@@ -1,0 +1,50 @@
+# Database files
+*.db
+*.duckdb
+*.duckdb.wal
+data/database/*
+
+# Large data files
+data/raw/*
+data/processed/*
+*.parquet
+*.feather
+
+# Keep directory structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/database/.gitkeep
+
+# Claude Code local settings (personal permissions, not shared)
+.claude/settings.local.json
+
+# Credentials and secrets
+.env
+secrets.json
+config/credentials.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Generated output
+output/
+
+# Jupyter
+.ipynb_checkpoints/

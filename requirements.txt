@@ -1,0 +1,29 @@
+# Core data
+pandas
+numpy
+duckdb
+pybaseball
+
+# Visualization
+plotly
+matplotlib
+seaborn
+kaleido==0.2.1
+
+# Web apps
+streamlit
+
+# Social media
+atproto
+tweepy
+
+# ML (Phase 6)
+scikit-learn
+scipy
+
+# Utilities
+requests
+python-dotenv
+
+# Notebooks
+marimo
