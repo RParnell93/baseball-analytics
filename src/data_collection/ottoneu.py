@@ -1,7 +1,6 @@
 """Pull Ottoneu average player values for FGPts and SABR formats."""
 
 import os
-import ssl
 import certifi
 import duckdb
 import pandas as pd

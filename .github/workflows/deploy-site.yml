@@ -1,0 +1,66 @@
+name: Deploy Site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install marimo plotly pandas duckdb kaleido==0.2.1
+
+      - name: Build site
+        run: |
+          mkdir -p _site/images _site/notebooks
+
+          # Copy landing page
+          cp site/index.html _site/index.html
+          touch _site/.nojekyll
+
+          # Copy YTD leaderboard images if they exist
+          if [ -d "site/images" ]; then
+            cp site/images/*.png _site/images/ 2>/dev/null || true
+          fi
+
+          # Export marimo notebooks as static HTML (allow failures for cells with missing deps)
+          for nb in notebooks/*.py; do
+            name=$(basename "$nb" .py)
+            echo "Exporting $nb..."
+            python -m marimo export html "$nb" -o "_site/notebooks/${name}.html" --no-include-code 2>&1 || true
+          done
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

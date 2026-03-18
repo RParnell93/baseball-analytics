@@ -18,7 +18,7 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - kaleido==0.2.1 for Plotly PNG export (do NOT use kaleido 1.x, it's broken)
 - marimo for notebooks
 - Streamlit for dashboards (later Dash)
-- atproto for Bluesky bot (later tweepy for Twitter)
+- tweepy for Twitter/X bot
 
 ## Database
 - DuckDB file: data/database/baseball.duckdb
@@ -41,11 +41,12 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - Chadwick Bureau: player ID crosswalk
 
 ## Ottoneu Context
-- Owner plays ~10 Ottoneu leagues, team name "sabrmagician"
-- Formats: FGPts (FanGraphs Points) and SABR Points
+- Owner plays 9 Ottoneu leagues, all SABR Points format
 - 12-team leagues, 40-man rosters, $400 salary cap
-- FGPts scoring weights documented in PROJECT_PLAN.md
 - SABR scoring weights documented in PROJECT_PLAN.md
+- Auth: FanGraphs WordPress login -> session cookies (credentials in .env)
+- Lineup API: AJAX POST with jQuery-style form data, requires X-Requested-With header
+- FanGraphs login rate-limits aggressively - reuse sessions, don't re-login per call
 
 ## Coding Conventions
 - Keep scripts simple, avoid over-engineering
@@ -57,6 +58,10 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 ## Running Things
 - Notebooks: `marimo edit notebooks/<name>.py`
 - Streamlit apps: `streamlit run apps/<name>.py`
+- Matchup explorer: `streamlit run apps/matchup_app.py`
+- ABS bot daily run: `python scripts/run_abs_bot.py --date 2026-03-17 --dry-run`
+- ABS bot with posting: `python scripts/run_abs_bot.py --post`
+- YTD umpire leaderboard: `python scripts/generate_ytd_umpire_leaderboard.py --cache --min-challenges 20`
 - Data refresh (all): `python src/data_collection/refresh_all.py`
 - Data refresh (recent only): `python src/data_collection/refresh_all.py --recent`
 - Data refresh (skip slow Statcast): `python src/data_collection/refresh_all.py --skip-statcast`
@@ -66,8 +71,28 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - STATCAST_GLOSSARY.md - reference for all Statcast metrics and column names
 - src/visualization/team_colors.py - hex colors for all 30 MLB teams
 - src/visualization/style.py - chart style defaults, @sabrmagician watermark
-- src/visualization/charts.py - reusable chart functions (heatmap, pitch movement, exit velo)
+- src/visualization/charts.py - reusable chart functions (heatmap, pitch movement, exit velo, spray, radar)
+- src/visualization/stat_cards.py - Pitcher List-style stat cards, dark theme constants
+- src/visualization/batted_ball_by_pitch.py - batted ball metrics by pitch type with conditional formatting
 - src/ottoneu/scoring.py - FGPts and SABR scoring calculators
+- src/ottoneu/client.py - authenticated client: login, roster, lineup read/write, player moves
 - src/utils/db.py - database query helpers (batter_statcast, pitcher_statcast, player lookups)
 - src/data_collection/refresh_all.py - master data refresh script
 - notebooks/01_explore_database.py - marimo notebook to explore all data
+
+## ABS Challenge Bot (src/bots/)
+- abs_challenge_bot.py - core: find challenges, generate images, build tweet text
+- challenge_impact.py - run expectancy + count leverage impact scoring (0-100 scale)
+- challenge_strategy.py - team strategy profiles (by count, outs, inning, score situation)
+- abs_leaderboards.py - team rankings and umpire accuracy leaderboards
+- twitter_poster.py - tweepy posting with dry-run mode
+- live_games.py - shared live game feed polling infrastructure
+- post_challenge_workflow.py - end-to-end example: detect, visualize, post
+- MLB API: scores in play["result"], NOT play["about"]. Challenges in playEvents[].reviewDetails AND allPlays[].reviewDetails.
+
+## Scripts (scripts/)
+- run_abs_bot.py - daily ABS bot runner with Twitter posting
+- generate_ytd_umpire_leaderboard.py - YTD spring training leaderboards (caches data)
+
+## Apps (apps/)
+- matchup_app.py - Streamlit hitter vs pitcher matchup explorer

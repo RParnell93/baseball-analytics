@@ -244,13 +244,7 @@ This is what separates analysts who get noticed from ones who don't. Make visual
 - Many developers moved away from Twitter bots in 2023-2024
 - If you want Twitter presence, post manually or budget $100/month
 
-**Bluesky (Recommended for bots):**
-- Free API, developer-friendly, open protocol
-- Growing baseball analytics community (many migrated from Twitter)
-- Python library: `atproto`
-- Zero cost for automated posting
-
-**Strategy:** Post to BOTH manually on Twitter (for reach) and automate on Bluesky (for the bot experience). Cross-post the best content.
+**Strategy:** Use Twitter/X as the primary platform. The baseball analytics community is there, and that's where the audience is. Use `tweepy` for automated posting.
 
 ### Content That Gets Engagement
 
@@ -279,10 +273,9 @@ Things that aren't being done well yet:
 
 ### Phase 5 Action Items
 
-- [ ] Create Twitter/X account for your baseball analytics brand
-- [ ] Create Bluesky account
-- [ ] Apply for Twitter developer account (decide if $100/month is worth it)
-- [ ] Set up Bluesky bot using `atproto` library
+- [ ] Create Twitter/X account (@sabrmagician or similar)
+- [ ] Apply for Twitter developer account
+- [ ] Set up Twitter bot using `tweepy` library
 - [ ] Build first automated post: "Daily Exit Velo Leaders" with visualization
 - [ ] Create 10 manual posts with original visualizations to establish your style
 

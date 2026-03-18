@@ -14,12 +14,14 @@ kaleido==0.2.1
 streamlit
 
 # Social media
-atproto
 tweepy
 
 # ML (Phase 6)
 scikit-learn
 scipy
+
+# MLB API
+MLB-StatsAPI
 
 # Utilities
 requests
