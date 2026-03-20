@@ -518,6 +518,12 @@ Automated daily reports during spring training (and regular season when ABS expa
 - **Umpire historical tracking**: how does each ump's accuracy trend across games
 - **Score differential**: do teams challenge more when behind, and are they more successful
 - **Challenge timing**: early-game vs late-game challenge patterns
+- **Missed challenge opportunities**: pitches that would have been overturned but weren't challenged
+  - Full version: count ALL missed opportunities across every called pitch (shows the total cost of not challenging)
+  - Practical version: only count missed opportunities when the team had a challenge available (shows actual wasted value)
+  - Requires: all called pitches from game feeds + Hawk-Eye zone truth (or a model approximation using pX/pZ vs zone boundaries)
+  - Metrics: missed overturns per game, missed overturns by count/leverage, teams that leave the most value on the table
+  - Could power a "should have challenged" tweet or daily report section
 
 ### Spring Training League Split
 - Cactus League (AZ): 15 teams, ~55 dedicated umpires

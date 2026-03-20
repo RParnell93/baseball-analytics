@@ -11,9 +11,6 @@ def _():
     import os
     import pandas as pd
     import plotly.express as px
-    from dotenv import load_dotenv
-
-    load_dotenv()
 
     mo.md("""# Ottoneu Value Finder
 
@@ -23,26 +20,9 @@ def _():
 
 
 @app.cell
-def _(mo, os):
-    _env_token = os.environ.get("MOTHERDUCK_TOKEN", "")
-    token_input = mo.ui.text(
-        label="MotherDuck Token",
-        kind="password",
-        value=_env_token,
-    )
-    mo.vstack([
-        mo.md("Paste your MotherDuck token to connect to cloud DB:"),
-        token_input,
-    ]) if not _env_token else mo.md("")
-    return (token_input,)
-
-
-@app.cell
-def _(duckdb, mo, token_input):
-    if token_input.value:
-        con = duckdb.connect(f"md:baseball?motherduck_token={token_input.value}")
-    else:
-        con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
+def _(duckdb, mo, os):
+    _password = os.environ.get("MOTHERDUCK_TOKEN")
+    con = duckdb.connect("md:baseball", config={"motherduck_token": _password})
 
     format_picker = mo.ui.dropdown(
         options={"FGPts": "fgpts", "SABR": "sabr"},

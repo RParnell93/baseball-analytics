@@ -12,37 +12,20 @@ def _():
     import pandas as pd
     import plotly.express as px
     import plotly.graph_objects as go
-    from dotenv import load_dotenv
-
-    load_dotenv()
 
     mo.md("# Baseball Analytics - Database Explorer\n\nExplore the data loaded into our DuckDB database.")
     return duckdb, go, mo, os, pd, px
 
 
 @app.cell
-def _(mo, os):
-    _env_token = os.environ.get("MOTHERDUCK_TOKEN", "")
-    token_input = mo.ui.text(
-        label="MotherDuck Token",
-        kind="password",
-        value=_env_token,
-    )
-    mo.vstack([
-        mo.md("Paste your MotherDuck token to connect to cloud DB:"),
-        token_input,
-    ]) if not _env_token else mo.md("")
-    return (token_input,)
+def _(duckdb, os):
+    _password = os.environ.get("MOTHERDUCK_TOKEN")
+    con = duckdb.connect("md:baseball", config={"motherduck_token": _password})
+    return (con,)
 
 
 @app.cell
-def _(duckdb, mo, pd, token_input):
-    # Connect to MotherDuck if token is available, otherwise fall back to local DuckDB
-    if token_input.value:
-        con = duckdb.connect(f"md:baseball?motherduck_token={token_input.value}")
-    else:
-        con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
-
+def _(con, mo, pd):
     # Show all tables
     tables = con.execute("SHOW TABLES").fetchdf()
     table_info = []
@@ -52,11 +35,11 @@ def _(duckdb, mo, pd, token_input):
         table_info.append({"Table": t, "Rows": f"{count:,}", "Columns": cols})
 
     mo.md(f"""## Database Summary\n\n{pd.DataFrame(table_info).to_markdown(index=False)}""")
-    return (con,)
+    return
 
 
 @app.cell
-def _(con, mo, pd, px):
+def _(con, mo, px):
     # Top 20 hitters by FGPts in 2024
     top_hitters = con.execute("""
         SELECT Name, Team, PA, HR, SB, AVG, OBP, SLG,
