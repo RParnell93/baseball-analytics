@@ -8,19 +8,27 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import duckdb
+    import os
     import pandas as pd
     import plotly.express as px
+    from dotenv import load_dotenv
+
+    load_dotenv()
 
     mo.md("""# Ottoneu Value Finder
 
     Find undervalued and overvalued players by comparing projected FGPts/SABR production
     to current Ottoneu market salaries.""")
-    return duckdb, mo, pd, px
+    return duckdb, mo, os, pd, px
 
 
 @app.cell
-def _(duckdb, mo, pd):
-    con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
+def _(duckdb, mo, os, pd):
+    # Connect to MotherDuck if token is set, otherwise fall back to local DuckDB
+    if os.environ.get("MOTHERDUCK_TOKEN"):
+        con = duckdb.connect("md:baseball")
+    else:
+        con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
 
     format_picker = mo.ui.dropdown(
         options={"FGPts": "fgpts", "SABR": "sabr"},

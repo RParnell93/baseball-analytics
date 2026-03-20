@@ -11,7 +11,31 @@ from collections import defaultdict
 from src.visualization.stat_cards import (
     DARK_BG, CARD_BG, ACCENT, TEXT_WHITE, TEXT_DIM, GRID_DIM
 )
-from src.visualization.team_colors import get_color
+from src.visualization.team_colors import get_color, get_visible_color
+
+# Data definitions for all ABS challenge metrics
+STAT_DEFINITIONS = {
+    "Used": "Total ABS challenges used by a team",
+    "W": "Challenges resulting in an overturned call (successful challenge)",
+    "L": "Challenges resulting in an upheld call (failed challenge)",
+    "Win%": "Success rate: W / Used * 100",
+    "High Lev%": "Percentage of challenges in high-leverage situations (impact score >= 50). "
+                 "High leverage = close game, runners on, late innings, favorable count leverage.",
+    "CHG+": "Challenge Plus. Net value per challenge, scaled so league average = 100. "
+            "A CHG+ of 120 means the team gets 20% more value per challenge than average. "
+            "Based on net_value (impact_gained - impact_wasted * 0.3) divided by challenges used, "
+            "normalized to league average.",
+    "Net Value": "Impact gained from successful overturns minus a 0.3x penalty for wasted challenges. "
+                 "Impact scores (0-100) come from run expectancy change and count leverage.",
+    "Impact Gained": "Sum of impact scores from all overturned (successful) challenges. "
+                     "Impact score (0-100) combines run expectancy delta and count leverage.",
+    "Impact Wasted": "Sum of impact scores from upheld (failed) challenges, "
+                     "representing opportunities lost.",
+    "Overturn %": "For umpires: percentage of challenges that resulted in overturned calls. "
+                  "Higher = less accurate umpire.",
+    "Accuracy %": "For umpires: percentage of challenged calls that were upheld. "
+                  "Higher = more accurate umpire.",
+}
 
 
 def filter_by_date_range(challenges, start_date, end_date):
@@ -69,10 +93,21 @@ def aggregate_team_stats(challenges):
         stats["avg_impact_per_win"] = stats["impact_gained"] / max(stats["overturned"], 1)
         stats["games"] = len(stats["games_with_challenges"])
         stats["challenges_per_game"] = stats["challenges"] / max(stats["games"], 1)
-        # Net value: impact gained minus opportunity cost of failed challenges
         stats["net_value"] = stats["impact_gained"] - stats["impact_wasted"] * 0.3
-        # Convert set to count for JSON serialization
+        stats["high_leverage_pct"] = stats["high_leverage_wins"] / max(stats["challenges"], 1) * 100
         stats["games_with_challenges"] = stats["games"]
+
+    # CHG+ (Challenge Plus): net value per challenge, scaled so league avg = 100
+    total_challenges = sum(s["challenges"] for s in teams.values())
+    total_net_value = sum(s["net_value"] for s in teams.values())
+    lg_avg_net_per_challenge = total_net_value / max(total_challenges, 1)
+
+    for team, stats in teams.items():
+        team_net_per_challenge = stats["net_value"] / max(stats["challenges"], 1)
+        if lg_avg_net_per_challenge > 0:
+            stats["chg_plus"] = round(team_net_per_challenge / lg_avg_net_per_challenge * 100)
+        else:
+            stats["chg_plus"] = 100
 
     return dict(teams)
 
@@ -137,7 +172,7 @@ def generate_team_leaderboard(challenges, period_label="YTD", save_path=None):
 
     if ranked:
         col_labels = ["Rank", "Team", "Used", "W", "L", "Win%",
-                      "Impact Gained", "High Lev W", "Net Value"]
+                      "High Lev%", "CHG+", "Net Value"]
         rows = []
         for i, (team, stats) in enumerate(ranked):
             rows.append([
@@ -147,8 +182,8 @@ def generate_team_leaderboard(challenges, period_label="YTD", save_path=None):
                 str(stats["overturned"]),
                 str(stats["upheld"]),
                 f"{stats['success_rate']:.0f}%",
-                f"{stats['impact_gained']:.0f}",
-                str(stats["high_leverage_wins"]),
+                f"{stats['high_leverage_pct']:.0f}%",
+                str(stats["chg_plus"]),
                 f"{stats['net_value']:.0f}",
             ])
 
@@ -174,10 +209,11 @@ def generate_team_leaderboard(challenges, period_label="YTD", save_path=None):
                 cell.set_facecolor(CARD_BG if row % 2 == 1 else "#1E2840")
                 cell.set_text_props(color=TEXT_WHITE)
 
-                # Team column - use team color
+                # Team column - use team color visible on dark bg
                 if col == 1 and row > 0:
                     team_abbr = rows[row - 1][1]
-                    team_color = get_color(team_abbr)
+                    bg = CARD_BG if row % 2 == 1 else "#1E2840"
+                    team_color = get_visible_color(team_abbr, bg)
                     cell.set_text_props(color=team_color, fontweight="bold")
 
                 # Win% column - color by performance
@@ -187,6 +223,24 @@ def generate_team_leaderboard(challenges, period_label="YTD", save_path=None):
                         cell.set_text_props(color="#44FF44", fontweight="bold")
                     elif pct >= 50:
                         cell.set_text_props(color="#FFD93D")
+                    else:
+                        cell.set_text_props(color="#FF6B6B")
+
+                # High Lev% column
+                if col == 6 and row > 0:
+                    pct = float(rows[row - 1][6].replace("%", ""))
+                    if pct >= 20:
+                        cell.set_text_props(color="#44FF44", fontweight="bold")
+                    elif pct >= 10:
+                        cell.set_text_props(color="#FFD93D")
+
+                # CHG+ column - wRC+ style (100 = average)
+                if col == 7 and row > 0:
+                    val = int(rows[row - 1][7])
+                    if val >= 120:
+                        cell.set_text_props(color="#44FF44", fontweight="bold")
+                    elif val >= 100:
+                        cell.set_text_props(color="#FFD93D", fontweight="bold")
                     else:
                         cell.set_text_props(color="#FF6B6B")
 
@@ -314,7 +368,7 @@ def generate_team_bar_chart(challenges, period_label="YTD",
 
     teams = [t for t, _ in ranked]
     values = [s[metric] for _, s in ranked]
-    colors = [get_color(t) for t in teams]
+    colors = [get_visible_color(t, DARK_BG) for t in teams]
 
     y_pos = range(len(teams))
     bars = ax.barh(y_pos, values, color=colors, alpha=0.85, height=0.7)

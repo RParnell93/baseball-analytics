@@ -42,6 +42,51 @@ def get_color(team_abbr: str, which: str = "primary") -> str:
     return team.get(which, "#333333")
 
 
+def _luminance(hex_color: str) -> float:
+    """Relative luminance of a hex color (0=black, 1=white)."""
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16) / 255, int(h[2:4], 16) / 255, int(h[4:6], 16) / 255
+    # sRGB to linear
+    r = r / 12.92 if r <= 0.04045 else ((r + 0.055) / 1.055) ** 2.4
+    g = g / 12.92 if g <= 0.04045 else ((g + 0.055) / 1.055) ** 2.4
+    b = b / 12.92 if b <= 0.04045 else ((b + 0.055) / 1.055) ** 2.4
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def get_visible_color(team_abbr: str, bg_hex: str = "#232D3F") -> str:
+    """Get a team color that's visible against the given background.
+
+    Uses primary color if bright enough, otherwise falls back to secondary.
+    If both are too dark, lightens the primary.
+    """
+    team = TEAM_COLORS.get(team_abbr.upper(), {})
+    primary = team.get("primary", "#CCCCCC")
+    secondary = team.get("secondary", "#CCCCCC")
+
+    bg_lum = _luminance(bg_hex)
+    pri_lum = _luminance(primary)
+    sec_lum = _luminance(secondary)
+
+    # WCAG contrast ratio threshold - need at least ~3:1 for readability
+    min_contrast = 3.0
+    pri_contrast = (pri_lum + 0.05) / (bg_lum + 0.05)
+    sec_contrast = (sec_lum + 0.05) / (bg_lum + 0.05)
+
+    if pri_contrast >= min_contrast:
+        return primary
+    if sec_contrast >= min_contrast:
+        return secondary
+
+    # Both too dark - lighten primary by blending toward white
+    h = primary.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    factor = 0.5
+    r = int(r + (255 - r) * factor)
+    g = int(g + (255 - g) * factor)
+    b = int(b + (255 - b) * factor)
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+
 def get_team_name(team_abbr: str) -> str:
     """Get full team name from abbreviation."""
     return TEAM_COLORS.get(team_abbr.upper(), {}).get("name", team_abbr)

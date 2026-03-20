@@ -8,17 +8,25 @@ app = marimo.App(width="full")
 def _():
     import marimo as mo
     import duckdb
+    import os
     import pandas as pd
     import plotly.express as px
     import plotly.graph_objects as go
+    from dotenv import load_dotenv
+
+    load_dotenv()
 
     mo.md("# Baseball Analytics - Database Explorer\n\nExplore the data loaded into our DuckDB database.")
-    return duckdb, go, mo, pd, px
+    return duckdb, go, mo, os, pd, px
 
 
 @app.cell
-def _(duckdb, mo, pd):
-    con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
+def _(duckdb, mo, os, pd):
+    # Connect to MotherDuck if token is set, otherwise fall back to local DuckDB
+    if os.environ.get("MOTHERDUCK_TOKEN"):
+        con = duckdb.connect("md:baseball")
+    else:
+        con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
 
     # Show all tables
     tables = con.execute("SHOW TABLES").fetchdf()

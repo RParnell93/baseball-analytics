@@ -25,13 +25,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: |
-          pip install marimo plotly pandas duckdb kaleido==0.2.1
-
       - name: Build site
         run: |
-          mkdir -p _site/images _site/notebooks
+          mkdir -p _site/images
 
           # Copy landing page
           cp site/index.html _site/index.html
@@ -42,12 +38,8 @@ jobs:
             cp site/images/*.png _site/images/ 2>/dev/null || true
           fi
 
-          # Export marimo notebooks as static HTML (allow failures for cells with missing deps)
-          for nb in notebooks/*.py; do
-            name=$(basename "$nb" .py)
-            echo "Exporting $nb..."
-            python -m marimo export html "$nb" -o "_site/notebooks/${name}.html" --no-include-code 2>&1 || true
-          done
+          # Notebooks are hosted on MoLab via session snapshots
+          # (committed in notebooks/__marimo__/session/)
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

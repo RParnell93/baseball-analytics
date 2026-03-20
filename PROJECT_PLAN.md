@@ -460,6 +460,97 @@ Will be created at `/baseball-analytics/CLAUDE.md` with:
 
 ---
 
+## ABS Challenge Bot - Daily Robo Ump Report
+
+### Vision
+Automated daily reports during spring training (and regular season when ABS expands) that break down every ABS challenge: who challenged, what was called, what happened, and what it meant. Published to Twitter via @roboumpstats (or similar). Goal is to become THE source for ABS challenge data and umpire accuracy analysis.
+
+### Daily Report Components
+
+**1. Game Challenge Map (per game)**
+- Single strike zone showing ALL challenges from that game
+- Each challenge is a circle colored by challenging team (filled = overturned, hollow = upheld)
+- Team 2-letter abbreviation inside each circle
+- Pitch type label (FF, SL, CU, etc.) next to each circle
+- Umpire's general zone overlay/heat map behind the dots
+- Shows the full story of that game's challenges in one image
+
+**2. Umpire Card (cumulative, per umpire)**
+- Same strike zone layout but showing ALL challenges across the umpire's full body of work
+- Team circles with pitch type labels, filled/hollow by result
+- Shows clusters and patterns - where is this umpire weak, which teams are targeting them
+- Header with umpire stats: total challenges, overturn rate, games worked
+
+**3. Team Challenge Strike Zones**
+- One strike zone plot per team showing all their challenges that day
+- Color-coded by result (overturned vs upheld)
+- Shows whether teams are targeting specific zones
+
+**4. Umpire Strike Zone Heat Maps**
+- Heat map of each umpire's full called strike zone for the game (not just challenges)
+- Overlay the challenged pitches on top
+- Shows the umpire's tendencies and where teams are pushing back
+- Helps answer: are teams doing their homework on umpire weak spots?
+
+**5. Umpire Scorecard**
+- **Raw accuracy score**: % of challengeable calls that were correct (no challenge needed or upheld)
+- **Adjusted score**: factor in challenge results (overturns hurt the score more)
+- **Game impact score**: weight each missed call by run expectancy swing and count leverage
+- **Challenge pressure**: how many times were they challenged, by which teams
+- **Zone consistency**: how stable is their zone game-to-game (std dev of zone edges)
+- **Edge call accuracy**: accuracy on pitches within 1 inch of the zone boundary
+
+**4. Pitch Type Analysis**
+- **Miss rate by pitch type**: which pitch types get the most incorrect calls (breaking balls vs fastballs)
+- **Challenge rate by pitch type**: which pitches are teams choosing to challenge
+- **Challenge success rate by pitch type**: are certain pitch types more likely to be overturned
+- **Speed bands**: do faster pitches get more or fewer missed calls
+- **Movement profile**: do pitches with more break lead to more challenges
+
+**5. Additional Analysis Ideas**
+- **Count leverage**: challenge frequency and success rate by count (0-2 vs 3-1, etc.)
+- **Inning splits**: do umpires degrade in late innings / after long games
+- **Catcher framing impact**: which catchers are involved in the most challenges (drawing or losing)
+- **Batter handedness splits**: are calls worse for lefties or righties
+- **Location breakdown**: inside/outside/high/low miss tendencies per umpire
+- **First pitch vs two-strike**: do umpires expand the zone in two-strike counts
+- **Team strategy profiles**: which teams challenge most aggressively, which are most selective
+- **Umpire historical tracking**: how does each ump's accuracy trend across games
+- **Score differential**: do teams challenge more when behind, and are they more successful
+- **Challenge timing**: early-game vs late-game challenge patterns
+
+### Spring Training League Split
+- Cactus League (AZ): 15 teams, ~55 dedicated umpires
+- Grapefruit League (FL): 15 teams, ~53 dedicated umpires
+- Zero crossover between leagues (umpires stay in their assigned league)
+- All charts split by Cactus/Grapefruit rather than AL/NL
+
+### Data Pipeline
+- Source: MLB Stats API game feeds, `reviewDetails` on plays
+- `challengeTeamId` is the authoritative field for who challenged
+- Statcast for pitch-level data (location, type, speed, movement) on challenged pitches
+- Cached data: `output/abs/spring_training_challenges.json`
+- Current dataset: 1,632 challenges, Feb 20 - Mar 19, 2026
+
+### Bot Accounts
+- @sabrmagician - personal brand, manual posts, original analysis
+- @roboumpstats (TBD) - dedicated ABS bot, daily automated reports
+- Future: weather bot for outdoor ballparks (Open-Meteo API, wind direction relative to field)
+
+### Phase / Priority
+1. ~~Collect challenge data~~ (done)
+2. ~~Team success rate charts~~ (done)
+3. ~~Umpire leaderboards~~ (done)
+4. ~~Strike vs ball butterfly/stacked charts~~ (done)
+5. ~~Cactus/Grapefruit league splits~~ (done)
+6. Daily umpire scorecard with strike zone heat maps
+7. Pitch type accuracy breakdown
+8. Team strategy deep dives (targeting umpire weak spots)
+9. Catcher framing impact analysis
+10. Full automated daily report pipeline -> Twitter
+
+---
+
 ## Immediate Next Steps (This Week)
 
 1. **Create GitHub repo** - `rparnell93/baseball-analytics`
