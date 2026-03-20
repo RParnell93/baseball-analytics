@@ -45,6 +45,8 @@ Thumbs.db
 
 # Generated output
 output/
+!output/abs/
+!output/abs/spring_training_challenges.json
 
 # Jupyter
 .ipynb_checkpoints/
