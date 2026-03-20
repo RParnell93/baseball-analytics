@@ -78,9 +78,11 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - Data refresh (skip slow Statcast): `python src/data_collection/refresh_all.py --skip-statcast`
 
 ## Deployment
-- Repo is PRIVATE (RParnell93/baseball-analytics)
-- GitHub Pages won't work on free plan with private repos
+- Repo is PUBLIC (RParnell93/baseball-analytics)
 - MoLab for notebook hosting: free, GitHub-integrated marimo cloud
+- MoLab imports from public GitHub URLs (From GitHub tab, paste .py URL)
+- MoLab has NO .env support - use Secrets panel (Cmd-J > Secrets tab) or mo.ui.text password input
+- MoLab "Add Connection" button creates conflicting auto-cell - delete it, use notebook's own code
 - MoLab notebook URLs:
   - Database Explorer: https://molab.marimo.io/notebooks/nb_RtE6fgCfP2gJSSfkkBvYQi
   - Ottoneu Value Finder: https://molab.marimo.io/notebooks/nb_w4F7FCPchgaQS4CWyVXW5o

@@ -24,15 +24,16 @@ def _():
 
 @app.cell
 def _(mo, os):
-    _has_env_token = bool(os.environ.get("MOTHERDUCK_TOKEN"))
+    _env_token = os.environ.get("MOTHERDUCK_TOKEN", "")
     token_input = mo.ui.text(
-        label="MotherDuck Token (paste to connect to cloud DB)",
+        label="MotherDuck Token",
         kind="password",
-        value=os.environ.get("MOTHERDUCK_TOKEN", ""),
+        value=_env_token,
     )
-    if not _has_env_token:
-        mo.md("### Connect to MotherDuck\nPaste your token below, or leave blank to use local DuckDB.")
-        token_input
+    mo.vstack([
+        mo.md("Paste your MotherDuck token to connect to cloud DB:"),
+        token_input,
+    ]) if not _env_token else mo.md("")
     return (token_input,)
 
 
