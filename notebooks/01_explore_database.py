@@ -21,10 +21,25 @@ def _():
 
 
 @app.cell
-def _(duckdb, mo, os, pd):
-    # Connect to MotherDuck if token is set, otherwise fall back to local DuckDB
-    if os.environ.get("MOTHERDUCK_TOKEN"):
-        con = duckdb.connect("md:baseball")
+def _(mo, os):
+    # Show token input only if MOTHERDUCK_TOKEN isn't already in the environment
+    _has_env_token = bool(os.environ.get("MOTHERDUCK_TOKEN"))
+    token_input = mo.ui.text(
+        label="MotherDuck Token (paste to connect to cloud DB)",
+        kind="password",
+        value=os.environ.get("MOTHERDUCK_TOKEN", ""),
+    )
+    if not _has_env_token:
+        mo.md("### Connect to MotherDuck\nPaste your token below, or leave blank to use local DuckDB.")
+        token_input
+    return (token_input,)
+
+
+@app.cell
+def _(duckdb, mo, pd, token_input):
+    # Connect to MotherDuck if token is available, otherwise fall back to local DuckDB
+    if token_input.value:
+        con = duckdb.connect(f"md:baseball?motherduck_token={token_input.value}")
     else:
         con = duckdb.connect("data/database/baseball.duckdb", read_only=True)
 
