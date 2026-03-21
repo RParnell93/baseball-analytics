@@ -122,8 +122,8 @@ def _(con, ump_select, CREDIT, LAYOUT, THEME, go, np, mo):
                           line=dict(color=THEME["grid"], width=1, dash="dot"))
 
         for _subset, _color, _label in [
-            (_over, THEME["green"], "Overturned"),
-            (_upheld, THEME["red"], "Upheld"),
+            (_over, "#4A90D9", "Overturned"),
+            (_upheld, "#E8553D", "Upheld"),
         ]:
             if len(_subset) == 0:
                 continue
@@ -156,7 +156,7 @@ def _(con, ump_select, CREDIT, LAYOUT, THEME, go, np, mo):
             title=dict(
                 text=(f"ABS Challenge Zone Map - {_title_ump}"
                       f"<br><sub>{_total} challenges | {_rate:.0f}% overturn rate</sub>"),
-                font=dict(size=16, color=THEME["text"]),
+                font=dict(size=20, color=THEME["text"]),
                 x=0.5, xanchor="center",
             ),
             xaxis=dict(
@@ -168,7 +168,7 @@ def _(con, ump_select, CREDIT, LAYOUT, THEME, go, np, mo):
                 title="Vertical Location (ft)", range=[0, 5], dtick=0.5,
                 gridcolor=THEME["grid"], zerolinecolor=THEME["grid"],
             ),
-            height=700, width=650,
+            height=700,
             legend=dict(
                 orientation="h", yanchor="top", y=-0.05,
                 xanchor="center", x=0.5, font=dict(size=12),
@@ -260,7 +260,7 @@ def _(con, stuff_select, CREDIT, LAYOUT, THEME, go, mo, pd):
         else:
             _df = pd.DataFrame(_data).sort_values("usage", ascending=True)
             _colors = [
-                THEME["green"] if s >= 100 else THEME["red"]
+                "#4A90D9" if s >= 100 else "#E8553D"
                 for s in _df["stuff"]
             ]
 
@@ -297,7 +297,7 @@ def _(con, stuff_select, CREDIT, LAYOUT, THEME, go, mo, pd):
                 **LAYOUT,
                 title=dict(
                     text=f"{_name} ({_team}) - Pitch Arsenal Quality",
-                    font=dict(size=16, color=THEME["text"]),
+                    font=dict(size=20, color=THEME["text"]),
                     x=0.5, xanchor="center",
                 ),
                 xaxis=dict(
@@ -430,14 +430,14 @@ def _(con, p360_select, CREDIT, LAYOUT, THEME, go, mo, pd):
 
         def _pct_color(p):
             if p >= 90:
-                return THEME["red"]
+                return "#1565C0"
             if p >= 70:
-                return THEME["accent"]
+                return "#4A90D9"
             if p >= 40:
                 return THEME["gold"]
             if p >= 20:
-                return THEME["teal"]
-            return "#3498DB"
+                return THEME["accent"]
+            return "#E8553D"
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
@@ -463,7 +463,7 @@ def _(con, p360_select, CREDIT, LAYOUT, THEME, go, mo, pd):
             **LAYOUT,
             title=dict(
                 text=f"{_p['Name']} ({_p['Team']}) - Player 360",
-                font=dict(size=16, color=THEME["text"]),
+                font=dict(size=20, color=THEME["text"]),
                 x=0.5, xanchor="center",
             ),
             xaxis=dict(
@@ -496,7 +496,6 @@ def _(con, p360_select, CREDIT, LAYOUT, THEME, go, mo, pd):
 
 # ── 4. Bat Tracking: Speed vs Swing Length ──────────────────────────────────
 # Gap: Savant added bat tracking in 2024 but hasn't built visual explainers.
-# Blast rate (r=0.36 with wRC+) is the best single bat-tracking predictor.
 
 @app.cell
 def _(con, CREDIT, LAYOUT, THEME, go, mo, np, pd):
@@ -580,7 +579,7 @@ def _(con, CREDIT, LAYOUT, THEME, go, mo, np, pd):
             **LAYOUT,
             title=dict(
                 text="Bat Tracking: Speed vs Swing Length (2024)",
-                font=dict(size=16, color=THEME["text"]),
+                font=dict(size=20, color=THEME["text"]),
                 x=0.5, xanchor="center",
             ),
             xaxis=dict(title="Avg Bat Speed (mph)", gridcolor=THEME["grid"]),
@@ -589,7 +588,7 @@ def _(con, CREDIT, LAYOUT, THEME, go, mo, np, pd):
             annotations=[
                 dict(x=0.98, y=0.02, xref="paper", yref="paper",
                      text=CREDIT, showarrow=False,
-                     font=dict(size=9, color=THEME["muted"])),
+                     font=dict(size=11, color=THEME["muted"])),
                 dict(x=0.02, y=0.98, xref="paper", yref="paper",
                      text="Compact & Fast", showarrow=False,
                      font=dict(size=10, color=THEME["green"]),
@@ -670,7 +669,7 @@ def _(con, CREDIT, LAYOUT, THEME, go, mo):
     else:
         _pf = _pf.sort_values("hr_factor", ascending=True)
         _colors = [
-            THEME["red"] if x > 0 else THEME["teal"]
+            "#E8553D" if x > 0 else "#4A90D9"
             for x in _pf["hr_factor"]
         ]
 
@@ -701,7 +700,7 @@ def _(con, CREDIT, LAYOUT, THEME, go, mo):
             **LAYOUT,
             title=dict(
                 text="Statcast Park HR Factor (2024)",
-                font=dict(size=16, color=THEME["text"]),
+                font=dict(size=20, color=THEME["text"]),
                 x=0.5, xanchor="center",
             ),
             xaxis=dict(
@@ -714,7 +713,7 @@ def _(con, CREDIT, LAYOUT, THEME, go, mo):
             annotations=[
                 dict(x=0.98, y=0.02, xref="paper", yref="paper",
                      text=CREDIT, showarrow=False,
-                     font=dict(size=9, color=THEME["muted"])),
+                     font=dict(size=11, color=THEME["muted"])),
                 dict(x=0.5, y=-0.06, xref="paper", yref="paper",
                      text=("Computed from 2024 Statcast batted balls. "
                            "Red = hitter-friendly, teal = pitcher-friendly."),

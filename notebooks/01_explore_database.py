@@ -143,8 +143,8 @@ def _(con, go, mo, pitcher_select):
 
     # Pitch type colors matching Statcast
     _colors = {
-        "FF": "#D4474E", "SI": "#F28C38", "FC": "#E88DA0", "CH": "#4CAF50",
-        "SL": "#F0C73B", "CU": "#5BBFDF", "ST": "#E040C0", "SV": "#7B1FA2",
+        "FF": "#D4474E", "SI": "#F28C38", "FC": "#E88DA0", "CH": "#26A69A",
+        "SL": "#F0C73B", "CU": "#5BBFDF", "ST": "#E040C0", "SV": "#8E44AD",
         "KC": "#E91E63", "FS": "#26C6DA", "KN": "#795548",
     }
 
@@ -206,7 +206,7 @@ def _(con, go, mo, pitcher_select):
             gridcolor="rgba(0,0,0,0)",
             scaleanchor="x", scaleratio=1,
         ),
-        height=700, width=700,
+        height=700,
         plot_bgcolor="#F5F8FA",
         paper_bgcolor="white",
         legend=dict(

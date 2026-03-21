@@ -208,7 +208,7 @@ def _(batting, go, mo, np, pd):
             marker=dict(
                 size=10,
                 color=_df["surplus"],
-                colorscale=[[0, DARK["red"]], [0.5, DARK["muted"]], [1, DARK["green"]]],
+                colorscale=[[0, "#E8553D"], [0.5, DARK["muted"]], [1, "#4A90D9"]],
                 cmin=-20, cmax=20,
                 colorbar=dict(title="Surplus $", tickprefix="$", len=0.6),
                 line=dict(width=0.5, color="white"),
@@ -313,8 +313,8 @@ def _(con, format_picker, go, mo, pd):
         _pos_data = _pos_data[_pos_data["primary_pos"].isin(_pos_order)]
 
         _pos_colors = {
-            "C": "#E74C3C", "1B": "#FF6B35", "2B": "#F1C40F",
-            "3B": "#2ECC71", "SS": "#4ECDC4", "OF": "#3498DB",
+            "C": "#E67E22", "1B": "#FF6B35", "2B": "#F1C40F",
+            "3B": "#1ABC9C", "SS": "#4ECDC4", "OF": "#3498DB",
             "DH": "#9B59B6", "Util": "#8892a0",
         }
 

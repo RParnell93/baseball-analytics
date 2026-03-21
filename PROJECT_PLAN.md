@@ -1,632 +1,239 @@
-# Baseball Analytics Side Project - Master Plan
+# Baseball Analytics - Project Plan
 
-**Owner:** Robert Parnell (@rparnell93)
+**Owner:** Robert Parnell ([@sabrmagician](https://twitter.com/sabrmagician))
 **Started:** March 2026
-**Goal:** Learn Python, baseball analytics, AI/ML, and data visualization. Build tools for Ottoneu fantasy baseball. Create a public presence with original analysis and automated content.
+**Repo:** [RParnell93/baseball-analytics](https://github.com/RParnell93/baseball-analytics) (public)
 
 ---
 
-## Vision
+## Vision & Goals
 
 Build a personal baseball analytics platform that:
-1. Has a rich local database of historical and live MLB data
-2. Powers original analysis, models, and visualizations
-3. Feeds dashboards, web apps, and automated social media accounts
-4. Makes you a better Ottoneu player and a recognized voice in the baseball analytics community
+- Powers original analysis, models, and visualizations for Twitter/X
+- Feeds interactive notebooks, dashboards, and automated social media
+- Makes Robert a better Ottoneu player and a recognized voice in the baseball analytics community
+- Serves as a Python learning vehicle (owner knows SQL well, learning Python through this project)
+
+**Brand positioning:** Visual-first, personality-driven analytics. The market has data (Savant), tools (FanGraphs), and writing (BP, Athletic). What's missing is beautiful, shareable, automated visual content. The model to follow is @UmpScorecards: one consistent thing, done better than anyone, automated, every day.
+
+**Primary account:** @sabrmagician - personal brand, original analysis, data viz
+**Bot account (planned):** @roboumpstats - automated daily ABS reports
 
 ---
 
-## Project Pillars
+## Current Status (as of March 2026)
 
-### 1. Database & Data Pipeline (Phase 1 - START HERE)
-### 2. Data Visualization (Core Identity)
-### 3. Fantasy/Ottoneu Tools
-### 4. Dashboards & Web Apps
-### 5. Social Media Automation
-### 6. Models & AI/ML
+### Working
 
----
+| Component | Status | Notes |
+|-----------|--------|-------|
+| DuckDB database (local) | Done | 7 tables, 800K+ rows total |
+| MotherDuck cloud sync | Done | All 7 tables synced |
+| Data refresh pipeline | Done | `refresh_all.py` - Statcast, FG, Ottoneu, player IDs |
+| MoLab notebooks (2) | Done | Database Explorer + Ottoneu Value Finder, live on MoLab |
+| ABS challenge data collection | Done | 1,632 challenges, spring training 2026 |
+| ABS team rankings + umpire leaderboards | Done | YTD charts, daily charts, Cactus/Grapefruit splits |
+| ABS impact scoring | Done | Run expectancy + count leverage, 0-100 scale |
+| ABS bot pipeline | Done | Detection, scoring, image gen, tweet text, dry-run mode |
+| Ottoneu lineup API client | Done | Login, roster, lineup read/write, player moves |
+| Visualization library | Done | Charts, stat cards, team colors, style/watermark |
+| Matchup explorer app | Done | Streamlit, hitter vs pitcher |
+| Static landing page | Done | site/index.html, GitHub Pages, dark theme |
+| Competitor research | Done | research/competitor_landscape.md |
 
-## Phase 1: Database & Data Pipeline
+### Not Yet Started
 
-### Database Choice: DuckDB
-
-**Why DuckDB over SQLite or Postgres:**
-- Built for analytics (columnar storage) - aggregations on millions of rows are 10-100x faster than SQLite
-- Zero config, single file, no server to manage
-- Can query CSV, Parquet, and JSON files directly without importing
-- First-class Python integration
-- You already know SQL - DuckDB uses standard SQL
-- Free, open source, growing fast
-
-**Data Scale:**
-- Statcast pitch-level: ~700,000 pitches/season (2015-present)
-- Player batting/pitching stats: ~150 years of data
-- Total storage: single-digit GB range, easily handled
-
-### Data Sources
-
-| Source | What You Get | Access Method | Python Library |
-|--------|-------------|---------------|----------------|
-| **Statcast / Baseball Savant** | Pitch-level data: velocity, spin, movement, exit velo, launch angle, sprint speed, expected stats | Free CSV search + pybaseball | `pybaseball` |
-| **FanGraphs** | Leaderboards, projections (Steamer, ZiPS, ATC), park factors, WAR, advanced stats | CSV export + pybaseball | `pybaseball` |
-| **Baseball Reference** | Traditional stats, game logs, splits, awards, transactions | pybaseball wrappers | `pybaseball` |
-| **Lahman Database** | Complete historical stats back to 1871 (batting, pitching, fielding, teams, awards) | Direct download (CSV/SQLite) | `pybaseball` or direct download |
-| **Retrosheet** | Play-by-play data for every game back to 1921, event files | Free download | `retrosheet` package or manual parsing |
-| **MLB Stats API** | Live scores, rosters, schedules, game feeds (official, free, no auth needed) | REST API | `statsapi` package |
-| **Ottoneu** | Average player values, salary data, roster ownership % | CSV/XML export from ottoneu.fangraphs.com/averageValues | `requests` + parsing |
-| **Chadwick Bureau** | Player ID mapping (cross-reference FanGraphs, Baseball Ref, Retrosheet, MLB IDs) | GitHub CSV download | Direct download |
-
-### pybaseball - Your Main Tool
-
-The `pybaseball` library is the Swiss Army knife. Key functions:
-- `statcast(start_dt, end_dt)` - pull Statcast pitch data for date range
-- `batting_stats(start_season, end_season)` - FanGraphs batting leaderboard
-- `pitching_stats(start_season, end_season)` - FanGraphs pitching leaderboard
-- `playerid_lookup(last, first)` - find player IDs
-- `statcast_batter(start_dt, end_dt, player_id)` - single batter Statcast data
-- `statcast_pitcher(start_dt, end_dt, player_id)` - single pitcher Statcast data
-- `team_batting(start, end)` - team-level batting stats
-- `cache.enable()` - cache API calls locally to avoid re-downloading
-
-### Schema Design
-
-```
-players (player_id PK, name, birth_date, mlb_debut, fg_id, bbref_id, mlbam_id)
-teams (team_id PK, name, abbreviation, league, division)
-batting_season (player_id, season, team_id, G, PA, AB, H, 2B, 3B, HR, RBI, BB, K, SB, CS, AVG, OBP, SLG, wOBA, wRC+, WAR)
-pitching_season (player_id, season, team_id, G, GS, IP, H, ER, HR, BB, K, ERA, FIP, xFIP, SIERA, K%, BB%, WAR)
-statcast_pitches (pitch_id, game_date, pitcher_id, batter_id, pitch_type, release_speed, spin_rate, pfx_x, pfx_z, plate_x, plate_z, launch_speed, launch_angle, estimated_ba, estimated_woba)
-ottoneu_values (player_id, format, avg_salary, median_salary, roster_pct, last_10_avg, snapshot_date)
-```
-
-### Phase 1 Action Items
-
-- [ ] Set up GitHub repo with proper structure
-- [ ] Install core Python packages (pybaseball, duckdb, pandas, plotly)
-- [ ] Write data collection script: pull 2024-2025 Statcast data
-- [ ] Write data collection script: pull FanGraphs batting + pitching stats (2015-2025)
-- [ ] Load everything into DuckDB
-- [ ] Write data collection script: pull Ottoneu average values
-- [ ] Download Chadwick player ID crosswalk
-- [ ] Build a "refresh" script that updates data daily during season
+- Twitter API credentials / automated posting
+- Weather bot for outdoor ballparks
+- ML models (projection blending, breakout prediction)
+- Trade analyzer
+- Roster optimizer
+- Google Sheets integration
 
 ---
 
-## Phase 2: Data Visualization (Your Identity)
+## Active Workstreams
 
-This is what separates analysts who get noticed from ones who don't. Make visualization your thing.
+### 1. ABS Challenge Bot (highest priority)
 
-### Why Visualization Matters
-- It's the most shareable form of analysis on social media
-- Forces you to think about what insight you're actually communicating
-- Builds your brand faster than anything else
-- Every account you admire (Bland, TJStats, Eno) leads with visuals
+This is the first-mover opportunity. Nobody is doing automated daily ABS visual content on social media. Spring training 2026 is the proving ground before ABS expands to the regular season.
 
-### Visualization Stack
+**Done:**
+- Challenge data pipeline from MLB Stats API
+- Team success rate charts (by team, by league)
+- Umpire leaderboards (overall, Cactus/Grapefruit split)
+- Strike vs ball butterfly and stacked charts
+- Impact scoring (run expectancy + count leverage)
+- Daily bot runner with image generation and tweet text
 
-| Tool | Use Case | Why |
-|------|----------|-----|
-| **Plotly** | Interactive charts, dashboards | You already know it. Rich interactivity. Great for web apps. |
-| **matplotlib + seaborn** | Static publication-quality charts | Industry standard for baseball viz. Better control over layout. What most baseball Twitter accounts use. |
-| **Plotly for export** | Social media images | Use kaleido 0.2.1 for PNG export (you already have this working) |
+**Next:**
+- Get Twitter API credentials for @roboumpstats
+- Daily umpire scorecard with strike zone heat maps
+- Pitch type accuracy breakdown (which pitches get overturned most)
+- Team strategy deep dives (are teams targeting umpire weak spots)
+- Catcher framing impact analysis
+- Full automated daily report pipeline posting to Twitter
 
-### Visualization Skills to Build
+**Future ABS ideas (backlog):**
+- Umpire percentile sliders (Savant-style)
+- Player challenge cards (who benefits most from challenges)
+- Pre-ABS vs ABS zone comparison (2025 vs 2026 same umpires)
+- Missed challenge opportunities (pitches that should have been challenged)
+- Count leverage and inning splits
+- Score differential analysis
 
-**Level 1 - Foundation:**
-- Strike zone heat maps (pitch location density)
-- Spray charts (batted ball location)
-- Rolling average line charts (player performance over time)
-- Bar charts with team colors
-- Scatter plots with player labels (xwOBA vs actual wOBA, etc.)
+### 2. Data Visualization & Brand Building
 
-**Level 2 - Intermediate:**
-- Pitch movement plots (horizontal vs vertical break, colored by pitch type)
-- Launch angle / exit velocity scatter with expected outcomes
+Viz is the core differentiator. Every chart should be clean, branded, professional, shareable on mobile.
+
+**Done:**
+- Team colors module (all 30 MLB teams)
+- Reusable chart functions (heatmap, pitch movement, exit velo, spray, radar)
+- Stat card template (Pitcher List-style, dark theme)
+- Batted ball by pitch type tables with conditional formatting
+- @sabrmagician watermark on all output
+
+**Next:**
+- Create 10 manual Twitter posts with original visualizations
+- Swing analytics visualizations (bat speed, blast rate, attack angle)
 - Player comparison radar charts
-- Season timeline charts (WAR accumulation curves)
-- Percentile bar charts (like Baseball Savant player pages)
+- Rolling performance line charts
 
-**Level 3 - Advanced (differentiators):**
-- Animated pitch sequences (show an at-bat unfold)
-- Custom pitch tunneling visualizations
-- 3D pitch trajectory plots
-- Interactive "explorer" tools (click a player, see their whole profile)
-- Park factor visualizations with stadium overlays
+**Visualization ideas (backlog):**
+- Animated pitch sequences
+- Pitch tunneling visualizations
+- 3D pitch trajectories
 - Defensive positioning / shift charts
-- Custom color palettes using team colors programmatically
+- Park factor visualizations with stadium overlays
+- Swing decision zone maps
+- Contact quality waterfalls
 
-**Swing Analytics Visualizations (Statcast bat tracking data, 2024+):**
-- **Bat speed vs swing length scatter** - compact vs long swings, colored by outcome (HR, lineout, whiff, etc.). Shows a batter's swing profile relative to league. Can cluster swing types.
-- **Attack angle approximation** - infer vertical bat path from launch angle + bat speed relationship. Plot attack angle by pitch height to show uppercut vs level tendencies.
-- **Swing decision zone map** - heat map of the strike zone showing where a batter swings vs takes, with bat speed overlay. Shows discipline, aggression zones, and hunt zones at a glance.
-- **Sweet spot map** - combine bat speed + launch angle + exit velo by pitch location. Where in the zone does a batter barrel the ball? Where do they roll over or pop up?
-- **Swing length by pitch type** - do they shorten up on breaking balls? Box plot or strip plot of swing length by pitch type faced. Reveals approach adjustments.
-- Note: Hawk-Eye raw 3D bat trajectory data is NOT publicly available (proprietary, teams-only). Statcast provides summarized bat_speed and swing_length metrics starting 2024. All viz above uses these public summary metrics.
+### 3. Ottoneu Fantasy Tools
 
-**Advanced Hitter Analytics (bat tracking + stance + zone data, 2024+):**
-- **Swing profile cards** - compact single-player cards: bat speed percentile, blast rate, attack angle, swing length, squared-up rate. Shareable social media format.
-- **Contact point maps** - plot intercept X/Y positions colored by outcome (barrel, lineout, whiff). Shows where each hitter's physical sweet spot lives.
-- **Whiff vs barrel attack angle distributions** - overlapping density plots showing attack angle on whiffs vs barrels per hitter. Reveals mechanical tendencies.
-- **Zone decision value heat maps** - plate_x/plate_z colored by swing run value (heart/shadow/chase/waste framework from Savant). Where does a hitter add/lose value with swing decisions?
-- **Bat speed by count** - how does bat speed change 0-0 vs 0-2 vs 3-0? Reveals approach shifts and selling out for power.
-- **Squared-up rate by pitch location** - heat map showing where in the zone a hitter squares up most. The true "danger zone" for pitchers.
-- **Swing length vs bat speed scatter** - league-wide, colored by blast rate. Identifies efficient swingers (short + fast) vs long leveragers.
-- **Contact quality waterfall** - stacked bar: % whiff, weak, topped, under, flare, solid, barrel per hitter.
-- **Player-normalized contact depth** - bucket contacts into "deep" (late), "middle", "forward" (early) relative to that player's own average. Shows timing consistency. (Ben Clemens methodology)
-- **Rolling bat speed + blast rate** - time series showing mechanical changes through a season, can detect injuries or adjustments.
-- **Stance metrics over time** - track sz_top/sz_bot, depth in box, distance off plate, foot separation across a season. Detect stance drift, crouch changes, timing adjustments.
-- **Deception index (Kirby Corollary)** - KDE overlap of a pitcher's fastball vs slider release angles. High overlap = more chases regardless of movement quality.
-- Key insight from research: Blast Rate (r=0.36 with wRC+) is the strongest single bat-tracking predictor of offensive production. Bat speed alone (r=0.11) is mostly noise. Squared-Up % inversely correlates with K% - contact hitters square up more but hit softer.
-- Statcast fields: bat_speed, swing_length, attack_angle, swing_path_tilt, intercept_x, intercept_y, squared_up, blast (available in pybaseball statcast exports)
-- Stance fields (newer Savant leaderboards): depth_in_box, distance_off_plate, foot_separation, foot_angle
+Playing 9 leagues, all SABR Points. Nobody produces dedicated SABR Points content - this is a niche to own.
 
-### Visualization Design Principles
-- Clean, uncluttered layouts - white space is your friend
-- Use MLB team colors for instant recognition
-- Annotate the insight, not just the data - point arrows at the interesting thing
-- Mobile-first - most social media consumed on phones
-- High contrast text - readable at small sizes
-- Consistent style across all your work - becomes your brand
-- Always include data source and your handle
+**Done:**
+- FGPts and SABR scoring calculators
+- Ottoneu value data in database (FGPts + SABR avg salaries)
+- Value Finder notebook on MoLab
+- Authenticated lineup API client (login, roster, lineup changes, player moves)
 
-### Phase 2 Action Items
+**Next:**
+- Projection blending (Steamer + ZiPS + ATC)
+- Surplus value calculator for all players
+- Trade analyzer notebook
 
-- [ ] Create a team colors module (hex codes for all 30 MLB teams)
-- [ ] Build reusable chart templates (strike zone, spray chart, pitch movement)
-- [ ] Make 5 different visualizations of one player's 2025 season
-- [ ] Create a "style guide" for your charts (fonts, colors, layout rules)
-- [ ] Study Kyle Bland's visualizations and recreate 2-3 of them with your own twist
-- [ ] Learn matplotlib basics (even though you know Plotly - you need both)
+**Backlog:**
+- Roster optimizer (given roster + budget, maximize surplus)
+- Arbitration tracking (salary inflation predictions)
+- RP usage predictor (likelihood a reliever pitches today)
 
----
+### 4. MoLab + MotherDuck Infrastructure
 
-## Phase 3: Ottoneu Fantasy Tools
+Cloud notebooks connected to cloud database. Anyone can explore the data.
 
-### Ottoneu Scoring Reference
+**Done:**
+- MotherDuck database with all 7 tables
+- Database Explorer notebook on MoLab
+- Ottoneu Value Finder notebook on MoLab
 
-**FGPts (FanGraphs Points) - Linear Weights:**
-| Hitting | Points | Pitching | Points |
-|---------|--------|----------|--------|
-| AB | -1.0 | IP | 7.4 |
-| H | 5.6 | K | 2.0 |
-| 2B | 2.9 | H | -2.6 |
-| 3B | 5.7 | BB | -3.0 |
-| HR | 9.4 | HBP | -3.0 |
-| BB | 3.0 | HR | -12.3 |
-| HBP | 3.0 | SV | 5.0 |
-| SB | 1.9 | HLD | 4.0 |
-| CS | -2.8 | | |
+**Next:**
+- Rewire MoLab notebooks to connect to MotherDuck (currently local DuckDB)
+- Push ABS challenge data to MotherDuck
+- Set up scheduled refresh scripts to keep MotherDuck current
 
-**SABR Points - FIP-based Pitching:**
-- Hitting: Same as FGPts
-- Pitching: IP (5.0), K (2.0), BB (-3.0), HBP (-3.0), HR (-13.0), SV (5.0), HLD (4.0)
-- Key difference: SABR ignores hits allowed (pitcher can't control BABIP), uses FIP-style weighting
+### 5. Weather Bot (future)
 
-**League Structure:**
-- 12 teams, 40-man rosters, $400 salary cap
-- All players acquired via auction
-- Cutting a player costs 50% of salary as cap penalty
-- Minor leaguers eligible
-- Ottoneu exports average values as CSV/XML at ottoneu.fangraphs.com/averageValues
+Separate Twitter account. Daily visuals showing which parks favor hitters today and why.
 
-### Ottoneu Tools to Build
-
-1. **Surplus Value Calculator** - Project player stats, convert to FGPts/SABR points, calculate $/point, compare to salary
-2. **Trade Analyzer** - Compare two sides of a trade using projected surplus value
-3. **Auction Value Model** - Your own projection system feeding into Ottoneu dollar values
-4. **Roster Optimizer** - Given your roster + budget, which free agents maximize surplus?
-5. **Arbitration Helper** - Track player salary inflation, predict keeper costs
-6. **RP Usage Predictor** - Daily score for each relief pitcher estimating likelihood of being used
-   - Inputs: days since last appearance, pitch count in recent outings, team's bullpen workload, game situation (home/away, opponent strength), closer/setup role, handedness matchups in upcoming lineup
-   - Output: 0-100 score per RP, ranked list for lineup decisions
-   - Pairs with the lineup setter - skip RPs unlikely to pitch, prioritize high-usage-probability arms
-   - Could pull from MLB Stats API (recent game logs, bullpen usage) and team schedule
-
-### Phase 3 Action Items
-
-- [ ] Pull Ottoneu average values data for all formats
-- [ ] Build FGPts and SABR scoring calculators from raw stats
-- [ ] Create a projection blending system (average Steamer + ZiPS + ATC)
-- [ ] Calculate surplus value for all players
-- [ ] Build a simple trade analyzer notebook
-- [ ] Compare your projected values vs Ottoneu market values to find inefficiencies
+**Not started.** Requires:
+- Open-Meteo API integration (free)
+- Ballpark orientation data (wind direction relative to field)
+- Daily graphic generation (wind arrows on field diagrams)
+- Twitter API credentials
 
 ---
 
-## Phase 4: Dashboards & Web Apps
+## Backlog (by category)
 
-### Technology Progression
+### Apps & Dashboards
+- Player Profile Dashboard (enter name, see full stat profile)
+- Pitch Arsenal Analyzer (any pitcher's mix, movement, usage)
+- Historical Comp Tool ("who is this player most similar to?")
+- Live Game Tracker (real-time Statcast viz during games)
+- Deploy Streamlit apps to Streamlit Community Cloud
 
-1. **marimo** (now) - Use for exploration and quick analysis. You already know it.
-2. **Streamlit** (next) - Easiest path to a web-deployed dashboard. Pure Python, free hosting.
-3. **Dash by Plotly** (later) - More control, better for complex production apps.
+### Models & ML
+- Linear regression: predict HR from barrel rate + avg exit velo
+- Player similarity (k-nearest neighbors for comps)
+- Projection blending with custom weights
+- Pitch classification from trajectory data
+- Build own xBA/xwOBA model
+- Breakout prediction model
+- Stuff+ model
+- Aging curves
+- DSPy for LLM pipelines (tweet generation, scouting reports, NL-to-SQL)
 
-### App Ideas (in priority order)
+### Content & Social
+- Domain name (sabrmagician.com or similar)
+- Ottoneu-specific social content (SABR Points strategy)
+- Minor league prospect tracking with Statcast viz
+- Defensive metrics visualization
+- Park factor weekly updates
+- Catcher framing breakdowns
 
-1. **Player Profile Dashboard** - Enter a player name, see full stat profile + visualizations
-2. **Ottoneu Value Finder** - Shows undervalued players across all Ottoneu formats
-3. **Pitch Arsenal Analyzer** - Visualize any pitcher's pitch mix, movement, usage patterns
-4. **Historical Comp Tool** - "Who is this player most similar to historically?"
-5. **Live Game Tracker** - During games, show real-time Statcast data with your visualizations
-
-### Deployment Options (Free)
-- **Streamlit Community Cloud** - Connect GitHub repo, auto-deploys. Free.
-- **Render** - Free tier for web services
-- **marimo Cloud** - Can deploy marimo notebooks as apps
-
-### Phase 4 Action Items
-
-- [ ] Build first Streamlit app: simple player lookup dashboard
-- [ ] Deploy it to Streamlit Community Cloud
-- [ ] Build Ottoneu value dashboard
-- [ ] Build pitch arsenal analyzer
-- [ ] Get your own domain name for a personal site
-
-### Website / Domain Name Ideas
-- mlbstatviz.com
-- roboumpstats.com
-- sabrmagician.com
-- therobozonetv.com
-- pitchtruth.com
-- zonechecked.com
-- dialedinstats.com
-- theumpirefiles.com
-- absbaseball.com
-- batterseye.io
-- swingdecision.com
+### Infrastructure
+- Google Sheets integration
+- GitHub Actions for scheduled data refresh
+- Automated site image refresh on schedule
 
 ---
 
-## Phase 5: Social Media Automation
+## Technical Decisions
 
-### Platform Strategy
-
-**Twitter/X Reality Check:**
-- API pricing is brutal: $100/month minimum for posting access (Basic tier)
-- Many developers moved away from Twitter bots in 2023-2024
-- If you want Twitter presence, post manually or budget $100/month
-
-**Strategy:** Use Twitter/X as the primary platform. The baseball analytics community is there, and that's where the audience is. Use `tweepy` for automated posting.
-
-### Content That Gets Engagement
-
-Based on research of the accounts you follow:
-
-| Content Type | Example | Engagement Level |
-|-------------|---------|-----------------|
-| Real-time game visualizations | "Here's every pitch from Skenes' start tonight" | Very High |
-| Historical comparisons | "Only 5 players have ever done X before age 25" | High |
-| Daily leaderboards | "Exit velo leaders this week" | Medium-High |
-| Surprise stats | "Player X is doing something nobody's talking about" | High |
-| Interactive tools | "I built a tool that shows Y" | Very High |
-| Pitch movement charts | "Here's how [pitcher]'s slider changed this year" | High |
-| Player comps | "This rookie's profile matches peak [star player]" | High |
-
-### Content Gaps (Your Opportunities)
-
-Things that aren't being done well yet:
-- **Defensive metrics visualization** - hard to visualize, underserved
-- **Park factor weekly updates** - how is each park playing this week?
-- **Pitch tunneling analysis** - advanced sequencing visualizations
-- **Minor league prospect tracking** with Statcast-style viz
-- **Real-time historical comp** - "As of today, this season matches..."
-- **Catcher framing breakdowns** with strike zone viz
-- **Ottoneu-specific content** - huge niche audience, very underserved on social
-
-### Phase 5 Action Items
-
-- [ ] Create Twitter/X account (@sabrmagician or similar)
-- [ ] Apply for Twitter developer account
-- [ ] Set up Twitter bot using `tweepy` library
-- [ ] Build first automated post: "Daily Exit Velo Leaders" with visualization
-- [ ] Create 10 manual posts with original visualizations to establish your style
+| Decision | Choice | Why |
+|----------|--------|-----|
+| Database | DuckDB | Columnar, fast analytics on millions of rows, zero config, single file, standard SQL |
+| Cloud DB | MotherDuck | Cloud DuckDB, free tier, syncs with local, accessible from MoLab |
+| Notebooks | marimo | Reactive, Git-friendly (.py files), native to MoLab for cloud hosting |
+| Interactive viz | Plotly | Rich interactivity, good for web, kaleido for PNG export |
+| Static viz | matplotlib + seaborn | Industry standard for baseball Twitter, better layout control |
+| PNG export | kaleido 0.2.1 | 1.x is broken, must pin to 0.2.1 |
+| Web apps | Streamlit | Pure Python, free hosting, fast prototyping |
+| Social | Twitter/X via tweepy | Baseball analytics community lives on Twitter |
+| Cloud notebooks | MoLab | Free, imports from public GitHub URLs, marimo-native |
+| DuckDB version | v1.4.1 | MotherDuck doesn't yet support v1.5.0 |
 
 ---
 
-## Phase 6: Models & AI/ML
+## Reference
 
-### Learning Path (after you're comfortable with data + viz)
+### Ottoneu Scoring (SABR Points)
 
-**Starter Models:**
-1. Linear regression: predict season HR from Statcast metrics (barrel rate, avg exit velo)
-2. Player similarity: k-nearest neighbors to find historical comps
-3. Projection blending: weighted average of Steamer/ZiPS/ATC with your own weights
+**Hitting:** AB (-1.0), H (5.6), 2B (2.9), 3B (5.7), HR (9.4), BB (3.0), HBP (3.0), SB (1.9), CS (-2.8)
+**Pitching (SABR):** IP (5.0), K (2.0), BB (-3.0), HBP (-3.0), HR (-13.0), SV (5.0), HLD (4.0)
+**Pitching (FGPts):** IP (7.4), K (2.0), H (-2.6), BB (-3.0), HBP (-3.0), HR (-12.3), SV (5.0), HLD (4.0)
 
-**Intermediate:**
-4. Pitch classification: predict pitch type from trajectory data
-5. Expected stats: build your own xBA/xwOBA model from exit velo + launch angle
-6. Breakout prediction: which players will improve next year?
+Key difference: SABR ignores hits allowed (FIP-style). FGPts rewards contact managers with low BABIP.
 
-**Advanced:**
-7. Your own projection system (like a mini Steamer)
-8. Stuff+ model: rate pitch quality from raw characteristics
-9. Aging curves: how do different skills age differently?
+**League structure:** 12 teams, 40-man rosters, $400 salary cap, all players via auction.
 
-**LLM/AI Tools:**
-10. DSPy for structured LLM pipelines - tweet generation, scouting report summaries, natural language query-to-SQL
+### Spring Training ABS Data
 
-### Phase 6 Action Items
+- 1,632 challenges across 26 days (Feb 20 - Mar 19, 2026)
+- 52% overturn rate
+- Cactus League (AZ): 15 teams, ~55 umpires
+- Grapefruit League (FL): 15 teams, ~53 umpires
+- Zero crossover between leagues
 
-- [ ] Complete a scikit-learn tutorial
-- [ ] Build first model: predict HR from Statcast metrics
-- [ ] Build player similarity model
-- [ ] Create your own projection blending system
-- [ ] Compare your projections to established systems
+### Accounts to Study
 
----
-
-## Python Learning Path
-
-You're an analyst who knows SQL and is learning Python through marimo. Here's your progression:
-
-### Month 1-2: Data Manipulation
-- **pandas** - DataFrames are SQL tables. Learn: read_csv, groupby, merge, pivot_table, apply
-- **pybaseball** - Domain-specific, motivating, solves real problems
-- **DuckDB Python API** - Write SQL you know, get Python DataFrames back
-
-### Month 3-4: Visualization
-- **plotly** (deepen) - plotly.express for quick charts, graph_objects for custom control
-- **matplotlib** - Learn the basics. Many baseball viz examples use it. Needed for publication-quality static charts.
-- **seaborn** - Statistical visualization built on matplotlib
-
-### Month 5-6: Web Apps
-- **Streamlit** - Build and deploy your first dashboard
-- Functions, modules, imports - move from notebooks to scripts
-
-### Month 7-9: Statistics & ML
-- **scikit-learn** - Start with linear regression, k-nearest neighbors
-- **scipy** - Statistical tests
-- List comprehensions, classes, error handling
-
-### Month 10-12: Production
-- **Dash** - More complex web apps
-- **Testing** - pytest basics
-- **APIs** - requests library, maybe FastAPI
-- **Automation** - scheduling, cron, bots
-
-### Key Libraries to Install
-
-```
-# Core
-pandas
-numpy
-duckdb
-pybaseball
-
-# Visualization
-plotly
-matplotlib
-seaborn
-kaleido==0.2.1
-
-# Web Apps
-streamlit
-dash
-
-# Social Media
-atproto          # Bluesky
-tweepy           # Twitter/X
-
-# Data & ML
-scikit-learn
-scipy
-requests
-dspy-ai           # LLM programming framework - structured prompts, optimizers, pipelines
-
-# Notebooks
-marimo
-```
-
----
-
-## GitHub Repo Structure
-
-```
-baseball-analytics/
-├── .github/
-│   └── workflows/           # GitHub Actions for automated data updates
-├── data/
-│   ├── raw/                 # Downloaded CSVs (git-ignored if large)
-│   ├── processed/           # Cleaned data
-│   └── database/            # DuckDB file (git-ignored)
-├── notebooks/               # marimo notebooks for exploration
-├── src/
-│   ├── data_collection/     # Scripts to pull from APIs
-│   │   ├── statcast.py
-│   │   ├── fangraphs.py
-│   │   ├── ottoneu.py
-│   │   └── mlb_api.py
-│   ├── data_processing/     # ETL, cleaning, loading to DB
-│   ├── analysis/            # Analysis modules
-│   ├── visualization/       # Reusable chart functions, team colors, style
-│   ├── models/              # ML models
-│   ├── ottoneu/             # Fantasy-specific tools
-│   └── utils/               # Helpers
-├── apps/                    # Streamlit/Dash apps
-├── bots/                    # Social media bot scripts
-├── tests/
-├── .env.example             # Template for API keys
-├── .gitignore
-├── requirements.txt
-├── CLAUDE.md                # Instructions for Claude Code
-└── README.md
-```
-
----
-
-## Claude Code Setup
-
-### CLAUDE.md for this project
-
-Will be created at `/baseball-analytics/CLAUDE.md` with:
-- Project context and goals
-- Database location and schema
-- How to run scripts, apps, and notebooks
-- Data source documentation
-- Permission: access all folders/files without asking
-- Coding conventions
-
-### Memory Files
-
-- This project plan lives in the project directory
-- Key decisions and patterns will be tracked in Claude Code memory
-- Each phase will have its own tracking
-
----
-
-## Accounts You Admire (Research Notes)
-
-### @blandalytics (Kyle Bland)
-- Creates custom Python-based visualizations (matplotlib/seaborn heavy)
-- Known for pitch modeling, player development analysis, predictive work
-- Clean design, shares methodology, sometimes shares code
-- Threads long-form analysis with multiple charts
-- **What to learn from him:** Visual consistency, clean design, methodology transparency
-
-### @TJStats
-- Daily stats, historical comparisons, real-time game analysis
-- Quick-hit stats tied to current events
-- Conversational tone, "fun facts" that surprise people
-- **What to learn:** Timeliness, making stats accessible and surprising
-
-### @JonPgh
-- Mix of analytics and baseball culture, often Pirates-focused
-- Bridges analytics and traditional baseball discussion
-- **What to learn:** Having a voice beyond just numbers
-
-### @WrigleyWinds
-- Niche, specialized content (weather/park effects on baseball)
-- **What to learn:** Picking a niche and owning it
-
-### @enosarris (Eno Sarris)
-- Established writer (The Athletic), thought leader
-- Balances technical pitch design content with accessibility
-- Active in conversations, elevates other voices
-- **What to learn:** Community engagement, being generous with platform
-
----
-
-## ABS Challenge Bot - Daily Robo Ump Report
-
-### Vision
-Automated daily reports during spring training (and regular season when ABS expands) that break down every ABS challenge: who challenged, what was called, what happened, and what it meant. Published to Twitter via @roboumpstats (or similar). Goal is to become THE source for ABS challenge data and umpire accuracy analysis.
-
-### Daily Report Components
-
-**1. Game Challenge Map (per game)**
-- Single strike zone showing ALL challenges from that game
-- Each challenge is a circle colored by challenging team (filled = overturned, hollow = upheld)
-- Team 2-letter abbreviation inside each circle
-- Pitch type label (FF, SL, CU, etc.) next to each circle
-- Umpire's general zone overlay/heat map behind the dots
-- Shows the full story of that game's challenges in one image
-
-**2. Umpire Card (cumulative, per umpire)**
-- Same strike zone layout but showing ALL challenges across the umpire's full body of work
-- Team circles with pitch type labels, filled/hollow by result
-- Shows clusters and patterns - where is this umpire weak, which teams are targeting them
-- Header with umpire stats: total challenges, overturn rate, games worked
-
-**3. Team Challenge Strike Zones**
-- One strike zone plot per team showing all their challenges that day
-- Color-coded by result (overturned vs upheld)
-- Shows whether teams are targeting specific zones
-
-**4. Umpire Strike Zone Heat Maps**
-- Heat map of each umpire's full called strike zone for the game (not just challenges)
-- Overlay the challenged pitches on top
-- Shows the umpire's tendencies and where teams are pushing back
-- Helps answer: are teams doing their homework on umpire weak spots?
-
-**5. Umpire Scorecard**
-- **Raw accuracy score**: % of challengeable calls that were correct (no challenge needed or upheld)
-- **Adjusted score**: factor in challenge results (overturns hurt the score more)
-- **Game impact score**: weight each missed call by run expectancy swing and count leverage
-- **Challenge pressure**: how many times were they challenged, by which teams
-- **Zone consistency**: how stable is their zone game-to-game (std dev of zone edges)
-- **Edge call accuracy**: accuracy on pitches within 1 inch of the zone boundary
-
-**4. Pitch Type Analysis**
-- **Miss rate by pitch type**: which pitch types get the most incorrect calls (breaking balls vs fastballs)
-- **Challenge rate by pitch type**: which pitches are teams choosing to challenge
-- **Challenge success rate by pitch type**: are certain pitch types more likely to be overturned
-- **Speed bands**: do faster pitches get more or fewer missed calls
-- **Movement profile**: do pitches with more break lead to more challenges
-
-**5. Additional Analysis Ideas**
-- **Count leverage**: challenge frequency and success rate by count (0-2 vs 3-1, etc.)
-- **Inning splits**: do umpires degrade in late innings / after long games
-- **Catcher framing impact**: which catchers are involved in the most challenges (drawing or losing)
-- **Batter handedness splits**: are calls worse for lefties or righties
-- **Location breakdown**: inside/outside/high/low miss tendencies per umpire
-- **First pitch vs two-strike**: do umpires expand the zone in two-strike counts
-- **Team strategy profiles**: which teams challenge most aggressively, which are most selective
-- **Umpire historical tracking**: how does each ump's accuracy trend across games
-- **Score differential**: do teams challenge more when behind, and are they more successful
-- **Challenge timing**: early-game vs late-game challenge patterns
-- **Umpire percentile sliders**: Statcast-style percentile bars for umpires (like Baseball Savant player pages)
-  - Metrics: overall accuracy, zone accuracy, chase call accuracy, consistency, overturn rate, calls per game
-  - Each metric shown as a colored percentile bar (red = bad, blue = good) ranked against all umpires
-  - Great for umpire scorecards and social media - instantly readable visual format
-- **Player challenge cards**: individual batter/pitcher cards showing their ABS challenge involvement
-  - Most impacted players: who benefits most from challenges (bad calls overturned in their favor)
-  - Least impacted / hurt most: who gets screwed by upheld calls or loses overturned calls against them
-  - Player strike zone with challenge overlay (like umpire map but from the player's perspective)
-  - Batter zone tendencies: where do they get squeezed, where do they get generous calls
-  - Pitcher zone tendencies: which pitchers get the most borderline calls, which lose them
-- **Pre-ABS vs ABS zone comparison**: how has the strike zone changed since ABS challenges started
-  - Compare 2025 (no ABS) called strike zones to 2026 (with ABS) for the same umpires
-  - Are umpires tightening up knowing they can be challenged? Measure zone shrinkage/expansion
-  - Per-umpire before/after cards showing zone shape changes
-  - Per-player before/after: are certain batters/pitchers affected more by the zone shift
-- **Missed challenge opportunities**: pitches that would have been overturned but weren't challenged
-  - Full version: count ALL missed opportunities across every called pitch (shows the total cost of not challenging)
-  - Practical version: only count missed opportunities when the team had a challenge available (shows actual wasted value)
-  - Requires: all called pitches from game feeds + Hawk-Eye zone truth (or a model approximation using pX/pZ vs zone boundaries)
-  - Metrics: missed overturns per game, missed overturns by count/leverage, teams that leave the most value on the table
-  - Could power a "should have challenged" tweet or daily report section
-
-### Spring Training League Split
-- Cactus League (AZ): 15 teams, ~55 dedicated umpires
-- Grapefruit League (FL): 15 teams, ~53 dedicated umpires
-- Zero crossover between leagues (umpires stay in their assigned league)
-- All charts split by Cactus/Grapefruit rather than AL/NL
-
-### Data Pipeline
-- Source: MLB Stats API game feeds, `reviewDetails` on plays
-- `challengeTeamId` is the authoritative field for who challenged
-- Statcast for pitch-level data (location, type, speed, movement) on challenged pitches
-- Cached data: `output/abs/spring_training_challenges.json`
-- Current dataset: 1,632 challenges, Feb 20 - Mar 19, 2026
-
-### Bot Accounts
-- @sabrmagician - personal brand, manual posts, original analysis
-- @roboumpstats (TBD) - dedicated ABS bot, daily automated reports
-- Future: weather bot for outdoor ballparks (Open-Meteo API, wind direction relative to field)
-
-### Phase / Priority
-1. ~~Collect challenge data~~ (done)
-2. ~~Team success rate charts~~ (done)
-3. ~~Umpire leaderboards~~ (done)
-4. ~~Strike vs ball butterfly/stacked charts~~ (done)
-5. ~~Cactus/Grapefruit league splits~~ (done)
-6. Daily umpire scorecard with strike zone heat maps
-7. Pitch type accuracy breakdown
-8. Team strategy deep dives (targeting umpire weak spots)
-9. Catcher framing impact analysis
-10. Full automated daily report pipeline -> Twitter
-
----
-
-## Immediate Next Steps (This Week)
-
-1. **Create GitHub repo** - `rparnell93/baseball-analytics`
-2. **Set up project structure** - directories, .gitignore, requirements.txt
-3. **Create CLAUDE.md** - project instructions for Claude Code
-4. **Install packages** - pybaseball, duckdb, pandas, plotly, matplotlib
-5. **First data pull** - 2024 Statcast data via pybaseball, load to DuckDB
-6. **First visualization** - Pick a player, make a pitch movement chart
-7. **First notebook** - marimo exploration of the data you pulled
-
-That's it for week 1. Small, concrete, no sideways movement.
+| Account | Lesson |
+|---------|--------|
+| @UmpScorecards | One consistent format, automated, after every game = brand machine |
+| @would_it_dong | Simple concept + immediate relevance + automation = viral |
+| @blandalytics | Visual consistency, clean design, methodology transparency |
+| @PitcherList | Consistent visual brand across every post |
+| @TJStats | Timeliness, making stats accessible and surprising |
+| @WrigleyWinds | Pick a niche and own it |
+| @EnoSarris | Community engagement, elevating other voices |

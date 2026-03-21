@@ -35,7 +35,7 @@ Personal baseball analytics platform. Owner is learning Python through this proj
   - player_ids: 25.9K rows, Chadwick crosswalk (MLBAM, FanGraphs, BBRef IDs)
   - ottoneu_fgpts_values: 1.2K rows, current FGPts format average salaries
   - ottoneu_sabr_values: 1.2K rows, current SABR format average salaries
-  - abs_challenges: 1.5K rows, spring training 2026 ABS challenge data
+  - abs_challenges: 1.6K rows, spring training 2026 ABS challenge data
 - NOTE: Statcast player_name is the PITCHER. Batters identified by `batter` column (MLBAM ID)
 - Use src/utils/db.py helpers for common queries (batter_statcast, pitcher_statcast, etc.)
 
@@ -93,8 +93,11 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - .github/workflows/deploy-site.yml - GitHub Actions workflow for static site
 
 ## Key Files
-- PROJECT_PLAN.md - master plan with phases, action items, research
+- PROJECT_PLAN.md - master plan with priorities, status, and backlog
 - STATCAST_GLOSSARY.md - reference for all Statcast metrics and column names
+- COMPETITIVE_LANDSCAPE.md - market analysis and brand positioning
+- docs/ARCHITECTURE.md - data flow diagrams, pipeline docs
+- docs/CHART_CATALOG.md - every chart/visualization with source and data
 - src/visualization/team_colors.py - hex colors for all 30 MLB teams
 - src/visualization/style.py - chart style defaults, @sabrmagician watermark
 - src/visualization/charts.py - reusable chart functions (heatmap, pitch movement, exit velo, spray, radar)
@@ -106,6 +109,7 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - src/data_collection/refresh_all.py - master data refresh script
 - notebooks/01_explore_database.py - marimo notebook to explore all data
 - notebooks/02_ottoneu_value_finder.py - marimo notebook to find undervalued Ottoneu players
+- notebooks/03_sabrmagician_dashboard.py - @sabrmagician branded analytics dashboard
 
 ## ABS Challenge Bot (src/bots/)
 - abs_challenge_bot.py - core: find challenges, generate images, build tweet text
@@ -113,10 +117,11 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 - challenge_strategy.py - team strategy profiles (by count, outs, inning, score situation)
 - abs_leaderboards.py - team rankings and umpire accuracy leaderboards
 - twitter_poster.py - tweepy posting with dry-run mode
+- twitter_example.py - Twitter API usage example
 - live_games.py - shared live game feed polling infrastructure
 - post_challenge_workflow.py - end-to-end example: detect, visualize, post
 - MLB API: scores in play["result"], NOT play["about"]. Challenges in playEvents[].reviewDetails AND allPlays[].reviewDetails.
-- Spring training 2026 data: 1,511 challenges, 52% overturn rate across 26 days
+- Spring training 2026 data: 1,632 challenges, 52% overturn rate across 26 days (Feb 20 - Mar 19)
 - Cached challenge data: output/abs/spring_training_challenges.json
 
 ## Scripts (scripts/)
@@ -126,3 +131,10 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 
 ## Apps (apps/)
 - matchup_app.py - Streamlit hitter vs pitcher matchup explorer
+
+## Docs (docs/)
+- ARCHITECTURE.md - data flow diagrams, pipeline details, deployment architecture
+- CHART_CATALOG.md - catalog of every chart/visualization with source and data
+
+## Research (research/)
+- competitor_landscape.md - Ottoneu tools ecosystem and competitor analysis
