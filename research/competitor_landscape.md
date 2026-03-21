@@ -146,6 +146,16 @@
 - **WAR Graphs, WPA Inquirer, Park Factors, Season Stat Grids.**
 - **Ottoneu:** Full fantasy platform owned by FanGraphs.
 
+### Ballpark Pal (ballparkpal.com)
+**What they do:** MLB research platform built around game simulations, park factors, player projections, and matchup analysis. Simulates each game 3,000 times with individual plate appearances tracked.
+**Weather integration:** Uses WeatherStack for hourly forecasts (temperature, wind speed/direction, humidity, barometric pressure). Models how weather interacts with specific stadium dimensions - not just generic adjustments. Acknowledges forecast limitations (e.g., Oracle Park's rapidly shifting wind).
+**Park factors:** Individual batter-level park factors using batted ball physics. Starts with baseline batter performance, then models how park dimensions + weather modify outcome probabilities. Sophisticated, not just simple lookup tables.
+**Matchup model:** Trained on 1M+ plate appearances with 100+ proprietary features. All models built in-house, not relying on public projections.
+**Visual style:** Clean, modern interface with team-colored elements. Card-based layouts.
+**Pricing:** Subscription/freemium model.
+**Audience:** DFS players, bettors, serious fantasy players.
+**Gaps:** Betting/DFS-focused, not a visual content brand. No social media presence posting daily weather impact content. The analysis is locked behind their platform, not shareable.
+
 ### Other Tools
 - **Brooks Baseball PITCHf/x Tool:** Historical pitch classification and movement data.
 - **Stathead (Baseball Reference):** Custom queries against the full historical database. Subscription.
@@ -196,10 +206,10 @@ Baseball Savant adds features (bat tracking, ABS data) without much explanation.
 **Opportunity:** Short, visual "here's what this means" content that bridges the gap between data dumps and understanding.
 
 ### 6. Weather + Ballpark Analytics
-Open-Meteo API + ballpark orientation data = wind impact on fly balls. Nobody does this consistently with good visuals.
+Ballpark Pal already does serious weather + park factor modeling (WeatherStack data, batter-level park factors, batted ball physics). They're the best in-platform tool for this. But their analysis is locked behind a subscription platform aimed at DFS/betting - they don't post daily shareable content on social media.
 
-**Gap:** No reliable, visual, daily weather-impact analysis for baseball.
-**Opportunity:** Already on your TODO list. Could be a standalone bot account.
+**Gap:** Nobody is posting daily visual weather-impact content (wind arrows on field diagrams, temperature/humidity effects, "today's best/worst parks for hitters"). Ballpark Pal has the data but not the social presence.
+**Opportunity:** Don't try to out-model Ballpark Pal on park factor math. Instead, be the visual/social layer - daily shareable graphics showing which parks favor hitters today and why. Open-Meteo API (free) + ballpark orientation data + clean visuals = content Ballpark Pal doesn't produce.
 
 ### 7. SABR Points Format Expertise
 You play in 9 Ottoneu leagues, all SABR Points. Nobody is producing dedicated SABR Points content.
@@ -219,6 +229,7 @@ You play in 9 Ottoneu leagues, all SABR Points. Nobody is producing dedicated SA
 | Would It Dong | Viral simplicity | One-trick | Multiple automated visual concepts |
 | Pitcher List | Visual brand consistency | Narrow (pitching/fantasy) | Broader analytics + Ottoneu |
 | Baseball Prospectus | Prestige writing | Paywalled, small reach | Free, visual, accessible |
+| Ballpark Pal | Sophisticated weather/park models | Platform-locked, no social content | Daily shareable weather impact visuals |
 | Baseball Reference | Complete historical data | Zero analysis or personality | Personality + visual storytelling |
 
 ### @sabrmagician's Sweet Spot
