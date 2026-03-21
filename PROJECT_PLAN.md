@@ -136,6 +136,31 @@ This is what separates analysts who get noticed from ones who don't. Make visual
 - Defensive positioning / shift charts
 - Custom color palettes using team colors programmatically
 
+**Swing Analytics Visualizations (Statcast bat tracking data, 2024+):**
+- **Bat speed vs swing length scatter** - compact vs long swings, colored by outcome (HR, lineout, whiff, etc.). Shows a batter's swing profile relative to league. Can cluster swing types.
+- **Attack angle approximation** - infer vertical bat path from launch angle + bat speed relationship. Plot attack angle by pitch height to show uppercut vs level tendencies.
+- **Swing decision zone map** - heat map of the strike zone showing where a batter swings vs takes, with bat speed overlay. Shows discipline, aggression zones, and hunt zones at a glance.
+- **Sweet spot map** - combine bat speed + launch angle + exit velo by pitch location. Where in the zone does a batter barrel the ball? Where do they roll over or pop up?
+- **Swing length by pitch type** - do they shorten up on breaking balls? Box plot or strip plot of swing length by pitch type faced. Reveals approach adjustments.
+- Note: Hawk-Eye raw 3D bat trajectory data is NOT publicly available (proprietary, teams-only). Statcast provides summarized bat_speed and swing_length metrics starting 2024. All viz above uses these public summary metrics.
+
+**Advanced Hitter Analytics (bat tracking + stance + zone data, 2024+):**
+- **Swing profile cards** - compact single-player cards: bat speed percentile, blast rate, attack angle, swing length, squared-up rate. Shareable social media format.
+- **Contact point maps** - plot intercept X/Y positions colored by outcome (barrel, lineout, whiff). Shows where each hitter's physical sweet spot lives.
+- **Whiff vs barrel attack angle distributions** - overlapping density plots showing attack angle on whiffs vs barrels per hitter. Reveals mechanical tendencies.
+- **Zone decision value heat maps** - plate_x/plate_z colored by swing run value (heart/shadow/chase/waste framework from Savant). Where does a hitter add/lose value with swing decisions?
+- **Bat speed by count** - how does bat speed change 0-0 vs 0-2 vs 3-0? Reveals approach shifts and selling out for power.
+- **Squared-up rate by pitch location** - heat map showing where in the zone a hitter squares up most. The true "danger zone" for pitchers.
+- **Swing length vs bat speed scatter** - league-wide, colored by blast rate. Identifies efficient swingers (short + fast) vs long leveragers.
+- **Contact quality waterfall** - stacked bar: % whiff, weak, topped, under, flare, solid, barrel per hitter.
+- **Player-normalized contact depth** - bucket contacts into "deep" (late), "middle", "forward" (early) relative to that player's own average. Shows timing consistency. (Ben Clemens methodology)
+- **Rolling bat speed + blast rate** - time series showing mechanical changes through a season, can detect injuries or adjustments.
+- **Stance metrics over time** - track sz_top/sz_bot, depth in box, distance off plate, foot separation across a season. Detect stance drift, crouch changes, timing adjustments.
+- **Deception index (Kirby Corollary)** - KDE overlap of a pitcher's fastball vs slider release angles. High overlap = more chases regardless of movement quality.
+- Key insight from research: Blast Rate (r=0.36 with wRC+) is the strongest single bat-tracking predictor of offensive production. Bat speed alone (r=0.11) is mostly noise. Squared-Up % inversely correlates with K% - contact hitters square up more but hit softer.
+- Statcast fields: bat_speed, swing_length, attack_angle, swing_path_tilt, intercept_x, intercept_y, squared_up, blast (available in pybaseball statcast exports)
+- Stance fields (newer Savant leaderboards): depth_in_box, distance_off_plate, foot_separation, foot_angle
+
 ### Visualization Design Principles
 - Clean, uncluttered layouts - white space is your friend
 - Use MLB team colors for instant recognition
@@ -192,6 +217,11 @@ This is what separates analysts who get noticed from ones who don't. Make visual
 3. **Auction Value Model** - Your own projection system feeding into Ottoneu dollar values
 4. **Roster Optimizer** - Given your roster + budget, which free agents maximize surplus?
 5. **Arbitration Helper** - Track player salary inflation, predict keeper costs
+6. **RP Usage Predictor** - Daily score for each relief pitcher estimating likelihood of being used
+   - Inputs: days since last appearance, pitch count in recent outings, team's bullpen workload, game situation (home/away, opponent strength), closer/setup role, handedness matchups in upcoming lineup
+   - Output: 0-100 score per RP, ranked list for lineup decisions
+   - Pairs with the lineup setter - skip RPs unlikely to pitch, prioritize high-usage-probability arms
+   - Could pull from MLB Stats API (recent game logs, bullpen usage) and team schedule
 
 ### Phase 3 Action Items
 
@@ -232,6 +262,19 @@ This is what separates analysts who get noticed from ones who don't. Make visual
 - [ ] Build Ottoneu value dashboard
 - [ ] Build pitch arsenal analyzer
 - [ ] Get your own domain name for a personal site
+
+### Website / Domain Name Ideas
+- mlbstatviz.com
+- roboumpstats.com
+- sabrmagician.com
+- therobozonetv.com
+- pitchtruth.com
+- zonechecked.com
+- dialedinstats.com
+- theumpirefiles.com
+- absbaseball.com
+- batterseye.io
+- swingdecision.com
 
 ---
 
@@ -300,6 +343,9 @@ Things that aren't being done well yet:
 8. Stuff+ model: rate pitch quality from raw characteristics
 9. Aging curves: how do different skills age differently?
 
+**LLM/AI Tools:**
+10. DSPy for structured LLM pipelines - tweet generation, scouting report summaries, natural language query-to-SQL
+
 ### Phase 6 Action Items
 
 - [ ] Complete a scikit-learn tutorial
@@ -366,6 +412,7 @@ tweepy           # Twitter/X
 scikit-learn
 scipy
 requests
+dspy-ai           # LLM programming framework - structured prompts, optimizers, pipelines
 
 # Notebooks
 marimo
@@ -518,6 +565,21 @@ Automated daily reports during spring training (and regular season when ABS expa
 - **Umpire historical tracking**: how does each ump's accuracy trend across games
 - **Score differential**: do teams challenge more when behind, and are they more successful
 - **Challenge timing**: early-game vs late-game challenge patterns
+- **Umpire percentile sliders**: Statcast-style percentile bars for umpires (like Baseball Savant player pages)
+  - Metrics: overall accuracy, zone accuracy, chase call accuracy, consistency, overturn rate, calls per game
+  - Each metric shown as a colored percentile bar (red = bad, blue = good) ranked against all umpires
+  - Great for umpire scorecards and social media - instantly readable visual format
+- **Player challenge cards**: individual batter/pitcher cards showing their ABS challenge involvement
+  - Most impacted players: who benefits most from challenges (bad calls overturned in their favor)
+  - Least impacted / hurt most: who gets screwed by upheld calls or loses overturned calls against them
+  - Player strike zone with challenge overlay (like umpire map but from the player's perspective)
+  - Batter zone tendencies: where do they get squeezed, where do they get generous calls
+  - Pitcher zone tendencies: which pitchers get the most borderline calls, which lose them
+- **Pre-ABS vs ABS zone comparison**: how has the strike zone changed since ABS challenges started
+  - Compare 2025 (no ABS) called strike zones to 2026 (with ABS) for the same umpires
+  - Are umpires tightening up knowing they can be challenged? Measure zone shrinkage/expansion
+  - Per-umpire before/after cards showing zone shape changes
+  - Per-player before/after: are certain batters/pitchers affected more by the zone shift
 - **Missed challenge opportunities**: pitches that would have been overturned but weren't challenged
   - Full version: count ALL missed opportunities across every called pitch (shows the total cost of not challenging)
   - Practical version: only count missed opportunities when the team had a challenge available (shows actual wasted value)
