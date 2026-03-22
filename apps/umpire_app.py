@@ -78,6 +78,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
 
     donut_html = ""
+    donut_value_html = ""
     if donut:
         ot = donut["overturned"]
         up = donut["upheld"]
@@ -85,30 +86,29 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         if total > 0:
             ot_pct = ot / total * 100
             up_pct = up / total * 100
-            r = 18
+            r = 14
             circ = 2 * 3.14159 * r
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
-            donut_html = f"""
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
-                <svg width="40" height="40" viewBox="0 0 44 44" style="flex-shrink:0;">
-                    <circle cx="22" cy="22" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
+            # Inline donut next to the big number
+            donut_value_html = f"""
+                <svg width="32" height="32" viewBox="0 0 36 36" style="flex-shrink:0; margin-left:0.5rem; vertical-align:middle;">
+                    <circle cx="18" cy="18" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="5"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 22 22)" opacity="0.85"/>
-                    <circle cx="22" cy="22" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
+                        stroke-dashoffset="0" transform="rotate(-90 18 18)" opacity="0.85"/>
+                    <circle cx="18" cy="18" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="5"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 22 22)" opacity="0.85"/>
-                </svg>
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; line-height:1.4;">
-                    <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)
-                    <span style="color:{UPHELD}; margin-left:0.3rem;">&#9679;</span> {up} UH ({up_pct:.0f}%)
-                </div>
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 18 18)" opacity="0.85"/>
+                </svg>"""
+            donut_html = f"""<div style="font-size:0.7rem; color:{TEXT_DIM}; margin-top:0.15rem;">
+                <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)
+                <span style="color:{UPHELD}; margin-left:0.25rem;">&#9679;</span> {up} UH ({up_pct:.0f}%)
             </div>"""
 
     return (
         f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
         f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
-        f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
+        f'<div style="display:flex; align-items:center; font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}{donut_value_html}</div>'
         f'{delta_html}{sub_html}{donut_html}'
         f'</div>'
     )
@@ -380,7 +380,7 @@ st.markdown(f"""
         margin-bottom: 0.25rem;
     }}
 
-    /* Equal height columns for sliders + table */
+    /* Equal height columns */
     div[data-testid="stHorizontalBlock"] {{
         align-items: stretch !important;
     }}
@@ -1145,11 +1145,18 @@ if HAS_ANTHROPIC:
             st.session_state.ai_summary_text = ""
             st.session_state.ai_filter_key = filter_key
 
-        _ai_col1, _ai_col2 = st.columns([3, 1])
-        with _ai_col1:
-            st.markdown(f'<div class="section-header" style="margin-bottom:0.25rem;">AI Analysis</div>', unsafe_allow_html=True)
-        with _ai_col2:
+        st.markdown(f'<div class="section-header" style="margin-bottom:0.25rem;">AI Analysis</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<style>.ai-gen-btn button { background-color: #4fc3f7 !important; color: #0a0a1a !important; '
+            'font-weight: 700 !important; font-family: "Montserrat", sans-serif !important; '
+            'letter-spacing: 0.05em !important; text-transform: uppercase !important; '
+            'font-size: 0.8rem !important; padding: 0.3rem 1.2rem !important; border: none !important; }</style>',
+            unsafe_allow_html=True,
+        )
+        with st.container():
+            st.markdown('<div class="ai-gen-btn">', unsafe_allow_html=True)
             _gen_btn = st.button("Generate", key="ai_summary_btn", type="secondary")
+            st.markdown('</div>', unsafe_allow_html=True)
 
         if _gen_btn:
             api_key = os.environ.get("ANTHROPIC_API_KEY", "")
