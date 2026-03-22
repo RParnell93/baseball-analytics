@@ -38,8 +38,11 @@ jobs:
             cp site/images/*.png _site/images/ 2>/dev/null || true
           fi
 
-          # Notebooks are hosted on MoLab via session snapshots
-          # (committed in notebooks/__marimo__/session/)
+          # Copy mlbumpviz redirect page
+          if [ -d "site/mlbumpviz" ]; then
+            mkdir -p _site/mlbumpviz
+            cp site/mlbumpviz/index.html _site/mlbumpviz/index.html
+          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
