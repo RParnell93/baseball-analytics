@@ -1052,29 +1052,14 @@ if called_pitches_df is not None:
             density, x_grid, z_grid = compute_kde(
                 zone_strikes["pX"].values, zone_strikes["pZ"].values
             )
-            # Established zone: gradient heatmap showing where ump calls strikes
-            # Mask low-density areas to transparent
+            # Established zone: uniform filled region with outline
             d_max = density.max()
-            masked = np.where(density > d_max * 0.12, density, np.nan)
-            fig.add_trace(go.Heatmap(
-                x=x_grid, y=z_grid, z=masked.T,
-                colorscale=[
-                    [0, "rgba(200,40,140,0)"],
-                    [0.3, "rgba(200,40,140,0.15)"],
-                    [0.6, "rgba(255,80,180,0.3)"],
-                    [1, "rgba(255,80,180,0.5)"],
-                ],
-                showscale=False,
-                hoverinfo="skip",
-                zsmooth="best",
-            ))
-            # Contour outline
             fig.add_trace(go.Contour(
                 x=x_grid, y=z_grid, z=density.T,
                 contours=dict(
                     type="constraint", operation=">=", value=d_max * 0.15,
                 ),
-                fillcolor="rgba(0,0,0,0)",
+                fillcolor="rgba(255,80,180,0.15)",
                 line=dict(width=2, color="rgba(255,80,180,0.6)"),
                 showscale=False,
                 hoverinfo="skip",
