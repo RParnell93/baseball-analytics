@@ -35,6 +35,8 @@ OVERTURNED = "#ff6b6b"
 UPHELD = "#51cf66"
 
 PLATE_HALF_FT = 0.7083  # half plate width: 17 inches / 2 / 12
+BALL_RADIUS_FT = 0.121  # baseball radius (~1.45 in / 12)
+ZONE_EDGE_FT = PLATE_HALF_FT + BALL_RADIUS_FT  # 0.8293 ft - strike if any part of ball crosses zone
 DEFAULT_SZ_TOP = 3.4
 DEFAULT_SZ_BOT = 1.6
 KDE_BW = 0.3
@@ -174,14 +176,14 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
 def vectorized_zone_distance(px, pz, sz_top, sz_bot):
     """Compute distance from zone edge for each pitch (vectorized)."""
     abs_px = np.abs(px)
-    dx = np.maximum(0, abs_px - PLATE_HALF_FT)
+    dx = np.maximum(0, abs_px - ZONE_EDGE_FT)
     dz_above = np.maximum(0, pz - sz_top)
     dz_below = np.maximum(0, sz_bot - pz)
     dz = np.maximum(dz_above, dz_below)
     outside = (dx > 0) | (dz > 0)
     outside_dist = np.sqrt(dx**2 + dz**2)
     inside_dist = -np.minimum(
-        np.minimum(PLATE_HALF_FT - abs_px, abs_px + PLATE_HALF_FT),
+        np.minimum(ZONE_EDGE_FT - abs_px, abs_px + ZONE_EDGE_FT),
         np.minimum(pz - sz_bot, sz_top - pz),
     )
     return np.where(outside, outside_dist, inside_dist)
@@ -651,17 +653,25 @@ if single_umpire:
 
     games_sub = None
 
-    # Umpire accuracy: how many called pitches were correct (not overturned)
-    # Overall accuracy = (called pitches - overturned challenges) / called pitches
-    if ump_called > 0:
-        overall_accuracy = (ump_called - ump_ot) / ump_called * 100
-    else:
-        overall_accuracy = 0
-
-    # League avg accuracy for delta
-    league_total_called = len(called_pitches_df) if called_pitches_df is not None else 0
-    league_total_ot = (df["result"] == "overturned").sum()
-    league_accuracy = (league_total_called - league_total_ot) / max(league_total_called, 1) * 100
+    # Umpire accuracy: zone geometry (correct calls / total called pitches)
+    overall_accuracy = 0
+    league_accuracy = 0
+    if called_pitches_df is not None:
+        _acc_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+        _acc_in_zone = (
+            (_acc_cp["pX"].abs() <= ZONE_EDGE_FT)
+            & (_acc_cp["pZ"] >= _acc_cp["sz_bottom"])
+            & (_acc_cp["pZ"] <= _acc_cp["sz_top"])
+        )
+        _acc_cp["_correct"] = (
+            ((_acc_cp["call"] == "Called Strike") & _acc_in_zone)
+            | ((_acc_cp["call"] == "Ball") & ~_acc_in_zone)
+        )
+        # League avg
+        league_accuracy = _acc_cp["_correct"].mean() * 100 if len(_acc_cp) > 0 else 0
+        # This umpire
+        _acc_ump = _acc_cp[_acc_cp["umpire"] == selected_umpire]
+        overall_accuracy = _acc_ump["_correct"].mean() * 100 if len(_acc_ump) > 0 else 0
     accuracy_delta = overall_accuracy - league_accuracy
 
     # Compute rolling 100-pitch accuracy sparkline
@@ -672,7 +682,7 @@ if single_umpire:
         if len(_ump_cp) >= 100:
             _ump_cp = _ump_cp.sort_values("date").reset_index(drop=True)
             _in_zone = (
-                (_ump_cp["pX"].abs() <= PLATE_HALF_FT)
+                (_ump_cp["pX"].abs() <= ZONE_EDGE_FT)
                 & (_ump_cp["pZ"] >= _ump_cp["sz_bottom"])
                 & (_ump_cp["pZ"] <= _ump_cp["sz_top"])
             )
@@ -687,16 +697,25 @@ if single_umpire:
                 step = max(1, len(_valid) // 30)
                 acc_sparkline = _valid.iloc[::step].tolist()
 
-    # Check if this umpire has #1 accuracy in MLB (min 3 games)
+    # Check if this umpire has #1 accuracy in MLB (min 3 games, zone geometry)
     _is_top_accuracy = False
     if called_pitches_df is not None:
-        _cp_umps = called_pitches_df.groupby("umpire").size().reset_index(name="cp")
-        _ot_umps = df.groupby("umpire").agg(ot=("result", lambda x: (x == "overturned").sum()), games=("game_id", "nunique")).reset_index()
-        _acc_umps = _cp_umps.merge(_ot_umps, on="umpire")
-        _acc_umps = _acc_umps[_acc_umps["games"] >= 3]
-        _acc_umps["accuracy"] = (_acc_umps["cp"] - _acc_umps["ot"]) / _acc_umps["cp"] * 100
-        if len(_acc_umps) > 0:
-            _best_ump = _acc_umps.loc[_acc_umps["accuracy"].idxmax(), "umpire"]
+        _top_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+        _top_iz = (
+            (_top_cp["pX"].abs() <= ZONE_EDGE_FT)
+            & (_top_cp["pZ"] >= _top_cp["sz_bottom"])
+            & (_top_cp["pZ"] <= _top_cp["sz_top"])
+        )
+        _top_cp["_correct"] = (
+            ((_top_cp["call"] == "Called Strike") & _top_iz)
+            | ((_top_cp["call"] == "Ball") & ~_top_iz)
+        )
+        _top_games = df.groupby("umpire")["game_id"].nunique().reset_index(name="games")
+        _top_acc = _top_cp.groupby("umpire")["_correct"].mean().reset_index(name="accuracy")
+        _top_acc = _top_acc.merge(_top_games, on="umpire")
+        _top_acc = _top_acc[_top_acc["games"] >= 3]
+        if len(_top_acc) > 0:
+            _best_ump = _top_acc.loc[_top_acc["accuracy"].idxmax(), "umpire"]
             _is_top_accuracy = (_best_ump == selected_umpire)
 
     _acc_label = "Accuracy"
@@ -735,11 +754,21 @@ else:
 
     all_up_pct = 100 - all_ot_pct
 
-    # League-wide accuracy
-    if total_called > 0:
-        league_overall_accuracy = (total_called - all_ot) / total_called * 100
-    else:
-        league_overall_accuracy = 0
+    # League-wide accuracy (zone geometry)
+    league_overall_accuracy = 0
+    if called_pitches_df is not None:
+        _lg_acc_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"])
+        if len(_lg_acc_cp) > 0:
+            _lg_iz = (
+                (_lg_acc_cp["pX"].abs() <= ZONE_EDGE_FT)
+                & (_lg_acc_cp["pZ"] >= _lg_acc_cp["sz_bottom"])
+                & (_lg_acc_cp["pZ"] <= _lg_acc_cp["sz_top"])
+            )
+            _lg_correct = (
+                ((_lg_acc_cp["call"] == "Called Strike") & _lg_iz)
+                | ((_lg_acc_cp["call"] == "Ball") & ~_lg_iz)
+            )
+            league_overall_accuracy = _lg_correct.mean() * 100
 
     # League-wide strike %
     _lg_strike_pct = 0
@@ -754,7 +783,7 @@ else:
         if len(_all_cp) >= 100:
             _all_cp = _all_cp.sort_values("date").reset_index(drop=True)
             _in_zone = (
-                (_all_cp["pX"].abs() <= PLATE_HALF_FT)
+                (_all_cp["pX"].abs() <= ZONE_EDGE_FT)
                 & (_all_cp["pZ"] >= _all_cp["sz_bottom"])
                 & (_all_cp["pZ"] <= _all_cp["sz_top"])
             )
@@ -800,7 +829,7 @@ if single_umpire and called_pitches_df is not None:
     # Zone-geometry accuracy per umpire (correct calls / total calls)
     _zg_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
     _zg_in_zone = (
-        (_zg_cp["pX"].abs() <= PLATE_HALF_FT)
+        (_zg_cp["pX"].abs() <= ZONE_EDGE_FT)
         & (_zg_cp["pZ"] >= _zg_cp["sz_bottom"])
         & (_zg_cp["pZ"] <= _zg_cp["sz_top"])
     )
@@ -840,11 +869,20 @@ if single_umpire and called_pitches_df is not None:
         ump_row = ump_row.iloc[0]
 
         def percentile_of(series, value):
-            return (series < value).sum() / len(series) * 100
+            """Percentile using normal distribution CDF for tighter spreads."""
+            from scipy.stats import norm
+            mu, sigma = series.mean(), series.std()
+            if sigma == 0:
+                return 50.0
+            return norm.cdf(value, loc=mu, scale=sigma) * 100
 
         def percentile_of_inverse(series, value):
-            """Higher percentile = better, but for metrics where LOWER value = better."""
-            return (series > value).sum() / len(series) * 100
+            """Higher percentile = better, for metrics where LOWER value = better."""
+            from scipy.stats import norm
+            mu, sigma = series.mean(), series.std()
+            if sigma == 0:
+                return 50.0
+            return (1 - norm.cdf(value, loc=mu, scale=sigma)) * 100
 
         # Higher percentile = better for all sliders
         metrics = [
@@ -861,21 +899,25 @@ if single_umpire and called_pitches_df is not None:
         ]
 
         def pct_color(pct):
-            """Smooth gradient: dark navy (0) -> steel blue (30) -> light blue (50) -> light red (70) -> deep red (100)."""
+            """4-stop gradient: blue(0) -> light blue(33) -> light red(66) -> red(100)."""
             pct = max(0, min(100, pct))
-            if pct <= 50:
-                # Blue side: dark navy (0) -> light steel blue (50)
-                t = pct / 50  # 0..1
-                r = int(21 + t * (80 - 21))     # 21 -> 80
-                g = int(67 + t * (140 - 67))    # 67 -> 140
-                b = int(120 + t * (190 - 120))  # 120 -> 190
-            else:
-                # Red side: light red (50) -> deep red (100)
-                t = (pct - 50) / 50  # 0..1
-                r = int(160 + t * (183 - 160))  # 160 -> 183
-                g = int(100 - t * (72))          # 100 -> 28
-                b = int(100 - t * (72))          # 100 -> 28
-            return f"rgb({r},{g},{b})"
+            # Stops: 0%=(40,80,160), 33%=(100,160,210), 66%=(210,130,120), 100%=(200,60,60)
+            stops = [
+                (0,   40,  80, 160),   # blue
+                (33, 100, 160, 210),   # light blue
+                (66, 210, 130, 120),   # light red / salmon
+                (100, 200,  60,  60),  # red
+            ]
+            for i in range(len(stops) - 1):
+                p0, r0, g0, b0 = stops[i]
+                p1, r1, g1, b1 = stops[i + 1]
+                if pct <= p1:
+                    t = (pct - p0) / (p1 - p0) if p1 != p0 else 0
+                    r = int(r0 + t * (r1 - r0))
+                    g = int(g0 + t * (g1 - g0))
+                    b = int(b0 + t * (b1 - b0))
+                    return f"rgb({r},{g},{b})"
+            return f"rgb(200,60,60)"
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box; display:flex; flex-direction:column;">'
         slider_html += f'<div class="section-header">Umpire Percentile Rankings <span style="font-size:0.7rem; font-weight:400; color:{TEXT_DIM}; letter-spacing:0; text-transform:none;">{selected_umpire}</span></div>'
@@ -938,7 +980,7 @@ if single_umpire and called_pitches_df is not None:
                 _cp = _cp[_cp["pitch_name"].notna() & (_cp["pitch_name"] != "")]
                 if len(_cp) > 0:
                     _in_zone = (
-                        (_cp["pX"].abs() <= PLATE_HALF_FT)
+                        (_cp["pX"].abs() <= ZONE_EDGE_FT)
                         & (_cp["pZ"] >= _cp["sz_bottom"])
                         & (_cp["pZ"] <= _cp["sz_top"])
                     )
@@ -996,7 +1038,7 @@ if single_umpire and called_pitches_df is not None:
                 _lg_cp = _lg_cp[_lg_cp["pitch_name"].notna() & (_lg_cp["pitch_name"] != "")]
                 if len(_lg_cp) > 0:
                     _lg_in_zone = (
-                        (_lg_cp["pX"].abs() <= PLATE_HALF_FT)
+                        (_lg_cp["pX"].abs() <= ZONE_EDGE_FT)
                         & (_lg_cp["pZ"] >= _lg_cp["sz_bottom"])
                         & (_lg_cp["pZ"] <= _lg_cp["sz_top"])
                     )
@@ -1393,9 +1435,15 @@ fig.add_annotation(x=0.5, y=-0.19, xref="paper", yref="paper",
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
 # Build worst calls HTML (works for single umpire AND all umpires)
+# Use ump_team_all (umpire+team filtered, ignores result toggle)
 _worst_calls_html = ""
-if "zone_dist" in valid.columns and len(valid) > 0:
-    _ot_valid = valid.copy()
+_wc_src = ump_team_all.dropna(subset=["pX", "pZ"]).copy() if len(ump_team_all) > 0 else pd.DataFrame()
+if len(_wc_src) > 0:
+    _wc_sz_t = _wc_src["sz_top"].fillna(DEFAULT_SZ_TOP).values
+    _wc_sz_b = _wc_src["sz_bottom"].fillna(DEFAULT_SZ_BOT).values
+    _wc_src["zone_dist"] = vectorized_zone_distance(_wc_src["pX"].values, _wc_src["pZ"].values, _wc_sz_t, _wc_sz_b)
+if "zone_dist" in _wc_src.columns and len(_wc_src) > 0:
+    _ot_valid = _wc_src.copy()
     _ot_valid["_abs_zone_dist"] = _ot_valid["zone_dist"].abs()
     _worst = _ot_valid.nlargest(10, "_abs_zone_dist")
     if len(_worst) > 0:
