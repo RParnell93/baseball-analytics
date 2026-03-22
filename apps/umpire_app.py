@@ -639,19 +639,19 @@ if single_umpire and called_pitches_df is not None:
         ]
 
         def pct_color(pct):
-            """Blue (low/bad) -> light blue -> light red -> red (high/good)."""
+            """Blue (low/bad) -> red (high/good). All dark enough for white text."""
             if pct >= 80:
-                return "#d63031"   # red (top tier)
+                return "#c0392b"   # deep red (top tier)
             elif pct >= 60:
-                return "#e17055"   # light red
+                return "#d35400"   # burnt orange
             elif pct >= 40:
-                return "#74b9ff"   # light blue
+                return "#2471a3"   # steel blue
             elif pct >= 20:
-                return "#0984e3"   # blue
+                return "#1a5276"   # navy blue
             else:
-                return "#0652DD"   # dark blue (bottom tier)
+                return "#154360"   # dark navy (bottom tier)
 
-        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; max-width:900px;">'
+        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem;">'
         slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
 
         for label, val, display, pct in metrics:
@@ -670,7 +670,8 @@ if single_umpire and called_pitches_df is not None:
             </div>"""
 
         slider_html += '</div>'
-        st.markdown(slider_html, unsafe_allow_html=True)
+        # Store for side-by-side rendering below
+        st.session_state["_slider_html"] = slider_html
 
     # --- Pitch Type Breakdown Table (umpire-only, no team filter) ---
     ump_all = df[df["umpire"] == selected_umpire]
@@ -760,7 +761,7 @@ if single_umpire and called_pitches_df is not None:
             _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
             has_total = ump_by_pitch["total_pitches"].sum() > 0
             table_html = f"""
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; max-width:900px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch;">
                 <div class="section-header">Pitch Type Breakdown</div>
                 <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
@@ -797,7 +798,25 @@ if single_umpire and called_pitches_df is not None:
                 </table>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.4rem;">Red = better than league avg | Blue = worse | Strike/Ball Acc. = % of challenged calls upheld by ABS</div>
             </div>"""
-            st.markdown(table_html, unsafe_allow_html=True)
+            st.session_state["_table_html"] = table_html
+
+    # Render sliders and table side by side
+    _s_html = st.session_state.get("_slider_html", "")
+    _t_html = st.session_state.get("_table_html", "")
+    if _s_html or _t_html:
+        if _s_html and _t_html:
+            _col_sl, _col_tb = st.columns(2)
+            with _col_sl:
+                st.markdown(_s_html, unsafe_allow_html=True)
+            with _col_tb:
+                st.markdown(_t_html, unsafe_allow_html=True)
+        elif _s_html:
+            st.markdown(_s_html, unsafe_allow_html=True)
+        else:
+            st.markdown(_t_html, unsafe_allow_html=True)
+    # Clean up
+    st.session_state.pop("_slider_html", None)
+    st.session_state.pop("_table_html", None)
 
 st.markdown("---")
 
