@@ -1264,15 +1264,16 @@ fig.add_annotation(x=0.5, y=-0.40, xref="paper", yref="paper",
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
-# Build worst calls HTML (single umpire only)
+# Build worst calls HTML (works for single umpire AND all umpires)
 _worst_calls_html = ""
-if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
+if "zone_dist" in valid.columns and len(valid) > 0:
     _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
     if len(_ot_valid) == 0:
         _ot_valid = valid.copy()
     _ot_valid["_abs_zone_dist"] = _ot_valid["zone_dist"].abs()
     _worst = _ot_valid.nlargest(5, "_abs_zone_dist")
     if len(_worst) > 0:
+        _wc_title = "Worst Calls" if single_umpire else "Worst Calls This Spring"
         _rows_html = ""
         for _i, (_, _row) in enumerate(_worst.iterrows()):
             _call_short = "STK" if "trike" in str(_row.get("original_call", "")) else "BALL"
@@ -1287,10 +1288,12 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _date_str = str(_row.get("date", ""))[:10]
             _away = _row.get("away", "")
             _home = _row.get("home", "")
+            _umpire_name = str(_row.get("umpire", "")).split()[-1] if not single_umpire and _row.get("umpire") else ""
             _badge_bg = 'rgba(227,96,105,0.2)' if _row.get('result', '') == 'overturned' else 'rgba(110,194,120,0.2)'
             _badge_color = OVERTURNED if _row.get('result', '') == 'overturned' else UPHELD
             _badge_text = 'OT' if _row.get('result', '') == 'overturned' else 'UH'
             _border_top = f'border-top:1px solid rgba(255,255,255,0.06);' if _i > 0 else ''
+            _ump_line = f' <span style="color:{ACCENT}; font-weight:700;">{_umpire_name}</span> &middot;' if _umpire_name else ''
             _rows_html += f'''
                 <div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; {_border_top}">
                     <div style="font-size:0.7rem; color:{TEXT_DIM}; font-weight:800; font-family:'Montserrat',sans-serif; min-width:1.2rem;">#{_i+1}</div>
@@ -1299,7 +1302,7 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
                     </div>
                     <div style="flex:1; min-width:0;">
                         <div style="font-size:0.65rem; color:{TEXT_WHITE}; font-family:'Montserrat',sans-serif; line-height:1.3;">
-                            <span style="color:{_call_color}; font-weight:700;">{_call_short}</span> &middot; {_count} &middot; {_pitch} &middot; {_pitcher} v {_batter}
+                            {_ump_line}<span style="color:{_call_color}; font-weight:700;">{_call_short}</span> &middot; {_count} &middot; {_pitch} &middot; {_pitcher} v {_batter}
                         </div>
                         <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
                     </div>
@@ -1309,7 +1312,7 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
                 </div>'''
         _worst_calls_html = f'''
             <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; height:100%; box-sizing:border-box;">
-                <div class="section-header">Worst Calls</div>
+                <div class="section-header">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">Ranked by distance from zone edge</div>
                 {_rows_html}
             </div>'''
