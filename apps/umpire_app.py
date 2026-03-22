@@ -714,14 +714,14 @@ fig.update_layout(
     ),
     xaxis=dict(
         title="Horizontal Location (ft from center)",
-        range=[-2, 2], autorange=False,
+        range=[-2, 2], autorange=False, fixedrange=True,
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
     ),
     yaxis=dict(
         title="Vertical Location (ft)",
-        range=[0, 4.5], autorange=False,
+        range=[0, 4.5], autorange=False, fixedrange=True,
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
@@ -921,8 +921,8 @@ if len(bottom_df) > 0:
                     font=dict(size=12), bgcolor="rgba(0,0,0,0)",
                 ),
                 height=400,
-                xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM),
-                yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True),
+                xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
+                yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
                 margin=dict(l=10, r=10, t=10, b=80),
             )
             st.plotly_chart(bar_fig, use_container_width=True, config=PLOTLY_CONFIG)
