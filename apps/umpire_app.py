@@ -90,19 +90,20 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_right_html = f"""
-                <svg width="70" height="70" viewBox="0 0 70 70" style="flex-shrink:0;">
-                    <circle cx="35" cy="35" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
+                <svg width="90" height="90" viewBox="0 0 90 90" style="flex-shrink:0;">
+                    <circle cx="45" cy="45" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 35 35)" opacity="0.85"/>
-                    <circle cx="35" cy="35" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
+                        stroke-dashoffset="0" transform="rotate(-90 45 45)" opacity="0.85"/>
+                    <circle cx="45" cy="45" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 35 35)" opacity="0.85"/>
-                    <text x="35" y="38" text-anchor="middle" fill="{ACCENT}" font-size="16" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 45 45)" opacity="0.85"/>
+                    <text x="45" y="43" text-anchor="middle" fill="{ACCENT}" font-size="18" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
+                    <text x="45" y="55" text-anchor="middle" fill="{TEXT_DIM}" font-size="7" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
+                    <text x="12" y="10" text-anchor="middle" fill="{OVERTURNED}" font-size="8" font-weight="700" font-family="Montserrat,sans-serif">{ot}</text>
+                    <text x="12" y="19" text-anchor="middle" fill="{TEXT_DIM}" font-size="6.5" font-weight="600" font-family="Montserrat,sans-serif">OT</text>
+                    <text x="78" y="10" text-anchor="middle" fill="{UPHELD}" font-size="8" font-weight="700" font-family="Montserrat,sans-serif">{up}</text>
+                    <text x="78" y="19" text-anchor="middle" fill="{TEXT_DIM}" font-size="6.5" font-weight="600" font-family="Montserrat,sans-serif">UH</text>
                 </svg>"""
-            donut_legend = f"""<div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.15rem; white-space:nowrap;">
-                <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT
-                <span style="color:{UPHELD}; margin-left:0.3rem;">&#9679;</span> {up} UH
-            </div>"""
 
     if donut_right_html:
         return (
@@ -110,7 +111,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
             f'<div style="display:flex; align-items:center; justify-content:space-between;">'
             f'  <div>'
-            f'    {sub_html}{donut_legend}'
+            f'    {sub_html}'
             f'  </div>'
             f'  {donut_right_html}'
             f'</div>'
