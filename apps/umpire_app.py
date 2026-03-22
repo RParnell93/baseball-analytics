@@ -539,7 +539,7 @@ if called_pitches_df is not None:
                 showscale=True,
                 colorbar=dict(
                     title="", orientation="h",
-                    y=-0.15, yanchor="top", x=0.25, xanchor="center",
+                    y=-0.17, yanchor="top", x=0.35, xanchor="center",
                     len=0.35, thickness=12, tickvals=[], ticktext=[],
                 ),
                 hoverinfo="skip",
@@ -745,11 +745,11 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Colorbar legend
-fig.add_annotation(x=0.08, y=-0.17, xref="paper", yref="paper",
+fig.add_annotation(x=0.18, y=-0.19, xref="paper", yref="paper",
                    text="No strikes", showarrow=False, font=dict(size=10, color=TEXT_DIM))
-fig.add_annotation(x=0.25, y=-0.17, xref="paper", yref="paper",
+fig.add_annotation(x=0.35, y=-0.19, xref="paper", yref="paper",
                    text="Fringe", showarrow=False, font=dict(size=10, color=TEXT_DIM))
-fig.add_annotation(x=0.42, y=-0.17, xref="paper", yref="paper",
+fig.add_annotation(x=0.52, y=-0.19, xref="paper", yref="paper",
                    text="Core zone", showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
 st.plotly_chart(fig, use_container_width=True)
