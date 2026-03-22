@@ -1335,7 +1335,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                                 background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box; height:700px; overflow-y:auto;">
                 <div class="section-header" style="margin-bottom:0.25rem;">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.75rem;">Ranked by distance from zone edge</div>
                 {_rows_html}
