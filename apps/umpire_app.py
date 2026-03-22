@@ -863,10 +863,10 @@ if single_umpire and called_pitches_df is not None:
                     <tbody>"""
 
             for _, row in merged.iterrows():
-                ot_style = cell_color_spectrum(row["ot_rate"], row.get("lg_ot_rate", 50), higher_is_better=False)
+                ot_style = cell_color_spectrum(row["ot_rate"], row.get("lg_ot_rate", 50), higher_is_better=False, threshold=0.5)
                 ta_style = cell_color_spectrum(row["total_acc"], row.get("lg_total_acc", 99), higher_is_better=True, threshold=0.1) if row["total_pitches"] > 0 else f"background:transparent; color:{TEXT_DIM}"
-                sa_style = cell_color_spectrum(row["strike_acc"], row.get("lg_strike_acc", 50), higher_is_better=True) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
-                ba_style = cell_color_spectrum(row["ball_acc"], row.get("lg_ball_acc", 50), higher_is_better=True) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                sa_style = cell_color_spectrum(row["strike_acc"], row.get("lg_strike_acc", 50), higher_is_better=True, threshold=0.5) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                ba_style = cell_color_spectrum(row["ball_acc"], row.get("lg_ball_acc", 50), higher_is_better=True, threshold=0.5) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 ta_val = f"{row['total_acc']:.1f}%" if row["total_pitches"] > 0 else "-"
                 sa_val = f"{row['strike_acc']:.0f}%" if row["strike_challenges"] > 0 else "-"
                 ba_val = f"{row['ball_acc']:.0f}%" if row["ball_challenges"] > 0 else "-"
