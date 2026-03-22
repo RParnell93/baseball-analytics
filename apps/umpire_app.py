@@ -1298,22 +1298,22 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _date_str = str(_row.get("date", ""))[:10]
             _away = _row.get("away", "")
             _home = _row.get("home", "")
-            _card = f'''<div style="background:{CARD_BG}; padding:0.5rem 0.75rem; border-radius:0.5rem;
-                        display:flex; flex-direction:column; gap:0.15rem;">
-                <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
-                            font-weight:800; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.1rem;">
+            _card = f'''<div style="background:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem;
+                        display:flex; flex-direction:column; gap:0.3rem;">
+                <div style="font-size:0.7rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
+                            font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">
                     Worst #{_i+1}
                 </div>
-                <div style="font-size:1.3rem; font-weight:700; color:{OVERTURNED};
+                <div style="font-size:1.6rem; font-weight:700; color:{OVERTURNED};
                             font-family:'Montserrat',sans-serif; line-height:1.1;">
-                    {_dist_in:.1f} <span style="font-size:0.7rem;">inches</span>
+                    {_dist_in:.1f} <span style="font-size:0.85rem;">inches</span>
                 </div>
-                <div style="font-size:0.6rem; color:{TEXT_WHITE}; line-height:1.35; font-family:'Montserrat',sans-serif;">
+                <div style="font-size:0.7rem; color:{TEXT_WHITE}; line-height:1.4; font-family:'Montserrat',sans-serif;">
                     <span style="color:{_call_color}; font-weight:700;">{_call_short}</span>
                     &middot; {_count} &middot; {_pitch}<br>
                     {_pitcher} vs {_batter}
                 </div>
-                <div style="font-size:0.5rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; line-height:1.2;">{_date_str} &middot; {_away} @ {_home}</div>
+                <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; line-height:1.3;">{_date_str} &middot; {_away} @ {_home}</div>
             </div>'''
             _wcols[_i].markdown(_card, unsafe_allow_html=True)
 
