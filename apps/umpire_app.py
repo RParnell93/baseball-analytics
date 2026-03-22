@@ -709,7 +709,7 @@ if single_umpire and called_pitches_df is not None:
             return f"rgb({r},{g},{b})"
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box;">'
-        slider_html += f'<div class="section-header" style="margin-bottom:0.75rem;">Umpire Percentile Rankings</div>'
+        slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
 
         for label, val, display, pct in metrics:
             color = pct_color(pct)
@@ -830,7 +830,7 @@ if single_umpire and called_pitches_df is not None:
             _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
             has_total = ump_by_pitch["total_pitches"].sum() > 0
             table_html = f"""
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch; height:100%; box-sizing:border-box;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch; height:100%; box-sizing:border-box;">
                 <div class="section-header">Pitch Type Breakdown</div>
                 <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
@@ -1165,7 +1165,7 @@ if HAS_ANTHROPIC:
             st.session_state.ai_summary_text = ""
             st.session_state.ai_filter_key = filter_key
 
-        st.markdown(f'<div class="section-header" style="margin-bottom:0.25rem;">AI Analysis</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="section-header" style="margin-bottom:0.5rem;">AI Analysis</div>', unsafe_allow_html=True)
         st.markdown(
             '<style>.ai-gen-btn button { background-color: #4fc3f7 !important; color: #0a0a1a !important; '
             'font-weight: 700 !important; font-family: "Montserrat", sans-serif !important; '
@@ -1200,7 +1200,7 @@ if HAS_ANTHROPIC:
         if st.session_state.ai_summary_text:
             st.markdown(
                 f'<div style="background-color:{CARD_BG}; padding:1rem 1.5rem; '
-                f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.25rem 0 1rem 0;">'
+                f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.75rem 0 1rem 0;">'
                 f'<span style="color:{TEXT_WHITE}; font-size:0.95rem; line-height:1.6;">'
                 f'{st.session_state.ai_summary_text}</span></div>',
                 unsafe_allow_html=True,
