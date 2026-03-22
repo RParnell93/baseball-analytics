@@ -1551,12 +1551,12 @@ if "zone_dist" in _wc_src.columns and len(_wc_src) > 0:
         _wc_title = "Worst Calls" if single_umpire else "Worst Calls This Spring"
         _rows_html = ""
         for _i, (_, _row) in enumerate(_worst.iterrows()):
-            _call_short = "STK" if "trike" in str(_row.get("original_call", "")) else "BALL"
+            _call_short = "K" if "trike" in str(_row.get("original_call", "")) else "B"
             _is_overturned = _row.get("result", "") == "overturned"
-            _corrected_call = "BALL" if _call_short == "STK" else "STK"
+            _corrected_call = "B" if _call_short == "K" else "K"
             if _is_overturned:
                 _call_html = (f'<span style="text-decoration:line-through; color:{TEXT_DIM}; font-weight:600;">{_call_short}</span>'
-                              f' <span style="color:{UPHELD}; font-weight:800;">{_corrected_call}</span>')
+                              f'<span style="color:{UPHELD}; font-weight:800;">{_corrected_call}</span>')
             else:
                 _call_html = f'<span style="color:{UPHELD}; font-weight:800;">{_call_short}</span>'
             _call_color = OVERTURNED if _is_overturned else UPHELD
@@ -1595,7 +1595,7 @@ if "zone_dist" in _wc_src.columns and len(_wc_src) > 0:
                         </div>
                     </div>
                     <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.75rem; color:{TEXT_WHITE}; font-family:'Montserrat',sans-serif; line-height:1.4; font-weight:600;">
+                        <div style="font-size:0.7rem; color:{TEXT_WHITE}; font-family:'Montserrat',sans-serif; line-height:1.4; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                             {_ump_line}{_call_html} &middot; {_count} &middot; {_pitch} &middot; {_pitcher} v {_batter}
                         </div>
                         <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; margin-top:2px;">{_date_str} &middot; {_away} @ {_home}</div>
