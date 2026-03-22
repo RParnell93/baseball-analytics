@@ -1343,7 +1343,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                     </div>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box; height:700px; overflow-y:auto;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box; height:100%; min-height:700px; overflow-y:auto;">
                 <div class="section-header" style="margin-bottom:0.25rem;">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.75rem;">Ranked by distance from zone edge</div>
                 {_rows_html}
@@ -1355,7 +1355,7 @@ if _worst_calls_html:
     with _zone_col:
         st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
     with _worst_col:
-        st.html(_worst_calls_html)
+        st.html(_worst_calls_html, height=750)
 else:
     st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
