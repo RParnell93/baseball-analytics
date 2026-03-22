@@ -1264,10 +1264,8 @@ fig.add_annotation(x=0.5, y=-0.40, xref="paper", yref="paper",
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
-# Challenge map - always full width
-st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
-
-# Worst Calls cards (single umpire only)
+# Build worst calls HTML (single umpire only)
+_worst_calls_html = ""
 if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
     _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
     if len(_ot_valid) == 0:
@@ -1275,12 +1273,7 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
     _ot_valid["_abs_zone_dist"] = _ot_valid["zone_dist"].abs()
     _worst = _ot_valid.nlargest(5, "_abs_zone_dist")
     if len(_worst) > 0:
-        st.markdown(
-            f'<div class="section-header" style="margin-top:-0.5rem;">Worst Calls</div>'
-            f'<div style="font-size:0.75rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">Top overturned calls by distance from zone edge</div>',
-            unsafe_allow_html=True
-        )
-        _wcols = st.columns(min(len(_worst), 5))
+        _rows_html = ""
         for _i, (_, _row) in enumerate(_worst.iterrows()):
             _call_short = "STK" if "trike" in str(_row.get("original_call", "")) else "BALL"
             _call_color = OVERTURNED if _row.get("result", "") == "overturned" else UPHELD
@@ -1294,28 +1287,46 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _date_str = str(_row.get("date", ""))[:10]
             _away = _row.get("away", "")
             _home = _row.get("home", "")
-            _card = f'''<div style="background:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem;
-                        display:flex; flex-direction:column; gap:0.3rem;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:0.7rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
-                                font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">#{_i+1}</span>
-                    <span style="font-size:0.5rem; font-weight:700; font-family:'Montserrat',sans-serif;
-                                padding:2px 6px; border-radius:3px; letter-spacing:0.03em;
-                                background:{'rgba(227,96,105,0.2)' if _row.get('result','')=='overturned' else 'rgba(110,194,120,0.2)'};
-                                color:{OVERTURNED if _row.get('result','')=='overturned' else UPHELD};">{'OVERTURNED' if _row.get('result','')=='overturned' else 'UPHELD'}</span>
-                </div>
-                <div style="font-size:1.6rem; font-weight:700; color:{OVERTURNED};
-                            font-family:'Montserrat',sans-serif; line-height:1.1;">
-                    {_dist_in:.1f} <span style="font-size:0.85rem;">inches</span>
-                </div>
-                <div style="font-size:0.7rem; color:{TEXT_WHITE}; line-height:1.4; font-family:'Montserrat',sans-serif;">
-                    <span style="color:{_call_color}; font-weight:700;">{_call_short}</span>
-                    &middot; {_count} &middot; {_pitch}<br>
-                    {_pitcher} vs {_batter}
-                </div>
-                <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; line-height:1.3;">{_date_str} &middot; {_away} @ {_home}</div>
+            _badge_bg = 'rgba(227,96,105,0.2)' if _row.get('result', '') == 'overturned' else 'rgba(110,194,120,0.2)'
+            _badge_color = OVERTURNED if _row.get('result', '') == 'overturned' else UPHELD
+            _badge_text = 'OT' if _row.get('result', '') == 'overturned' else 'UH'
+            _border_top = f'border-top:1px solid rgba(255,255,255,0.06);' if _i > 0 else ''
+            _rows_html += f'''
+                <div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; {_border_top}">
+                    <div style="font-size:0.7rem; color:{TEXT_DIM}; font-weight:800; font-family:'Montserrat',sans-serif; min-width:1.2rem;">#{_i+1}</div>
+                    <div style="font-size:1.2rem; font-weight:700; color:{OVERTURNED}; font-family:'Montserrat',sans-serif; min-width:4.5rem; white-space:nowrap;">
+                        {_dist_in:.1f}<span style="font-size:0.65rem; color:{TEXT_DIM};"> in</span>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.65rem; color:{TEXT_WHITE}; font-family:'Montserrat',sans-serif; line-height:1.3;">
+                            <span style="color:{_call_color}; font-weight:700;">{_call_short}</span> &middot; {_count} &middot; {_pitch} &middot; {_pitcher} v {_batter}
+                        </div>
+                        <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
+                    </div>
+                    <span style="font-size:0.45rem; font-weight:700; font-family:'Montserrat',sans-serif;
+                                padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
+                                background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
+                </div>'''
+        _worst_calls_html = f'''
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; height:100%; box-sizing:border-box;">
+                <div class="section-header">Worst Calls</div>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">Ranked by distance from zone edge</div>
+                {_rows_html}
             </div>'''
-            _wcols[_i].markdown(_card, unsafe_allow_html=True)
+
+# Layout: strike zone card + worst calls card side by side (or full width if no worst calls)
+if _worst_calls_html:
+    _zone_col, _worst_col = st.columns([3, 2])
+    with _zone_col:
+        st.markdown(f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:0.5rem; margin-bottom:0.5rem;">', unsafe_allow_html=True)
+        st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+        st.markdown('</div>', unsafe_allow_html=True)
+    with _worst_col:
+        st.markdown(_worst_calls_html, unsafe_allow_html=True)
+else:
+    st.markdown(f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:0.5rem; margin-bottom:0.5rem;">', unsafe_allow_html=True)
+    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
