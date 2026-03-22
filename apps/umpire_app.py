@@ -1295,7 +1295,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
     if len(_ot_valid) == 0:
         _ot_valid = valid.copy()
     _ot_valid["_abs_zone_dist"] = _ot_valid["zone_dist"].abs()
-    _worst = _ot_valid.nlargest(5, "_abs_zone_dist")
+    _worst = _ot_valid.nlargest(10, "_abs_zone_dist")
     if len(_worst) > 0:
         _wc_title = "Worst Calls" if single_umpire else "Worst Calls This Spring"
         _rows_html = ""
