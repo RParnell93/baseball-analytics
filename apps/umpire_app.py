@@ -1269,7 +1269,7 @@ fig.update_layout(
         itemclick="toggle",
         itemdoubleclick="toggleothers",
     ),
-    height=700,
+    height=780,
     margin=dict(t=70, b=190, l=40, r=40),
 )
 
@@ -1350,7 +1350,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                     </div>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; min-height:700px;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; height:780px; overflow-y:auto;">
                 <div class="section-header" style="margin-bottom:0.15rem;">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:1rem;">Ranked by distance from zone edge</div>
                 <div style="display:flex; flex-direction:column; gap:0.35rem;">
