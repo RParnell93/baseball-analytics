@@ -78,7 +78,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
     if subtext:
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
 
-    donut_right_html = ""
+    donut_html = ""
     if donut:
         ot = donut["overturned"]
         up = donut["upheld"]
@@ -86,38 +86,45 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         if total > 0:
             ot_pct = ot / total * 100
             up_pct = up / total * 100
-            r = 28
+            r = 22
             circ = 2 * 3.14159 * r
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
-            donut_right_html = f"""
-                <svg width="90" height="90" viewBox="0 0 90 90" style="flex-shrink:0;">
-                    <circle cx="45" cy="45" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
-                        stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 45 45)" opacity="0.85"/>
-                    <circle cx="45" cy="45" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
-                        stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 45 45)" opacity="0.85"/>
-                    <text x="45" y="43" text-anchor="middle" fill="{ACCENT}" font-size="18" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
-                    <text x="45" y="55" text-anchor="middle" fill="{TEXT_DIM}" font-size="7" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
-                    <text x="12" y="10" text-anchor="middle" fill="{OVERTURNED}" font-size="8" font-weight="700" font-family="Montserrat,sans-serif">{ot}</text>
-                    <text x="12" y="19" text-anchor="middle" fill="{TEXT_DIM}" font-size="6.5" font-weight="600" font-family="Montserrat,sans-serif">OT</text>
-                    <text x="78" y="10" text-anchor="middle" fill="{UPHELD}" font-size="8" font-weight="700" font-family="Montserrat,sans-serif">{up}</text>
-                    <text x="78" y="19" text-anchor="middle" fill="{TEXT_DIM}" font-size="6.5" font-weight="600" font-family="Montserrat,sans-serif">UH</text>
-                </svg>"""
+            donut_html = f"""
+                <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; margin-top:0.35rem;">
+                    <svg width="65" height="65" viewBox="0 0 65 65" style="flex-shrink:0;">
+                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
+                            stroke-dasharray="{up_dash:.1f} {circ:.1f}"
+                            stroke-dashoffset="0" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
+                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
+                            stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
+                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
+                        <text x="32.5" y="31" text-anchor="middle" fill="{ACCENT}" font-size="15" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
+                        <text x="32.5" y="41" text-anchor="middle" fill="{TEXT_DIM}" font-size="6" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
+                    </svg>
+                    <div style="font-family:'Montserrat',sans-serif;">
+                        <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
+                            <span style="font-size:0.7rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">OT</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.25rem;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
+                            <span style="font-size:0.7rem; font-weight:700; color:{UPHELD};">{up}</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">UH</span>
+                        </div>
+                    </div>
+                </div>"""
 
-    if donut_right_html:
+    if donut_html:
         return (
             f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
-            f'<div style="display:flex; justify-content:center; margin-top:0.25rem;">'
-            f'  {donut_right_html}'
-            f'</div>'
+            f'{donut_html}'
             f'{sub_html}'
             f'</div>'
         )
 
-    spark_html = ""
     if sparkline and len(sparkline) >= 2:
         w, h = 120, 32
         vals = sparkline
@@ -654,7 +661,7 @@ if single_umpire:
 
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem; white-space:nowrap;'>({challenge_pct:.1f}% of called)</span>", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of Called Pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
@@ -678,7 +685,7 @@ else:
 
     col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
     col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"<span style='font-size:0.7rem; white-space:nowrap;'>({challenge_pct:.1f}% of called)</span>", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of Called Pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
