@@ -816,7 +816,7 @@ if single_umpire and called_pitches_df is not None:
             return f"rgb({r},{g},{b})"
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box; display:flex; flex-direction:column;">'
-        slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
+        slider_html += f'<div class="section-header">Umpire Percentile Rankings <span style="font-size:0.7rem; font-weight:400; color:{TEXT_DIM}; letter-spacing:0; text-transform:none;">{selected_umpire}</span></div>'
         slider_html += f'<div style="flex:1; display:flex; flex-direction:column; justify-content:space-evenly;">'
 
         for label, val, display, pct in metrics:
@@ -935,7 +935,7 @@ if single_umpire and called_pitches_df is not None:
             has_total = ump_by_pitch["total_pitches"].sum() > 0
             table_html = f"""
             <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch; height:100%; box-sizing:border-box;">
-                <div class="section-header">Pitch Type Breakdown</div>
+                <div class="section-header">Pitch Type Breakdown <span style="font-size:0.7rem; font-weight:400; color:{TEXT_DIM}; letter-spacing:0; text-transform:none;">{selected_umpire}</span></div>
                 <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
