@@ -8,7 +8,6 @@ pybaseball
 plotly
 matplotlib
 seaborn
-kaleido==0.2.1
 
 # Web apps
 streamlit
@@ -30,5 +29,6 @@ python-dotenv
 # AI summaries
 anthropic
 
-# Notebooks
-marimo
+# Local-only (install manually: pip install kaleido==0.2.1 marimo)
+# kaleido==0.2.1  -- Plotly PNG export, no Linux wheel for newer Python
+# marimo           -- notebook runtime, not needed for Streamlit apps
