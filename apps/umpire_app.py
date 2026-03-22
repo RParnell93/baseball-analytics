@@ -827,20 +827,17 @@ if single_umpire and called_pitches_df is not None:
                     diff = -diff
                 if abs(diff) < threshold:
                     return f"background:transparent; color:{TEXT_WHITE}"
-                # Clamp diff to [-50, 50] for color scaling
-                clamped = max(-50, min(50, diff))
-                intensity = abs(clamped) / 50  # 0 to 1
+                # Clamp to [-20, 20] so colors saturate faster and look uniform
+                clamped = max(-20, min(20, diff))
+                intensity = abs(clamped) / 20  # 0 to 1
                 if clamped > 0:
-                    # Better: light red -> deep red
-                    r, g, b = 231, 76, 60
-                    alpha = 0.12 + intensity * 0.28  # 0.12 to 0.40
-                    text_r, text_g, text_b = int(220 + intensity * 35), int(100 - intensity * 40), int(80 - intensity * 30)
+                    # Better: red spectrum
+                    alpha = 0.18 + intensity * 0.27  # 0.18 to 0.45
+                    return f"background:rgba(180,50,40,{alpha:.2f}); color:rgb({int(220 + intensity * 35)},{int(100 - intensity * 40)},{int(80 - intensity * 30)})"
                 else:
-                    # Worse: light blue -> deep blue
-                    r, g, b = 52, 152, 219
-                    alpha = 0.12 + intensity * 0.28
-                    text_r, text_g, text_b = int(100 + intensity * 50), int(170 + intensity * 30), int(220 + intensity * 35)
-                return f"background:rgba({r},{g},{b},{alpha:.2f}); color:rgb({text_r},{text_g},{text_b})"
+                    # Worse: blue spectrum
+                    alpha = 0.18 + intensity * 0.27
+                    return f"background:rgba(40,90,160,{alpha:.2f}); color:rgb({int(100 + intensity * 50)},{int(170 + intensity * 30)},{int(220 + intensity * 35)})"
 
             _th = f"text-align:center; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;"
             _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
