@@ -1277,7 +1277,8 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
     _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
     if len(_ot_valid) == 0:
         _ot_valid = valid.copy()
-    _worst = _ot_valid.nlargest(5, "zone_dist")
+    _ot_valid["_abs_zone_dist"] = _ot_valid["zone_dist"].abs()
+    _worst = _ot_valid.nlargest(5, "_abs_zone_dist")
     if len(_worst) > 0:
         st.markdown(
             f'<div class="section-header" style="margin-top:-0.5rem;">Worst Calls</div>'
@@ -1294,7 +1295,7 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _dist_in = abs(_row["zone_dist"]) * 12
             _pitcher = str(_row.get("pitcher", "")).split()[-1] if _row.get("pitcher") else ""
             _batter = str(_row.get("batter", "")).split()[-1] if _row.get("batter") else ""
-            _count = f"{int(_row.get('balls', 0))}-{int(_row.get('strikes', 0))}"
+            _count = f"{int(_row.get('balls') or 0)}-{int(_row.get('strikes') or 0)}"
             _date_str = str(_row.get("date", ""))[:10]
             _away = _row.get("away", "")
             _home = _row.get("home", "")
@@ -1329,7 +1330,7 @@ if HAS_ANTHROPIC:
     summary_src = ump_team_all if len(ump_team_all) > 0 else df
 
     if len(summary_src) > 0:
-        filter_key = f"{selected_umpire}_{selected_team}_{show_overturned}_{show_upheld}"
+        filter_key = f"{selected_umpire}_{selected_team}_{show_overturned}_{show_upheld}_{date_range}"
         if "ai_filter_key" not in st.session_state:
             st.session_state.ai_filter_key = ""
         if "ai_summary_text" not in st.session_state:
@@ -1353,6 +1354,11 @@ if HAS_ANTHROPIC:
 
         if _gen_btn:
             api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                try:
+                    api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+                except Exception:
+                    api_key = ""
             if not api_key or api_key == "your-key-here":
                 st.warning("Add your ANTHROPIC_API_KEY to .env (local) or Streamlit secrets (cloud).")
             else:
