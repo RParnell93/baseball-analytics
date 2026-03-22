@@ -10,7 +10,7 @@ matplotlib
 seaborn
 
 # Web apps
-streamlit
+streamlit>=1.31.0
 
 # Social media
 tweepy
