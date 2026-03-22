@@ -1300,9 +1300,13 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _home = _row.get("home", "")
             _card = f'''<div style="background:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem;
                         display:flex; flex-direction:column; gap:0.3rem;">
-                <div style="font-size:0.7rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
-                            font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">
-                    Worst #{_i+1}
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.7rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
+                                font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">Worst #{_i+1}</span>
+                    <span style="font-size:0.5rem; font-weight:700; font-family:'Montserrat',sans-serif;
+                                padding:2px 6px; border-radius:3px; letter-spacing:0.03em;
+                                background:{'rgba(227,96,105,0.2)' if _row.get('result','')=='overturned' else 'rgba(110,194,120,0.2)'};
+                                color:{OVERTURNED if _row.get('result','')=='overturned' else UPHELD};">{'OVERTURNED' if _row.get('result','')=='overturned' else 'UPHELD'}</span>
                 </div>
                 <div style="font-size:1.6rem; font-weight:700; color:{OVERTURNED};
                             font-family:'Montserrat',sans-serif; line-height:1.1;">
