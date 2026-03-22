@@ -74,7 +74,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None):
     if subtext:
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
     return (
-        f'<div style="background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word;">'
+        f'<div style="background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
         f'<div style="font-size:0.85rem; color:{TEXT_DIM};">{label}</div>'
         f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
         f'{delta_html}{sub_html}'
@@ -310,13 +310,21 @@ st.markdown(f"""
         padding: 0.5rem 1rem;
     }}
 
+    /* Section spacing */
+    hr {{
+        margin: 1.5rem 0 !important;
+    }}
+    div[data-testid="stVerticalBlock"] > div {{
+        margin-bottom: 0.25rem;
+    }}
+
     /* Mobile optimizations */
     @media (max-width: 768px) {{
         .stMainBlockContainer {{
             padding: 1rem 0.5rem;
         }}
         h1 {{ font-size: 1.5rem !important; }}
-        h2 {{ font-size: 1.2rem !important; }}
+        h2 {{ font-size: 1.1rem !important; }}
         .stButton button {{
             min-height: 44px;
             font-size: 0.85rem;
@@ -552,8 +560,8 @@ if called_pitches_df is not None:
                 showscale=True,
                 colorbar=dict(
                     title="", orientation="h",
-                    y=-0.17, yanchor="top", x=0.35, xanchor="center",
-                    len=0.35, thickness=12, tickvals=[], ticktext=[],
+                    y=-0.17, yanchor="top", x=0.5, xanchor="center",
+                    len=0.45, thickness=10, tickvals=[], ticktext=[],
                 ),
                 hoverinfo="skip",
                 showlegend=False,
@@ -701,7 +709,7 @@ title_line2 = f"<span style='font-size:13px;color:{TEXT_DIM}'>{' | '.join(subtit
 fig.update_layout(
     title=dict(
         text=f"{title_line1}<br>{title_line2}",
-        font=dict(size=30, color="white"),
+        font=dict(size=22, color="white"),
         x=0.5, xanchor="center",
     ),
     xaxis=dict(
@@ -724,16 +732,16 @@ fig.update_layout(
     font=dict(color="white"),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="top", y=-0.17,
-        xanchor="left", x=0.58,
-        font=dict(size=12, color=TEXT_WHITE),
+        orientation="h", yanchor="top", y=-0.23,
+        xanchor="center", x=0.5,
+        font=dict(size=11, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
         itemsizing="constant",
         itemclick="toggle",
         itemdoubleclick="toggleothers",
     ),
     height=620,
-    margin=dict(t=90, b=140),
+    margin=dict(t=90, b=160),
 )
 
 # Annotations
@@ -744,13 +752,13 @@ fig.add_annotation(x=1.5, y=4.3, text="Ump's right", showarrow=False,
 fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=False,
                    font=dict(size=10, color=TEXT_DIM))
 
-# Colorbar legend
-fig.add_annotation(x=0.18, y=-0.19, xref="paper", yref="paper",
-                   text="No strikes", showarrow=False, font=dict(size=10, color=TEXT_DIM))
-fig.add_annotation(x=0.35, y=-0.19, xref="paper", yref="paper",
-                   text="Fringe", showarrow=False, font=dict(size=10, color=TEXT_DIM))
-fig.add_annotation(x=0.52, y=-0.19, xref="paper", yref="paper",
-                   text="Core zone", showarrow=False, font=dict(size=10, color=TEXT_DIM))
+# Colorbar legend (aligned with bar at x=0.5, len=0.45 -> spans 0.275 to 0.725)
+fig.add_annotation(x=0.28, y=-0.19, xref="paper", yref="paper",
+                   text="No strikes", showarrow=False, font=dict(size=9, color=TEXT_DIM))
+fig.add_annotation(x=0.5, y=-0.19, xref="paper", yref="paper",
+                   text="Fringe", showarrow=False, font=dict(size=9, color=TEXT_DIM))
+fig.add_annotation(x=0.72, y=-0.19, xref="paper", yref="paper",
+                   text="Core zone", showarrow=False, font=dict(size=9, color=TEXT_DIM))
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
@@ -970,7 +978,9 @@ if not single_umpire and len(bottom_df) >= 100:
             margin=dict(l=10, r=10, t=10, b=60),
             showlegend=False,
         )
-        st.plotly_chart(roll_fig, use_container_width=True, config=PLOTLY_CONFIG)
+        st.plotly_chart(roll_fig, use_container_width=True, config={
+            "displayModeBar": False, "scrollZoom": False, "staticPlot": True,
+        })
 
 # ---------------------------------------------------------------------------
 # Footer
