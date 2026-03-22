@@ -61,8 +61,11 @@ KDE_COLORSCALE = [
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def metric_card(label, value, subtext=None, delta=None, delta_color=None):
-    """Render a custom metric card with subtext inside the box."""
+def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=None):
+    """Render a custom metric card with subtext inside the box.
+
+    donut: optional dict with keys 'overturned', 'upheld' to render a mini donut.
+    """
     delta_html = ""
     if delta:
         if delta_color == "normal":
@@ -73,11 +76,41 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None):
     sub_html = ""
     if subtext:
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
+
+    donut_html = ""
+    if donut:
+        ot = donut["overturned"]
+        up = donut["upheld"]
+        total = ot + up
+        if total > 0:
+            ot_pct = ot / total * 100
+            up_pct = up / total * 100
+            # SVG donut using stroke-dasharray on circles
+            r = 28
+            circ = 2 * 3.14159 * r
+            ot_dash = circ * ot_pct / 100
+            up_dash = circ * up_pct / 100
+            donut_html = f"""
+            <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.4rem;">
+                <svg width="60" height="60" viewBox="0 0 72 72" style="flex-shrink:0;">
+                    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="10"
+                        stroke-dasharray="{up_dash:.1f} {circ:.1f}"
+                        stroke-dashoffset="0" transform="rotate(-90 36 36)" opacity="0.85"/>
+                    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="10"
+                        stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 36 36)" opacity="0.85"/>
+                </svg>
+                <div style="font-size:0.7rem; color:{TEXT_DIM}; line-height:1.5;">
+                    <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)<br>
+                    <span style="color:{UPHELD};">&#9679;</span> {up} UH ({up_pct:.0f}%)
+                </div>
+            </div>"""
+
     return (
         f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
         f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
         f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
-        f'{delta_html}{sub_html}'
+        f'{delta_html}{sub_html}{donut_html}'
         f'</div>'
     )
 
@@ -543,7 +576,7 @@ if single_umpire:
 
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span> Overturned: {ump_ot:,} | Upheld: {ump_up:,}"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}% of called pitches)</span>", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
@@ -567,7 +600,7 @@ else:
 
     col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
     col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span> Overturned: {all_ot:,} | Upheld: {all_up:,}"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}% of called pitches)</span>", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
@@ -641,9 +674,9 @@ if single_umpire and called_pitches_df is not None:
         def pct_color(pct):
             """Blue (low/bad) -> red (high/good). All dark enough for white text."""
             if pct >= 80:
-                return "#c0392b"   # deep red (top tier)
+                return "#b71c1c"   # deep red (top tier)
             elif pct >= 60:
-                return "#d35400"   # burnt orange
+                return "#c94c4c"   # light red
             elif pct >= 40:
                 return "#2471a3"   # steel blue
             elif pct >= 20:
@@ -651,7 +684,7 @@ if single_umpire and called_pitches_df is not None:
             else:
                 return "#154360"   # dark navy (bottom tier)
 
-        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem;">'
+        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%;">'
         slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
 
         for label, val, display, pct in metrics:
@@ -659,10 +692,10 @@ if single_umpire and called_pitches_df is not None:
             pct_int = int(round(pct))
             bar_width = max(pct_int, 3)
             slider_html += f"""
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem;">
                 <div style="width:120px; font-size:0.7rem; color:{TEXT_DIM}; text-align:right; flex-shrink:0; font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:0.03em; text-transform:uppercase;">{label}</div>
-                <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:3px; height:20px; position:relative;">
-                    <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:3px; display:flex; align-items:center; justify-content:center;">
+                <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:24px; position:relative;">
+                    <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:4px; display:flex; align-items:center; justify-content:center;">
                         <span style="font-size:0.7rem; font-weight:700; color:{TEXT_WHITE};">{pct_int}</span>
                     </div>
                 </div>
@@ -1161,41 +1194,18 @@ if len(bottom_df) > 0:
 
     with col_right:
         if single_umpire:
-            st.subheader(f"{selected_umpire} - Challenge Results")
-
-            pie_ot = (ump_team_all["result"] == "overturned").sum()
-            pie_up = (ump_team_all["result"] == "upheld").sum()
-
-            pie_fig = go.Figure(go.Pie(
-                labels=["Overturned", "Upheld"],
-                values=[pie_ot, pie_up],
-                marker=dict(
-                    colors=[OVERTURNED, UPHELD],
-                    line=dict(color=DARK_BG, width=3),
-                ),
-                hole=0.45,
-                textinfo="label+value+percent",
-                textfont=dict(size=13, color=TEXT_WHITE),
-                textposition="outside",
-                pull=[0.03, 0],
-                direction="clockwise",
-                sort=False,
-                hovertemplate="%{label}: %{value} (%{percent})<extra></extra>",
-                insidetextorientation="horizontal",
-            ))
-            pie_fig.add_annotation(
-                text=f"<b>{pie_ot + pie_up}</b><br><span style='font-size:12px;color:{TEXT_DIM}'>total</span>",
-                x=0.5, y=0.5, xref="paper", yref="paper",
-                showarrow=False, font=dict(size=24, color=TEXT_WHITE),
-            )
-            pie_fig.update_layout(
-                plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
-                font=dict(color=TEXT_WHITE),
-                hoverlabel=HOVER_LABEL,
-                showlegend=False, height=350,
-                margin=dict(l=40, r=40, t=20, b=40),
-            )
-            st.plotly_chart(pie_fig, use_container_width=True, config=PLOTLY_CONFIG)
+            # Challenge results by inning
+            st.subheader("Challenges by Inning")
+            if "inning" in bottom_df.columns:
+                by_inn = bottom_df.groupby("inning").agg(
+                    Challenges=("result", "size"),
+                    Overturned=("result", lambda x: (x == "overturned").sum()),
+                ).reset_index()
+                by_inn["Overturn %"] = (by_inn["Overturned"] / by_inn["Challenges"] * 100).round(1)
+                by_inn = by_inn.rename(columns={"inning": "Inning"})
+                st.dataframe(by_inn, use_container_width=True, hide_index=True)
+            else:
+                st.caption("No inning data available.")
 
         else:
             st.subheader("Top Umpires by Challenge Count")
