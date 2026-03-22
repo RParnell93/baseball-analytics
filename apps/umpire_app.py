@@ -723,17 +723,17 @@ if single_umpire and called_pitches_df is not None:
                 b = int(100 - t * (72))          # 100 -> 28
             return f"rgb({r},{g},{b})"
 
-        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box;">'
+        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box; display:flex; flex-direction:column;">'
         slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
+        slider_html += f'<div style="flex:1; display:flex; flex-direction:column; justify-content:space-evenly;">'
 
         for label, val, display, pct in metrics:
             color = pct_color(pct)
             pct_int = int(round(pct))
             bar_width = max(pct_int, 2)
-            # Circle positioned at end of bar via left offset
             circle_left = f"calc({bar_width}% - 14px)" if bar_width > 5 else "0px"
             slider_html += f"""
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.85rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
                 <div style="width:120px; font-size:0.7rem; color:{TEXT_DIM}; text-align:right; flex-shrink:0; font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:0.03em; text-transform:uppercase;">{label}</div>
                 <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:10px; position:relative;">
                     <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:4px;"></div>
@@ -744,7 +744,7 @@ if single_umpire and called_pitches_df is not None:
                 <div style="width:55px; font-size:0.75rem; color:{TEXT_WHITE}; flex-shrink:0; text-align:right;">{display}</div>
             </div>"""
 
-        slider_html += '</div>'
+        slider_html += '</div></div>'
         # Store for side-by-side rendering below
         st.session_state["_slider_html"] = slider_html
 
