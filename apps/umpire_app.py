@@ -614,7 +614,7 @@ if single_umpire:
 
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}% of called pitches)</span>", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem; white-space:nowrap;'>({challenge_pct:.1f}% of called)</span>", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
@@ -638,7 +638,7 @@ else:
 
     col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
     col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}% of called pitches)</span>", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"<span style='font-size:0.7rem; white-space:nowrap;'>({challenge_pct:.1f}% of called)</span>", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
