@@ -399,12 +399,13 @@ _logo_svg = """
 """
 
 st.markdown(
-    f'<div style="display:flex; align-items:center; gap:0.75rem;">'
-    f'<div style="flex-shrink:0; line-height:0;">{_logo_svg}</div>'
     f'<div>'
-    f'<div class="brand-title" style="line-height:1.1;">MLB-UMP-VIZ</div>'
-    f'<div class="brand-subtitle">Spring Training 2026</div>'
-    f'</div></div>',
+    f'<div style="display:flex; align-items:center; gap:0.6rem;">'
+    f'<div style="flex-shrink:0; line-height:0;">{_logo_svg}</div>'
+    f'<div class="brand-title" style="line-height:1;">MLB-UMP-VIZ</div>'
+    f'</div>'
+    f'<div class="brand-subtitle">🌴 Spring Training 2026</div>'
+    f'</div>',
     unsafe_allow_html=True,
 )
 
