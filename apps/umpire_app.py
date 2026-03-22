@@ -875,14 +875,14 @@ if len(bottom_df) > 0:
                 font=dict(color=TEXT_WHITE),
                 hoverlabel=HOVER_LABEL,
                 legend=dict(
-                    orientation="h", yanchor="bottom", y=-0.15,
+                    orientation="h", yanchor="top", y=-0.25,
                     xanchor="center", x=0.5,
                     font=dict(size=12), bgcolor="rgba(0,0,0,0)",
                 ),
                 height=500,
                 xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM),
                 yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True),
-                margin=dict(l=10, r=10, t=10, b=60),
+                margin=dict(l=10, r=10, t=10, b=80),
             )
             st.plotly_chart(bar_fig, use_container_width=True)
 
