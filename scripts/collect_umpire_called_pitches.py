@@ -94,6 +94,10 @@ def collect_called_pitches_from_game(game_id):
             if px is None or pz is None:
                 continue
 
+            # Pitch type info
+            pitch_type_code = details.get("type", {}).get("code", "")
+            pitch_type_desc = details.get("type", {}).get("description", "")
+
             called_pitches.append({
                 "umpire": umpire_hp,
                 "game_id": game_id,
@@ -105,6 +109,8 @@ def collect_called_pitches_from_game(game_id):
                 "sz_top": pitch_data.get("strikeZoneTop"),
                 "sz_bottom": pitch_data.get("strikeZoneBottom"),
                 "batting_team": batting_team,
+                "pitch_type": pitch_type_code,
+                "pitch_name": pitch_type_desc,
             })
 
     return called_pitches
