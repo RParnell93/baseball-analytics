@@ -925,8 +925,6 @@ if not single_umpire and len(bottom_df) >= 100:
     st.markdown("---")
     st.subheader("Rolling Overturn Rate (100-Challenge Window)")
 
-    from scipy.ndimage import gaussian_filter1d
-
     rolling_df = bottom_df.sort_values("date").reset_index(drop=True)
     rolling_df["is_overturned"] = (rolling_df["result"] == "overturned").astype(int)
     rolling_df["rolling_ot_pct"] = rolling_df["is_overturned"].rolling(100, min_periods=100).mean() * 100
@@ -934,15 +932,16 @@ if not single_umpire and len(bottom_df) >= 100:
 
     if len(rolling_valid) > 0:
         overall_ot_pct = rolling_df["is_overturned"].mean() * 100
-        smoothed = gaussian_filter1d(rolling_valid["rolling_ot_pct"].values, sigma=15)
+
+        # One point per date (end-of-day value) to avoid vertical box artifacts
+        daily = rolling_valid.groupby(rolling_valid["date"].dt.date)["rolling_ot_pct"].last().reset_index()
+        daily.columns = ["date", "rolling_ot_pct"]
 
         roll_fig = go.Figure()
         roll_fig.add_trace(go.Scatter(
-            x=rolling_valid["date"], y=smoothed,
+            x=daily["date"], y=daily["rolling_ot_pct"],
             mode="lines",
-            line=dict(color=ACCENT, width=3),
-            fill="tozeroy",
-            fillcolor="rgba(34,209,238,0.08)",
+            line=dict(color=ACCENT, width=2.5, shape="spline", smoothing=1.0),
             name="Rolling 100",
             hovertemplate="%{x|%b %d}<br>Overturn rate: %{y:.1f}%<extra></extra>",
         ))
