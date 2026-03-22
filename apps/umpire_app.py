@@ -100,16 +100,16 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_html = f"""
-                <div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; margin-top:0.25rem;">
-                    <svg width="65" height="65" viewBox="0 0 65 65" style="flex-shrink:0;">
-                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
+                <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex:1;">
+                    <svg width="75" height="75" viewBox="0 0 75 75" style="flex-shrink:0;">
+                        <circle cx="37.5" cy="37.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
                             stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="0" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
-                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
+                            stroke-dashoffset="0" transform="rotate(-90 37.5 37.5)" opacity="0.85"/>
+                        <circle cx="37.5" cy="37.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
                             stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
-                        <text x="32.5" y="30" text-anchor="middle" fill="{ACCENT}" font-size="15" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
-                        <text x="32.5" y="40" text-anchor="middle" fill="{TEXT_DIM}" font-size="6" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
+                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 37.5 37.5)" opacity="0.85"/>
+                        <text x="37.5" y="34" text-anchor="middle" fill="{ACCENT}" font-size="17" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
+                        <text x="37.5" y="45" text-anchor="middle" fill="{TEXT_DIM}" font-size="7" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
                     </svg>
                     <div style="font-family:'Montserrat',sans-serif;">
                         <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
