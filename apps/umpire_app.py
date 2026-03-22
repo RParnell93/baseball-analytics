@@ -396,6 +396,10 @@ st.markdown(f"""
     div[data-testid="stHorizontalBlock"] {{
         align-items: stretch !important;
     }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div[data-testid="stVerticalBlockBorderWrapper"],
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div[data-testid="stVerticalBlockBorderWrapper"] > div {{
+        height: 100% !important;
+    }}
 
     /* Subtle AI summary button */
     button[data-testid="stBaseButton-secondary"] {{
@@ -688,19 +692,23 @@ if single_umpire and called_pitches_df is not None:
         ]
 
         def pct_color(pct):
-            """Blue (low/bad) -> red (high/good). All dark enough for white text."""
-            if pct >= 80:
-                return "#b71c1c"   # deep red (top tier)
-            elif pct >= 60:
-                return "#c94c4c"   # light red
-            elif pct >= 40:
-                return "#2471a3"   # steel blue
-            elif pct >= 20:
-                return "#1a5276"   # navy blue
+            """Smooth gradient: dark blue (0) -> light blue (25) -> gray (50) -> light red (75) -> deep red (100)."""
+            pct = max(0, min(100, pct))
+            if pct <= 50:
+                # Blue side: dark navy (0) -> steel blue (25) -> muted gray-blue (50)
+                t = pct / 50  # 0..1
+                r = int(21 + t * (120 - 21))    # 21 -> 120
+                g = int(67 + t * (120 - 67))    # 67 -> 120
+                b = int(96 + t * (140 - 96))    # 96 -> 140
             else:
-                return "#154360"   # dark navy (bottom tier)
+                # Red side: muted gray-red (50) -> light red (75) -> deep red (100)
+                t = (pct - 50) / 50  # 0..1
+                r = int(120 + t * (183 - 120))  # 120 -> 183
+                g = int(120 - t * (92))          # 120 -> 28
+                b = int(140 - t * (112))         # 140 -> 28
+            return f"rgb({r},{g},{b})"
 
-        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%;">'
+        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box;">'
         slider_html += f'<div class="section-header" style="margin-bottom:0.75rem;">Umpire Percentile Rankings</div>'
 
         for label, val, display, pct in metrics:
@@ -822,7 +830,7 @@ if single_umpire and called_pitches_df is not None:
             _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
             has_total = ump_by_pitch["total_pitches"].sum() > 0
             table_html = f"""
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch; height:100%; box-sizing:border-box;">
                 <div class="section-header">Pitch Type Breakdown</div>
                 <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
