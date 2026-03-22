@@ -115,12 +115,12 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                         <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
                             <span style="width:7px; height:7px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
                             <span style="font-size:0.7rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
-                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Overturned</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Overturned ({ot_pct:.0f}%)</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:0.25rem;">
                             <span style="width:7px; height:7px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
                             <span style="font-size:0.7rem; font-weight:700; color:{UPHELD};">{up}</span>
-                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Upheld</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Upheld ({up_pct:.0f}%)</span>
                         </div>
                     </div>
                 </div>"""
@@ -698,12 +698,16 @@ if single_umpire:
     if _is_top_accuracy:
         _acc_label = 'Accuracy <span style="background:linear-gradient(90deg,#ffd700,#ffaa00); color:#1a1a2e; font-size:0.55rem; font-weight:800; padding:1px 6px; border-radius:8px; margin-left:6px; vertical-align:middle;">#1 MLB</span>'
 
-    col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
+    # Challenge rate delta vs league avg
+    _lg_total_challenges = len(df)
+    _lg_challenge_rate = _lg_total_challenges / max(total_called, 1) * 100
+    _cr_delta = challenge_pct - _lg_challenge_rate
+
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of {ump_called:,} called pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
-    col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", delta=f"{_cr_delta:+.1f}pp vs avg challenge rate", delta_color="normal"), unsafe_allow_html=True)
+    col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
-    col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
     all_n = len(ump_team_all)
@@ -720,13 +724,11 @@ else:
     else:
         league_overall_accuracy = 0
 
-    col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{all_games:,}"), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of {total_called:,} called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
-    col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
-    col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
-    col_m6.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}"), unsafe_allow_html=True)
+    col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Percentile Sliders (single umpire only, unfiltered by team)
@@ -1321,15 +1323,10 @@ if "zone_dist" in valid.columns and len(valid) > 0:
 if _worst_calls_html:
     _zone_col, _worst_col = st.columns([3, 2])
     with _zone_col:
-        st.markdown(f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:0.5rem; margin-bottom:0.5rem;">', unsafe_allow_html=True)
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
-        st.markdown('</div>', unsafe_allow_html=True)
-    with _worst_col:
-        st.markdown(_worst_calls_html, unsafe_allow_html=True)
+    _worst_col.markdown(_worst_calls_html, unsafe_allow_html=True)
 else:
-    st.markdown(f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:0.5rem; margin-bottom:0.5rem;">', unsafe_allow_html=True)
     st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
