@@ -770,23 +770,44 @@ if single_umpire and called_pitches_df is not None:
         overturned=("result", lambda x: (x == "overturned").sum()),
     ).reset_index()
 
-    # Strike/ball overturns
-    strike_ot = df[df["original_call"] == "Called Strike"].groupby("umpire").agg(
-        strike_overturned=("result", lambda x: (x == "overturned").sum()),
-    ).reset_index()
-    ball_ot = df[df["original_call"] == "Ball"].groupby("umpire").agg(
-        ball_overturned=("result", lambda x: (x == "overturned").sum()),
-    ).reset_index()
-
     all_ump = ch_by_ump.merge(cp_by_ump[["umpire", "called_pitches", "called_strikes", "called_balls"]], on="umpire", how="inner")
-    all_ump = all_ump.merge(strike_ot, on="umpire", how="left").fillna(0)
-    all_ump = all_ump.merge(ball_ot, on="umpire", how="left").fillna(0)
     all_ump = all_ump[all_ump["challenges"] >= 5]
 
+    # Zone-geometry accuracy per umpire (correct calls / total calls)
+    _zg_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+    _zg_in_zone = (
+        (_zg_cp["pX"].abs() <= PLATE_HALF_FT)
+        & (_zg_cp["pZ"] >= _zg_cp["sz_bottom"])
+        & (_zg_cp["pZ"] <= _zg_cp["sz_top"])
+    )
+    _zg_cp["_correct"] = (
+        ((_zg_cp["call"] == "Called Strike") & _zg_in_zone)
+        | ((_zg_cp["call"] == "Ball") & ~_zg_in_zone)
+    )
+    # Total accuracy per umpire
+    _zg_total = _zg_cp.groupby("umpire").agg(
+        _total=("_correct", "size"), _total_correct=("_correct", "sum"),
+    ).reset_index()
+    _zg_total["total_accuracy"] = (_zg_total["_total_correct"] / _zg_total["_total"] * 100)
+    # Strike accuracy per umpire
+    _zg_strikes = _zg_cp[_zg_cp["call"] == "Called Strike"].groupby("umpire").agg(
+        _s_total=("_correct", "size"), _s_correct=("_correct", "sum"),
+    ).reset_index()
+    _zg_strikes["strike_accuracy"] = (_zg_strikes["_s_correct"] / _zg_strikes["_s_total"] * 100)
+    # Ball accuracy per umpire
+    _zg_balls = _zg_cp[_zg_cp["call"] == "Ball"].groupby("umpire").agg(
+        _b_total=("_correct", "size"), _b_correct=("_correct", "sum"),
+    ).reset_index()
+    _zg_balls["ball_accuracy"] = (_zg_balls["_b_correct"] / _zg_balls["_b_total"] * 100)
+
+    all_ump = all_ump.merge(_zg_total[["umpire", "total_accuracy"]], on="umpire", how="left")
+    all_ump = all_ump.merge(_zg_strikes[["umpire", "strike_accuracy"]], on="umpire", how="left")
+    all_ump = all_ump.merge(_zg_balls[["umpire", "ball_accuracy"]], on="umpire", how="left")
+    all_ump["total_accuracy"] = all_ump["total_accuracy"].fillna(0)
+    all_ump["strike_accuracy"] = all_ump["strike_accuracy"].fillna(0)
+    all_ump["ball_accuracy"] = all_ump["ball_accuracy"].fillna(0)
+
     # Metrics
-    all_ump["total_accuracy"] = (all_ump["called_pitches"] - all_ump["overturned"]) / all_ump["called_pitches"] * 100
-    all_ump["strike_accuracy"] = (all_ump["called_strikes"] - all_ump["strike_overturned"]) / all_ump["called_strikes"].clip(lower=1) * 100
-    all_ump["ball_accuracy"] = (all_ump["called_balls"] - all_ump["ball_overturned"]) / all_ump["called_balls"].clip(lower=1) * 100
     all_ump["challenge_pct"] = all_ump["challenges"] / all_ump["called_pitches"] * 100
     all_ump["overturn_rate"] = all_ump["overturned"] / all_ump["challenges"] * 100
 
@@ -881,12 +902,13 @@ if single_umpire and called_pitches_df is not None:
             else:
                 ump_by_pitch["total_pitches"] = 0
 
-            # Strike/Ball accuracy from called pitches using zone geometry
-            # Strike Acc = correct strike calls / total called strikes
-            # Ball Acc = correct ball calls / total called balls
-            # "Correct" = called strike that was actually in zone, or called ball that was actually outside zone
-            _sa_by_pitch = pd.DataFrame(columns=["pitch_name", "strike_acc", "called_strikes"])
-            _ba_by_pitch = pd.DataFrame(columns=["pitch_name", "ball_acc", "called_balls"])
+            # Zone-geometry accuracy from called pitches
+            # Strike Acc = called strikes actually in zone / total called strikes
+            # Ball Acc = called balls actually outside zone / total called balls
+            # Total Acc = all correct calls / all called pitches
+            _sa_by_pitch = pd.DataFrame(columns=["pitch_name", "strike_acc", "called_strikes"]).astype({"strike_acc": "float64", "called_strikes": "float64"})
+            _ba_by_pitch = pd.DataFrame(columns=["pitch_name", "ball_acc", "called_balls"]).astype({"ball_acc": "float64", "called_balls": "float64"})
+            _ta_by_pitch = pd.DataFrame(columns=["pitch_name", "total_acc"]).astype({"total_acc": "float64"})
             if len(ump_cp) > 0 and all(c in ump_cp.columns for c in ["pX", "pZ", "sz_top", "sz_bottom", "call"]):
                 _cp = ump_cp.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
                 _cp = _cp[_cp["pitch_name"].notna() & (_cp["pitch_name"] != "")]
@@ -900,6 +922,13 @@ if single_umpire and called_pitches_df is not None:
                         ((_cp["call"] == "Called Strike") & _in_zone)
                         | ((_cp["call"] == "Ball") & ~_in_zone)
                     )
+                    # Total accuracy per pitch type (all calls)
+                    _tg = _cp.groupby("pitch_name").agg(
+                        _total=("_correct", "size"),
+                        _total_correct=("_correct", "sum"),
+                    ).reset_index()
+                    _tg["total_acc"] = (_tg["_total_correct"] / _tg["_total"] * 100).round(1)
+                    _ta_by_pitch = _tg[["pitch_name", "total_acc"]]
                     # Strike accuracy per pitch type
                     _strikes = _cp[_cp["call"] == "Called Strike"]
                     if len(_strikes) > 0:
@@ -919,14 +948,14 @@ if single_umpire and called_pitches_df is not None:
                         _bg["ball_acc"] = (_bg["correct_balls"] / _bg["called_balls"] * 100).round(1)
                         _ba_by_pitch = _bg[["pitch_name", "ball_acc", "called_balls"]]
 
+            ump_by_pitch = ump_by_pitch.merge(_ta_by_pitch, on="pitch_name", how="left")
             ump_by_pitch = ump_by_pitch.merge(_sa_by_pitch, on="pitch_name", how="left")
             ump_by_pitch = ump_by_pitch.merge(_ba_by_pitch, on="pitch_name", how="left")
-            ump_by_pitch["called_strikes"] = ump_by_pitch["called_strikes"].fillna(0)
-            ump_by_pitch["called_balls"] = ump_by_pitch["called_balls"].fillna(0)
+            ump_by_pitch["called_strikes"] = ump_by_pitch["called_strikes"].fillna(0).astype(float)
+            ump_by_pitch["called_balls"] = ump_by_pitch["called_balls"].fillna(0).astype(float)
 
             ump_by_pitch["challenge_pct"] = (ump_by_pitch["challenges"] / ump_by_pitch["challenges"].sum() * 100).round(1)
             ump_by_pitch["ot_rate"] = (ump_by_pitch["overturned"] / ump_by_pitch["challenges"] * 100).round(1)
-            ump_by_pitch["total_acc"] = ((ump_by_pitch["total_pitches"] - ump_by_pitch["overturned"]) / ump_by_pitch["total_pitches"].clip(lower=1) * 100).round(1)
 
             # League averages (same zone geometry approach)
             lg_by_pitch = league_pt.groupby("pitch_name").agg(
@@ -937,6 +966,7 @@ if single_umpire and called_pitches_df is not None:
 
             _lg_sa_by_pitch = pd.DataFrame(columns=["pitch_name", "lg_strike_acc"])
             _lg_ba_by_pitch = pd.DataFrame(columns=["pitch_name", "lg_ball_acc"])
+            _lg_ta_by_pitch = pd.DataFrame(columns=["pitch_name", "lg_total_acc"])
             if called_pitches_df is not None and all(c in called_pitches_df.columns for c in ["pX", "pZ", "sz_top", "sz_bottom", "call"]):
                 _lg_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
                 _lg_cp = _lg_cp[_lg_cp["pitch_name"].notna() & (_lg_cp["pitch_name"] != "")]
@@ -950,6 +980,13 @@ if single_umpire and called_pitches_df is not None:
                         ((_lg_cp["call"] == "Called Strike") & _lg_in_zone)
                         | ((_lg_cp["call"] == "Ball") & ~_lg_in_zone)
                     )
+                    # League total accuracy per pitch type
+                    _lg_tg = _lg_cp.groupby("pitch_name").agg(
+                        _n=("_correct", "size"), _c=("_correct", "sum"),
+                    ).reset_index()
+                    _lg_tg["lg_total_acc"] = (_lg_tg["_c"] / _lg_tg["_n"] * 100).round(1)
+                    _lg_ta_by_pitch = _lg_tg[["pitch_name", "lg_total_acc"]]
+                    # League strike accuracy per pitch type
                     _lg_s = _lg_cp[_lg_cp["call"] == "Called Strike"]
                     if len(_lg_s) > 0:
                         _lg_sg = _lg_s.groupby("pitch_name").agg(
@@ -957,6 +994,7 @@ if single_umpire and called_pitches_df is not None:
                         ).reset_index()
                         _lg_sg["lg_strike_acc"] = (_lg_sg["_c"] / _lg_sg["_n"] * 100).round(1)
                         _lg_sa_by_pitch = _lg_sg[["pitch_name", "lg_strike_acc"]]
+                    # League ball accuracy per pitch type
                     _lg_b = _lg_cp[_lg_cp["call"] == "Ball"]
                     if len(_lg_b) > 0:
                         _lg_bg = _lg_b.groupby("pitch_name").agg(
@@ -965,16 +1003,10 @@ if single_umpire and called_pitches_df is not None:
                         _lg_bg["lg_ball_acc"] = (_lg_bg["_c"] / _lg_bg["_n"] * 100).round(1)
                         _lg_ba_by_pitch = _lg_bg[["pitch_name", "lg_ball_acc"]]
 
+            lg_by_pitch = lg_by_pitch.merge(_lg_ta_by_pitch, on="pitch_name", how="left")
             lg_by_pitch = lg_by_pitch.merge(_lg_sa_by_pitch, on="pitch_name", how="left")
             lg_by_pitch = lg_by_pitch.merge(_lg_ba_by_pitch, on="pitch_name", how="left")
-
-            # League total accuracy per pitch type (from called pitches)
-            if called_pitches_df is not None and "pitch_name" in called_pitches_df.columns:
-                lg_cp_by_pitch = called_pitches_df[called_pitches_df["pitch_name"].notna() & (called_pitches_df["pitch_name"] != "")].groupby("pitch_name").size().reset_index(name="lg_total_pitches")
-                lg_by_pitch = lg_by_pitch.merge(lg_cp_by_pitch, on="pitch_name", how="left").fillna(0)
-                lg_by_pitch["lg_total_acc"] = ((lg_by_pitch["lg_total_pitches"] - lg_by_pitch["lg_ot"]) / lg_by_pitch["lg_total_pitches"].clip(lower=1) * 100).round(1)
-            else:
-                lg_by_pitch["lg_total_acc"] = 0
+            lg_by_pitch["lg_total_acc"] = lg_by_pitch["lg_total_acc"].fillna(0)
 
             merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]], on="pitch_name", how="left")
             merged = merged.sort_values("total_pitches", ascending=False)
@@ -1028,14 +1060,15 @@ if single_umpire and called_pitches_df is not None:
 
             for _, row in merged.iterrows():
                 ot_style = cell_color_spectrum(row["ot_rate"], _overall_ot_rate, higher_is_better=False, threshold=0.5)
-                ta_style = cell_color_spectrum(row["total_acc"], row.get("lg_total_acc", 99), higher_is_better=True, threshold=0.1) if row["total_pitches"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                _has_ta = pd.notna(row.get("total_acc")) and row["total_pitches"] > 0
+                ta_style = cell_color_spectrum(float(row["total_acc"]), row.get("lg_total_acc", 99) if pd.notna(row.get("lg_total_acc")) else 99, higher_is_better=True, threshold=0.1) if _has_ta else f"background:transparent; color:{TEXT_DIM}"
                 _sa_val_raw = row.get("strike_acc")
                 _ba_val_raw = row.get("ball_acc")
                 _has_sa = pd.notna(_sa_val_raw) and row.get("called_strikes", 0) > 0
                 _has_ba = pd.notna(_ba_val_raw) and row.get("called_balls", 0) > 0
                 sa_style = cell_color_spectrum(float(_sa_val_raw), row.get("lg_strike_acc", _overall_strike_acc) if pd.notna(row.get("lg_strike_acc")) else _overall_strike_acc, higher_is_better=True, threshold=0.5) if _has_sa else f"background:transparent; color:{TEXT_DIM}"
                 ba_style = cell_color_spectrum(float(_ba_val_raw), row.get("lg_ball_acc", _overall_ball_acc) if pd.notna(row.get("lg_ball_acc")) else _overall_ball_acc, higher_is_better=True, threshold=0.5) if _has_ba else f"background:transparent; color:{TEXT_DIM}"
-                ta_val = f"{row['total_acc']:.1f}%" if row["total_pitches"] > 0 else "-"
+                ta_val = f"{float(row['total_acc']):.1f}%" if _has_ta else "-"
                 sa_val = f"{float(_sa_val_raw):.1f}%" if _has_sa else "-"
                 ba_val = f"{float(_ba_val_raw):.1f}%" if _has_ba else "-"
                 tp_val = f"{int(row['total_pitches']):,}" if row["total_pitches"] > 0 else "-"
@@ -1397,7 +1430,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                     </div>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; height:850px; overflow-y:auto;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; height:886px; overflow-y:auto;">
                 <div class="section-header" style="margin-bottom:0.15rem;">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:1rem;">Ranked by distance from zone edge</div>
                 <div style="display:flex; flex-direction:column; gap:0.35rem;">
