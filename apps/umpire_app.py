@@ -937,7 +937,7 @@ if not single_umpire and len(bottom_df) >= 100:
         roll_fig.add_trace(go.Scatter(
             x=rolling_valid["date"], y=rolling_valid["rolling_ot_pct"],
             mode="lines",
-            line=dict(color=ACCENT, width=2.5),
+            line=dict(color=ACCENT, width=2.5, shape="spline", smoothing=1.3),
             fill="tozeroy",
             fillcolor="rgba(34,209,238,0.08)",
             name="Rolling 100",
