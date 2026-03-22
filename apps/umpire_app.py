@@ -563,7 +563,10 @@ st.markdown(
 col_f1, col_f2, col_f3, _col_spacer = st.columns([1, 1, 1, 1.5])
 
 with col_f1:
-    selected_umpire = st.selectbox("🔍 Umpire", ["All Umpires"] + all_umpires)
+    _default_ump = "Jen Pawol" if "Jen Pawol" in all_umpires else "All Umpires"
+    _ump_options = ["All Umpires"] + all_umpires
+    _default_idx = _ump_options.index(_default_ump) if _default_ump in _ump_options else 0
+    selected_umpire = st.selectbox("🔍 Umpire", _ump_options, index=_default_idx)
 
 # Cross-filter teams based on umpire
 if selected_umpire != "All Umpires":
@@ -744,11 +747,32 @@ else:
         _lg_strikes = (called_pitches_df["call"] == "Called Strike").sum()
         _lg_strike_pct = _lg_strikes / len(called_pitches_df) * 100
 
+    # League-wide rolling 100-pitch accuracy sparkline
+    _lg_acc_sparkline = None
+    if called_pitches_df is not None:
+        _all_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+        if len(_all_cp) >= 100:
+            _all_cp = _all_cp.sort_values("date").reset_index(drop=True)
+            _in_zone = (
+                (_all_cp["pX"].abs() <= PLATE_HALF_FT)
+                & (_all_cp["pZ"] >= _all_cp["sz_bottom"])
+                & (_all_cp["pZ"] <= _all_cp["sz_top"])
+            )
+            _all_cp["_correct"] = (
+                ((_all_cp["call"] == "Called Strike") & _in_zone)
+                | ((_all_cp["call"] == "Ball") & ~_in_zone)
+            ).astype(int)
+            _rolling = _all_cp["_correct"].rolling(500, min_periods=500).mean() * 100
+            _valid = _rolling.dropna()
+            if len(_valid) > 0:
+                step = max(1, len(_valid) // 30)
+                _lg_acc_sparkline = _valid.iloc[::step].tolist()
+
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{all_games:,}"), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", subtext=f"{_lg_strike_pct:.1f}% called strikes"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Percentile Sliders (single umpire only, unfiltered by team)
@@ -1449,75 +1473,6 @@ else:
     st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
-# AI Summary Section
-# ---------------------------------------------------------------------------
-st.markdown("---")
-if HAS_ANTHROPIC:
-    summary_src = ump_team_all if len(ump_team_all) > 0 else df
-
-    if len(summary_src) > 0:
-        filter_key = f"{selected_umpire}_{selected_team}_{show_overturned}_{show_upheld}_{date_range}"
-        if "ai_filter_key" not in st.session_state:
-            st.session_state.ai_filter_key = ""
-        if "ai_summary_text" not in st.session_state:
-            st.session_state.ai_summary_text = ""
-        if st.session_state.ai_filter_key != filter_key:
-            st.session_state.ai_summary_text = ""
-            st.session_state.ai_filter_key = filter_key
-
-        st.markdown(f'<div class="section-header" style="margin-bottom:0.5rem;">AI Analysis</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<style>.ai-gen-btn button { background-color: #4fc3f7 !important; color: #0a0a1a !important; '
-            'font-weight: 700 !important; font-family: "Montserrat", sans-serif !important; '
-            'letter-spacing: 0.05em !important; text-transform: uppercase !important; '
-            'font-size: 0.8rem !important; padding: 0.3rem 1.2rem !important; border: none !important; }</style>',
-            unsafe_allow_html=True,
-        )
-        with st.container():
-            st.markdown('<div class="ai-gen-btn">', unsafe_allow_html=True)
-            _gen_btn = st.button("Generate", key="ai_summary_btn", type="secondary")
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        if _gen_btn:
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-            if not api_key:
-                try:
-                    api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-                except Exception:
-                    api_key = ""
-            if not api_key or api_key == "your-key-here":
-                st.warning("Add your ANTHROPIC_API_KEY to .env (local) or Streamlit secrets (cloud).")
-            else:
-                with st.spinner("Analyzing..."):
-                    try:
-                        prompt = build_summary_prompt(
-                            summary_src, selected_umpire, selected_team,
-                            league_avg, called_pitches_df,
-                        )
-                        result = get_ai_summary(prompt)
-                        if result:
-                            st.session_state.ai_summary_text = result
-                        else:
-                            st.warning("No summary returned. Check your API key.")
-                    except Exception as e:
-                        st.error(f"API error: {e}")
-
-        if st.session_state.ai_summary_text:
-            st.markdown(
-                f'<div style="background-color:{CARD_BG}; padding:1rem 1.5rem; '
-                f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.75rem 0 1rem 0;">'
-                f'<span style="color:{TEXT_WHITE}; font-size:0.95rem; line-height:1.6;">'
-                f'{st.session_state.ai_summary_text}</span></div>',
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                f'<div style="color:{TEXT_DIM}; font-size:0.85rem; margin-bottom:0.5rem;">'
-                f'Click Generate for a Claude-powered analysis of the current umpire data.</div>',
-                unsafe_allow_html=True,
-            )
-
-# ---------------------------------------------------------------------------
 # Bottom section: bar chart (all umpires only)
 # ---------------------------------------------------------------------------
 bottom_df = ump_team_all if len(ump_team_all) > 0 else df
@@ -1645,6 +1600,75 @@ if not single_umpire and len(bottom_df) >= 100:
             yaxis=dict(fixedrange=True),
         )
         st.plotly_chart(roll_fig, width="stretch", config=PLOTLY_CONFIG)
+
+# ---------------------------------------------------------------------------
+# AI Summary Section
+# ---------------------------------------------------------------------------
+st.markdown("---")
+if HAS_ANTHROPIC:
+    summary_src = ump_team_all if len(ump_team_all) > 0 else df
+
+    if len(summary_src) > 0:
+        filter_key = f"{selected_umpire}_{selected_team}_{show_overturned}_{show_upheld}_{date_range}"
+        if "ai_filter_key" not in st.session_state:
+            st.session_state.ai_filter_key = ""
+        if "ai_summary_text" not in st.session_state:
+            st.session_state.ai_summary_text = ""
+        if st.session_state.ai_filter_key != filter_key:
+            st.session_state.ai_summary_text = ""
+            st.session_state.ai_filter_key = filter_key
+
+        st.markdown(f'<div class="section-header" style="margin-bottom:0.5rem;">AI Analysis</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<style>.ai-gen-btn button { background-color: #4fc3f7 !important; color: #0a0a1a !important; '
+            'font-weight: 700 !important; font-family: "Montserrat", sans-serif !important; '
+            'letter-spacing: 0.05em !important; text-transform: uppercase !important; '
+            'font-size: 0.8rem !important; padding: 0.3rem 1.2rem !important; border: none !important; }</style>',
+            unsafe_allow_html=True,
+        )
+        with st.container():
+            st.markdown('<div class="ai-gen-btn">', unsafe_allow_html=True)
+            _gen_btn = st.button("Generate", key="ai_summary_btn", type="secondary")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        if _gen_btn:
+            api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+            if not api_key:
+                try:
+                    api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+                except Exception:
+                    api_key = ""
+            if not api_key or api_key == "your-key-here":
+                st.warning("Add your ANTHROPIC_API_KEY to .env (local) or Streamlit secrets (cloud).")
+            else:
+                with st.spinner("Analyzing..."):
+                    try:
+                        prompt = build_summary_prompt(
+                            summary_src, selected_umpire, selected_team,
+                            league_avg, called_pitches_df,
+                        )
+                        result = get_ai_summary(prompt)
+                        if result:
+                            st.session_state.ai_summary_text = result
+                        else:
+                            st.warning("No summary returned. Check your API key.")
+                    except Exception as e:
+                        st.error(f"API error: {e}")
+
+        if st.session_state.ai_summary_text:
+            st.markdown(
+                f'<div style="background-color:{CARD_BG}; padding:1rem 1.5rem; '
+                f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.75rem 0 1rem 0;">'
+                f'<span style="color:{TEXT_WHITE}; font-size:0.95rem; line-height:1.6;">'
+                f'{st.session_state.ai_summary_text}</span></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<div style="color:{TEXT_DIM}; font-size:0.85rem; margin-bottom:0.5rem;">'
+                f'Click Generate for a Claude-powered analysis of the current umpire data.</div>',
+                unsafe_allow_html=True,
+            )
 
 # ---------------------------------------------------------------------------
 # Data Dictionary
