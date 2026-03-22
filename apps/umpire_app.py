@@ -539,7 +539,7 @@ if called_pitches_df is not None:
                 showscale=True,
                 colorbar=dict(
                     title="", orientation="h",
-                    y=-0.18, yanchor="top", x=0.5, xanchor="center",
+                    y=-0.15, yanchor="top", x=0.25, xanchor="center",
                     len=0.35, thickness=12, tickvals=[], ticktext=[],
                 ),
                 hoverinfo="skip",
@@ -706,7 +706,7 @@ fig.update_layout(
     ),
     xaxis=dict(
         title="Horizontal Location (ft from center)",
-        range=[-2, 2], autorange=False, constrain="domain",
+        range=[-2, 2], autorange=False,
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
@@ -724,7 +724,7 @@ fig.update_layout(
     font=dict(color="white"),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="bottom", y=-0.25,
+        orientation="h", yanchor="bottom", y=-0.12,
         xanchor="right", x=0.98,
         font=dict(size=14, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
@@ -733,7 +733,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=750,
-    margin=dict(t=120, b=180),
+    margin=dict(t=120, b=150),
 )
 
 # Annotations
@@ -744,12 +744,12 @@ fig.add_annotation(x=1.5, y=4.3, text="Ump's right", showarrow=False,
 fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=False,
                    font=dict(size=10, color=TEXT_DIM))
 
-# Colorbar legend (centered with colorbar at x=0.5)
-fig.add_annotation(x=0.33, y=-0.20, xref="paper", yref="paper",
+# Colorbar legend
+fig.add_annotation(x=0.08, y=-0.17, xref="paper", yref="paper",
                    text="No strikes", showarrow=False, font=dict(size=10, color=TEXT_DIM))
-fig.add_annotation(x=0.5, y=-0.20, xref="paper", yref="paper",
+fig.add_annotation(x=0.25, y=-0.17, xref="paper", yref="paper",
                    text="Fringe", showarrow=False, font=dict(size=10, color=TEXT_DIM))
-fig.add_annotation(x=0.67, y=-0.20, xref="paper", yref="paper",
+fig.add_annotation(x=0.42, y=-0.17, xref="paper", yref="paper",
                    text="Core zone", showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
 st.plotly_chart(fig, use_container_width=True)
