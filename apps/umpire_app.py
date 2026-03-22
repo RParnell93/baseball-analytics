@@ -930,11 +930,27 @@ if single_umpire and called_pitches_df is not None:
                     </thead>
                     <tbody>"""
 
+            # Use overall league averages so same value = same color across all rows
+            _overall_ot_rate = league_avg["overturn_pct"]
+            _overall_strike_acc = 100 - league_avg["overturn_pct"]  # approximate
+            _overall_ball_acc = 100 - league_avg["overturn_pct"]
+            _overall_total_acc = league_avg.get("accuracy", 98.5)
+            # Compute from raw data if available
+            _lg_total_ch = len(league_pt) if len(league_pt) > 0 else 1
+            _lg_total_ot = (league_pt["result"] == "overturned").sum() if len(league_pt) > 0 else 0
+            _overall_ot_rate = _lg_total_ot / _lg_total_ch * 100
+            _lg_s_ch = len(league_pt[league_pt["original_call"].str.contains("trike", case=False, na=False)]) if len(league_pt) > 0 else 1
+            _lg_s_ot = len(league_pt[(league_pt["original_call"].str.contains("trike", case=False, na=False)) & (league_pt["result"] == "overturned")]) if len(league_pt) > 0 else 0
+            _overall_strike_acc = (_lg_s_ch - _lg_s_ot) / max(_lg_s_ch, 1) * 100
+            _lg_b_ch = _lg_total_ch - _lg_s_ch
+            _lg_b_ot = _lg_total_ot - _lg_s_ot
+            _overall_ball_acc = (_lg_b_ch - _lg_b_ot) / max(_lg_b_ch, 1) * 100
+
             for _, row in merged.iterrows():
-                ot_style = cell_color_spectrum(row["ot_rate"], row.get("lg_ot_rate", 50), higher_is_better=False, threshold=0.5)
+                ot_style = cell_color_spectrum(row["ot_rate"], _overall_ot_rate, higher_is_better=False, threshold=0.5)
                 ta_style = cell_color_spectrum(row["total_acc"], row.get("lg_total_acc", 99), higher_is_better=True, threshold=0.1) if row["total_pitches"] > 0 else f"background:transparent; color:{TEXT_DIM}"
-                sa_style = cell_color_spectrum(row["strike_acc"], row.get("lg_strike_acc", 50), higher_is_better=True, threshold=0.5) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
-                ba_style = cell_color_spectrum(row["ball_acc"], row.get("lg_ball_acc", 50), higher_is_better=True, threshold=0.5) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                sa_style = cell_color_spectrum(row["strike_acc"], _overall_strike_acc, higher_is_better=True, threshold=0.5) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                ba_style = cell_color_spectrum(row["ball_acc"], _overall_ball_acc, higher_is_better=True, threshold=0.5) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 ta_val = f"{row['total_acc']:.1f}%" if row["total_pitches"] > 0 else "-"
                 sa_val = f"{row['strike_acc']:.0f}%" if row["strike_challenges"] > 0 else "-"
                 ba_val = f"{row['ball_acc']:.0f}%" if row["ball_challenges"] > 0 else "-"
