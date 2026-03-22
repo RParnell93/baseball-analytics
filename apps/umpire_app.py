@@ -90,19 +90,17 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_right_html = f"""
-            <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
-                <svg width="44" height="44" viewBox="0 0 40 40" style="flex-shrink:0;">
-                    <circle cx="20" cy="20" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="5"
+            <div style="position:relative; width:60px; height:60px; flex-shrink:0;">
+                <svg width="60" height="60" viewBox="0 0 60 60">
+                    <circle cx="30" cy="30" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 20 20)" opacity="0.85"/>
-                    <circle cx="20" cy="20" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="5"
+                        stroke-dashoffset="0" transform="rotate(-90 30 30)" opacity="0.85"/>
+                    <circle cx="30" cy="30" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 20 20)" opacity="0.85"/>
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 30 30)" opacity="0.85"/>
+                    <text x="30" y="27" text-anchor="middle" fill="{OVERTURNED}" font-size="8.5" font-weight="700" font-family="Montserrat,sans-serif">{ot_pct:.0f}%</text>
+                    <text x="30" y="37" text-anchor="middle" fill="{UPHELD}" font-size="8.5" font-weight="700" font-family="Montserrat,sans-serif">{up_pct:.0f}%</text>
                 </svg>
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; text-align:center; line-height:1.4; white-space:nowrap;">
-                    <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)<br>
-                    <span style="color:{UPHELD};">&#9679;</span> {up} UH ({up_pct:.0f}%)
-                </div>
             </div>"""
 
     if donut_right_html:
