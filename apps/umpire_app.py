@@ -649,7 +649,7 @@ if single_umpire:
         ump_called = len(called_pitches_df[called_pitches_df["umpire"] == selected_umpire])
     challenge_pct = ump_n / max(ump_called, 1) * 100
 
-    games_sub = f"{ump_called:,} Called Pitches"
+    games_sub = None
 
     # Umpire accuracy: how many called pitches were correct (not overturned)
     # Overall accuracy = (called pitches - overturned challenges) / called pitches
@@ -705,7 +705,7 @@ if single_umpire:
 
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of Called Pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of {ump_called:,} called pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
@@ -717,8 +717,6 @@ else:
     all_ot_pct = all_ot / max(all_n, 1) * 100
     challenge_pct = all_n / max(total_called, 1) * 100
 
-    games_sub = f"{total_called:,} Called Pitches"
-
     all_up_pct = 100 - all_ot_pct
 
     # League-wide accuracy
@@ -728,8 +726,8 @@ else:
         league_overall_accuracy = 0
 
     col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
-    col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of Called Pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
+    col_m1.markdown(metric_card("Games", f"{all_games:,}"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of {total_called:,} called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
@@ -1266,7 +1264,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
 
 # Established zone legend (below dot legend)
 fig.add_annotation(x=0.5, y=-0.40, xref="paper", yref="paper",
-                   text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span> Established Zone (where ump calls strikes)",
+                   text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
