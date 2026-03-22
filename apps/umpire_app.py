@@ -392,7 +392,7 @@ def compute_kde(px_values, pz_values, bw=KDE_BW):
 # ---------------------------------------------------------------------------
 _favicon_path = Path(__file__).parent / "favicon_umpire.svg"
 st.set_page_config(
-    page_title="mlbumpviz | ABS Challenge Explorer",
+    page_title="UMP STATS",
     page_icon=str(_favicon_path) if _favicon_path.exists() else "baseball",
     layout="wide",
 )
