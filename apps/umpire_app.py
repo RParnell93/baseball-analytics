@@ -90,8 +90,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_right_html = f"""
-            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; gap:0.3rem;">
-                <svg width="70" height="70" viewBox="0 0 70 70">
+                <svg width="70" height="70" viewBox="0 0 70 70" style="flex-shrink:0;">
                     <circle cx="35" cy="35" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
                         stroke-dashoffset="0" transform="rotate(-90 35 35)" opacity="0.85"/>
@@ -99,22 +98,19 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
                         stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 35 35)" opacity="0.85"/>
                     <text x="35" y="38" text-anchor="middle" fill="{ACCENT}" font-size="16" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
-                </svg>
-                <div style="display:flex; gap:0.6rem; font-size:0.65rem; white-space:nowrap;">
-                    <span><span style="color:{OVERTURNED};">&#9679;</span> {ot} OT</span>
-                    <span><span style="color:{UPHELD};">&#9679;</span> {up} UH</span>
-                </div>
+                </svg>"""
+            donut_legend = f"""<div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.15rem; white-space:nowrap;">
+                <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT
+                <span style="color:{UPHELD}; margin-left:0.3rem;">&#9679;</span> {up} UH
             </div>"""
 
     if donut_right_html:
-        # Two-column layout: left = number + subtext, right = donut + legend
         return (
             f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
-            f'<div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.25rem;">'
+            f'<div style="display:flex; align-items:center; justify-content:space-between;">'
             f'  <div>'
-            f'    <div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
-            f'    {delta_html}{sub_html}'
+            f'    {sub_html}{donut_legend}'
             f'  </div>'
             f'  {donut_right_html}'
             f'</div>'
