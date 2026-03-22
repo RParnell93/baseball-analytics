@@ -85,24 +85,23 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         if total > 0:
             ot_pct = ot / total * 100
             up_pct = up / total * 100
-            # SVG donut using stroke-dasharray on circles
-            r = 28
+            r = 18
             circ = 2 * 3.14159 * r
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_html = f"""
-            <div style="display:flex; align-items:center; gap:0.75rem; margin-top:0.4rem;">
-                <svg width="60" height="60" viewBox="0 0 72 72" style="flex-shrink:0;">
-                    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="10"
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.3rem;">
+                <svg width="40" height="40" viewBox="0 0 44 44" style="flex-shrink:0;">
+                    <circle cx="22" cy="22" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 36 36)" opacity="0.85"/>
-                    <circle cx="36" cy="36" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="10"
+                        stroke-dashoffset="0" transform="rotate(-90 22 22)" opacity="0.85"/>
+                    <circle cx="22" cy="22" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 36 36)" opacity="0.85"/>
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 22 22)" opacity="0.85"/>
                 </svg>
-                <div style="font-size:0.7rem; color:{TEXT_DIM}; line-height:1.5;">
-                    <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)<br>
-                    <span style="color:{UPHELD};">&#9679;</span> {up} UH ({up_pct:.0f}%)
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; line-height:1.4;">
+                    <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)
+                    <span style="color:{UPHELD}; margin-left:0.3rem;">&#9679;</span> {up} UH ({up_pct:.0f}%)
                 </div>
             </div>"""
 
@@ -685,21 +684,24 @@ if single_umpire and called_pitches_df is not None:
                 return "#154360"   # dark navy (bottom tier)
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%;">'
-        slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
+        slider_html += f'<div class="section-header" style="margin-bottom:0.75rem;">Umpire Percentile Rankings</div>'
 
         for label, val, display, pct in metrics:
             color = pct_color(pct)
             pct_int = int(round(pct))
-            bar_width = max(pct_int, 3)
+            bar_width = max(pct_int, 2)
+            # Circle positioned at end of bar via left offset
+            circle_left = f"calc({bar_width}% - 14px)" if bar_width > 5 else "0px"
             slider_html += f"""
-            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.6rem;">
+            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.85rem;">
                 <div style="width:120px; font-size:0.7rem; color:{TEXT_DIM}; text-align:right; flex-shrink:0; font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:0.03em; text-transform:uppercase;">{label}</div>
-                <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:24px; position:relative;">
-                    <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:4px; display:flex; align-items:center; justify-content:center;">
-                        <span style="font-size:0.7rem; font-weight:700; color:{TEXT_WHITE};">{pct_int}</span>
+                <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:10px; position:relative;">
+                    <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:4px;"></div>
+                    <div style="position:absolute; top:50%; left:{circle_left}; transform:translateY(-50%); width:28px; height:28px; border-radius:50%; background:{color}; display:flex; align-items:center; justify-content:center; border:2px solid {CARD_BG}; box-shadow:0 0 0 1px rgba(255,255,255,0.1);">
+                        <span style="font-size:0.65rem; font-weight:700; color:{TEXT_WHITE};">{pct_int}</span>
                     </div>
                 </div>
-                <div style="width:55px; font-size:0.75rem; color:{TEXT_WHITE}; flex-shrink:0;">{display}</div>
+                <div style="width:55px; font-size:0.75rem; color:{TEXT_WHITE}; flex-shrink:0; text-align:right;">{display}</div>
             </div>"""
 
         slider_html += '</div>'
@@ -777,12 +779,12 @@ if single_umpire and called_pitches_df is not None:
             merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]], on="pitch_name", how="left")
             merged = merged.sort_values("challenges", ascending=False)
 
-            def cell_color_spectrum(val, lg_val, higher_is_better=True):
+            def cell_color_spectrum(val, lg_val, higher_is_better=True, threshold=1.0):
                 """Spectrum color: deep red (much better) -> light red -> neutral -> light blue -> deep blue (much worse)."""
                 diff = val - lg_val
                 if not higher_is_better:
                     diff = -diff
-                if abs(diff) < 1.0:
+                if abs(diff) < threshold:
                     return f"background:transparent; color:{TEXT_WHITE}"
                 # Clamp diff to [-50, 50] for color scaling
                 clamped = max(-50, min(50, diff))
@@ -821,7 +823,7 @@ if single_umpire and called_pitches_df is not None:
 
             for _, row in merged.iterrows():
                 ot_style = cell_color_spectrum(row["ot_rate"], row.get("lg_ot_rate", 50), higher_is_better=False)
-                ta_style = cell_color_spectrum(row["total_acc"], row.get("lg_total_acc", 99), higher_is_better=True) if row["total_pitches"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                ta_style = cell_color_spectrum(row["total_acc"], row.get("lg_total_acc", 99), higher_is_better=True, threshold=0.1) if row["total_pitches"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 sa_style = cell_color_spectrum(row["strike_acc"], row.get("lg_strike_acc", 50), higher_is_better=True) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 ba_style = cell_color_spectrum(row["ball_acc"], row.get("lg_ball_acc", 50), higher_is_better=True) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 ta_val = f"{row['total_acc']:.1f}%" if row["total_pitches"] > 0 else "-"
