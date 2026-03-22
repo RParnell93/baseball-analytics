@@ -422,30 +422,16 @@ with col_f3:
 with col_f4:
     st.markdown("Result")
 
-    if "show_overturned" not in st.session_state:
-        st.session_state.show_overturned = True
-    if "show_upheld" not in st.session_state:
-        st.session_state.show_upheld = True
-
-    ot_active = st.session_state.show_overturned
-    up_active = st.session_state.show_upheld
-
-    st.markdown('<div style="height:0.3rem;"></div>', unsafe_allow_html=True)
     btn_col1, btn_col2 = st.columns([1, 1], gap="small")
     with btn_col1:
-        ot_dot = "●" if ot_active else "○"
-        if st.button(f"{ot_dot}  Overturned", key="btn_ot", use_container_width=True):
-            st.session_state.show_overturned = not st.session_state.show_overturned
-            st.rerun()
+        ot_circle = f'<span style="color:{OVERTURNED}; font-size:0.6rem; vertical-align:middle;">●</span>'
+        st.markdown(f'{ot_circle} <span style="font-size:0.8rem; color:{TEXT_WHITE};">Overturned</span>', unsafe_allow_html=True)
+        show_overturned = st.checkbox("ot", value=True, key="show_overturned", label_visibility="collapsed")
 
     with btn_col2:
-        up_dot = "●" if up_active else "○"
-        if st.button(f"{up_dot}  Upheld", key="btn_up", use_container_width=True):
-            st.session_state.show_upheld = not st.session_state.show_upheld
-            st.rerun()
-
-show_overturned = st.session_state.show_overturned
-show_upheld = st.session_state.show_upheld
+        up_circle = f'<span style="color:{UPHELD}; font-size:0.6rem; vertical-align:middle;">●</span>'
+        st.markdown(f'{up_circle} <span style="font-size:0.8rem; color:{TEXT_WHITE};">Upheld</span>', unsafe_allow_html=True)
+        show_upheld = st.checkbox("up", value=True, key="show_upheld", label_visibility="collapsed")
 
 result_filter = []
 if show_overturned:
