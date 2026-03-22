@@ -1241,13 +1241,13 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _call_short = "STK" if "trike" in str(_call) else "BALL"
             _call_color = OVERTURNED if _row.get("result", "") == "overturned" else UPHELD
             _pitch = _row.get("pitch_name", _row.get("pitch_type", ""))
-            _dist_val = abs(_row["zone_dist"])
+            _dist_in = abs(_row["zone_dist"]) * 12
             _team = _row.get("batting_team", "")
             _worst_html += f"""
                     <tr>
                         <td style="{_td_style}"><span style="color:{_call_color}; font-weight:700;">{_call_short}</span> <span style="color:{TEXT_DIM}; font-size:0.6rem;">{_team}</span></td>
                         <td style="{_td_style} font-size:0.65rem;">{_pitch}</td>
-                        <td style="{_td_style} text-align:right; font-weight:700; color:{OVERTURNED};">{_dist_val:.2f}ft</td>
+                        <td style="{_td_style} text-align:right; font-weight:700; color:{OVERTURNED};">{_dist_in:.1f}in</td>
                     </tr>"""
         _worst_html += """
                 </tbody>
