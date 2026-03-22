@@ -339,7 +339,7 @@ st.caption(
 # ---------------------------------------------------------------------------
 # Filters
 # ---------------------------------------------------------------------------
-col_f1, col_f2, col_f3 = st.columns(3)
+col_f1, col_f2, col_f3, col_f4 = st.columns([1, 1, 1, 1])
 
 with col_f1:
     selected_umpire = st.selectbox("Umpire", ["All Umpires"] + all_umpires)
@@ -355,8 +355,18 @@ else:
 with col_f2:
     selected_team = st.selectbox("Challenging Team", ["All Teams"] + available_teams)
 
-# Result circle buttons
 with col_f3:
+    min_date = df["date"].min().date()
+    max_date = df["date"].max().date()
+    date_range = st.date_input(
+        "Date Range",
+        value=(min_date, max_date),
+        min_value=min_date,
+        max_value=max_date,
+    )
+
+# Result circle buttons
+with col_f4:
     st.markdown("Result")
     btn_col1, btn_col2 = st.columns(2)
 
@@ -396,6 +406,14 @@ if show_upheld:
 
 # Apply filters
 filtered = df
+
+# Date range filter
+if isinstance(date_range, tuple) and len(date_range) == 2:
+    d_start, d_end = date_range
+    filtered = filtered[
+        (filtered["date"].dt.date >= d_start) & (filtered["date"].dt.date <= d_end)
+    ]
+
 if selected_umpire != "All Umpires":
     filtered = filtered[filtered["umpire"] == selected_umpire]
 if selected_team != "All Teams":
@@ -439,9 +457,16 @@ if single_umpire:
     ump_called = 0
     if called_pitches_df is not None:
         ump_called = len(called_pitches_df[called_pitches_df["umpire"] == selected_umpire])
+    challenge_pct = ump_n / max(ump_called, 1) * 100
+
+    games_sub = (
+        f"{ump_called:,} called pitches &nbsp;|&nbsp; "
+        f"{ump_n:,} challenged "
+        f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span>"
+    )
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    col_m1.markdown(metric_card("Games", ump_games, subtext=f"{ump_called:,} called pitches"), unsafe_allow_html=True)
+    col_m1.markdown(metric_card("Games", ump_games, subtext=games_sub), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Challenges", ump_n, subtext=f"Overturned: {ump_ot} &nbsp;|&nbsp; Upheld: {ump_up}"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Accuracy", f"{accuracy:.0f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
@@ -451,9 +476,16 @@ else:
     all_ot = (ump_team_all["result"] == "overturned").sum()
     all_up = all_n - all_ot
     all_ot_pct = all_ot / max(all_n, 1) * 100
+    challenge_pct = all_n / max(total_called, 1) * 100
+
+    games_sub = (
+        f"{total_called:,} called pitches &nbsp;|&nbsp; "
+        f"{all_n:,} challenged "
+        f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span>"
+    )
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    col_m1.markdown(metric_card("Games", all_games, subtext=f"{total_called:,} called pitches"), unsafe_allow_html=True)
+    col_m1.markdown(metric_card("Games", all_games, subtext=games_sub), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Challenges", all_n, subtext=f"Overturned: {all_ot} &nbsp;|&nbsp; Upheld: {all_up}"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
