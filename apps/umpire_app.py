@@ -1163,6 +1163,70 @@ PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
+# Rolling 100-Pitch Accuracy (single umpire view)
+# ---------------------------------------------------------------------------
+if single_umpire and called_pitches_df is not None:
+    ump_pitches = called_pitches_df[called_pitches_df["umpire"] == selected_umpire].copy()
+    ump_pitches = ump_pitches.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"])
+    if len(ump_pitches) >= 100:
+        ump_pitches = ump_pitches.sort_values("date").reset_index(drop=True)
+        # Determine correctness: called strike in zone = correct, ball outside zone = correct
+        in_zone = (
+            (ump_pitches["pX"].abs() <= PLATE_HALF_FT)
+            & (ump_pitches["pZ"] >= ump_pitches["sz_bottom"])
+            & (ump_pitches["pZ"] <= ump_pitches["sz_top"])
+        )
+        ump_pitches["is_correct"] = (
+            ((ump_pitches["call"] == "Called Strike") & in_zone)
+            | ((ump_pitches["call"] == "Ball") & ~in_zone)
+        ).astype(int)
+        ump_pitches["rolling_acc"] = ump_pitches["is_correct"].rolling(100, min_periods=100).mean() * 100
+        rolling_valid = ump_pitches.dropna(subset=["rolling_acc"])
+
+        if len(rolling_valid) > 0:
+            st.markdown("---")
+            st.subheader("Rolling 100-Pitch Accuracy")
+            overall_acc = ump_pitches["is_correct"].mean() * 100
+
+            # One point per date to keep it clean
+            daily_acc = rolling_valid.groupby("date")["rolling_acc"].last().reset_index()
+
+            acc_fig = go.Figure()
+            acc_fig.add_trace(go.Scatter(
+                x=daily_acc["date"], y=daily_acc["rolling_acc"],
+                mode="lines",
+                line=dict(color=ACCENT, width=2.5, shape="spline", smoothing=1.0),
+                name="Rolling 100",
+                hovertemplate="%{x|%b %d}<br>Accuracy: %{y:.1f}%<extra></extra>",
+            ))
+            acc_fig.add_hline(
+                y=overall_acc, line_dash="dot", line_color=TEXT_DIM,
+                annotation_text=f"Overall: {overall_acc:.1f}%",
+                annotation_position="top right",
+                annotation_font=dict(size=12, color=TEXT_DIM),
+            )
+            acc_fig.update_layout(
+                plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
+                font=dict(color=TEXT_WHITE),
+                hoverlabel=HOVER_LABEL,
+                hovermode="x unified",
+                xaxis=dict(title="Date", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
+                yaxis=dict(
+                    title="Accuracy %",
+                    gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM,
+                    range=[
+                        max(85, rolling_valid["rolling_acc"].min() - 2),
+                        min(100, rolling_valid["rolling_acc"].max() + 2),
+                    ],
+                    fixedrange=True,
+                ),
+                height=350,
+                margin=dict(l=10, r=10, t=10, b=60),
+                showlegend=False,
+            )
+            st.plotly_chart(acc_fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+# ---------------------------------------------------------------------------
 # AI Summary Section
 # ---------------------------------------------------------------------------
 st.markdown("---")
