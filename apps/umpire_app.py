@@ -637,6 +637,21 @@ fig.add_trace(go.Scatter(
 
 # Challenge dots (only when challenges exist)
 if len(valid) > 0:
+    # Scale markers: smaller when many dots, larger when few
+    n_dots = len(valid)
+    if n_dots > 500:
+        dot_size, dot_text_size, dot_opacity = 8, 0, 0.6
+        dot_mode = "markers"
+    elif n_dots > 200:
+        dot_size, dot_text_size, dot_opacity = 10, 0, 0.65
+        dot_mode = "markers"
+    elif n_dots > 50:
+        dot_size, dot_text_size, dot_opacity = 13, 6, 0.7
+        dot_mode = "markers+text"
+    else:
+        dot_size, dot_text_size, dot_opacity = 16, 7, 0.75
+        dot_mode = "markers+text"
+
     for result_val, color, marker_symbol, label_prefix in [
         ("overturned", OVERTURNED, "circle", "Overturned"),
         ("upheld", UPHELD, "circle", "Upheld"),
@@ -647,13 +662,13 @@ if len(valid) > 0:
 
         fig.add_trace(go.Scatter(
             x=subset["pX"], y=subset["pZ"],
-            mode="markers+text",
+            mode=dot_mode,
             marker=dict(
-                size=16, color=color, opacity=0.75, symbol=marker_symbol,
-                line=dict(width=2, color="white"),
+                size=dot_size, color=color, opacity=dot_opacity, symbol=marker_symbol,
+                line=dict(width=1 if n_dots > 200 else 2, color="white"),
             ),
-            text=subset["challenge_team"],
-            textfont=dict(size=7, color="white"),
+            text=subset["challenge_team"] if dot_text_size > 0 else None,
+            textfont=dict(size=dot_text_size if dot_text_size > 0 else 7, color="white"),
             textposition="middle center",
             name=f"{label_prefix} ({len(subset)})",
             customdata=np.stack([
@@ -680,18 +695,6 @@ if len(valid) > 0:
             ),
         ))
 
-        # Pitch type labels as a separate text-only trace (no per-row loop)
-        has_pt = subset["pitch_type"].notna() & (subset["pitch_type"] != "")
-        if has_pt.any():
-            pt_sub = subset[has_pt]
-            fig.add_trace(go.Scatter(
-                x=pt_sub["pX"] + 0.12, y=pt_sub["pZ"],
-                mode="text",
-                text=pt_sub["pitch_type"],
-                textfont=dict(size=8, color=TEXT_DIM),
-                textposition="middle right",
-                showlegend=False, hoverinfo="skip",
-            ))
 
 # Title
 ump_label = selected_umpire if single_umpire else "All Umpires"
@@ -887,6 +890,8 @@ if len(bottom_df) > 0:
             ).round(1)
             ump_stats = ump_stats.sort_values("challenges", ascending=True).tail(10)
 
+            ump_stats["upheld"] = ump_stats["challenges"] - ump_stats["overturned"]
+
             bar_fig = go.Figure()
             bar_fig.add_trace(go.Bar(
                 y=ump_stats["umpire"],
@@ -894,22 +899,31 @@ if len(bottom_df) > 0:
                 name="Overturned",
                 orientation="h",
                 marker=dict(color=OVERTURNED, line=dict(width=1, color=DARK_BG)),
-                text=ump_stats["overturn_rate"].apply(lambda x: f"{x:.0f}%"),
+                text=ump_stats["overturned"].astype(str),
                 textposition="inside",
-                textfont=dict(size=11, color="white"),
-                hovertemplate="%{y}<br>Overturned: %{x}<br>Rate: %{text}<extra></extra>",
+                textfont=dict(size=10, color="white"),
+                hovertemplate="%{y}<br>Overturned: %{x}<br>Rate: %{customdata[0]:.0f}%<extra></extra>",
+                customdata=ump_stats[["overturn_rate"]].values,
             ))
             bar_fig.add_trace(go.Bar(
                 y=ump_stats["umpire"],
-                x=ump_stats["challenges"] - ump_stats["overturned"],
+                x=ump_stats["upheld"],
                 name="Upheld",
                 orientation="h",
                 marker=dict(color=UPHELD, line=dict(width=1, color=DARK_BG)),
-                text=(ump_stats["challenges"] - ump_stats["overturned"]).astype(str),
+                text=ump_stats["upheld"].astype(str),
                 textposition="inside",
-                textfont=dict(size=11, color="white"),
+                textfont=dict(size=10, color="white"),
                 hovertemplate="%{y}<br>Upheld: %{x}<extra></extra>",
             ))
+            # Overturn rate annotation at end of each bar
+            for _, row in ump_stats.iterrows():
+                bar_fig.add_annotation(
+                    y=row["umpire"], x=row["challenges"] + 1,
+                    text=f"{row['overturn_rate']:.0f}%",
+                    showarrow=False, font=dict(size=9, color=TEXT_DIM),
+                    xanchor="left",
+                )
             bar_fig.update_layout(
                 barmode="stack",
                 plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
@@ -923,7 +937,7 @@ if len(bottom_df) > 0:
                 height=400,
                 xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
                 yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
-                margin=dict(l=10, r=10, t=10, b=80),
+                margin=dict(l=10, r=40, t=10, b=80),
             )
             st.plotly_chart(bar_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
