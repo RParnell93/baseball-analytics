@@ -91,39 +91,47 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
 
     donut_html = ""
     if donut:
-        ot = donut["overturned"]
-        up = donut["upheld"]
-        total = ot + up
+        # donut format: {"seg1_label": (count, color), "seg2_label": (count, color)}
+        # Legacy format: {"overturned": int, "upheld": int}
+        if "overturned" in donut and not isinstance(donut["overturned"], tuple):
+            _segments = [
+                ("Overturned", donut["overturned"], OVERTURNED),
+                ("Upheld", donut["upheld"], UPHELD),
+            ]
+        else:
+            _segments = [(k, v[0], v[1]) for k, v in donut.items()]
+        total = sum(s[1] for s in _segments)
         if total > 0:
-            ot_pct = ot / total * 100
-            up_pct = up / total * 100
-            r = 27
+            sz = 90
+            r = 33
+            cx = sz / 2
             circ = 2 * 3.14159 * r
-            ot_dash = circ * ot_pct / 100
-            up_dash = circ * up_pct / 100
+            sw = 8
+            circles = ""
+            offset = 0
+            for seg_label, seg_val, seg_color in reversed(_segments):
+                dash = circ * seg_val / total
+                circles = f"""<circle cx="{cx}" cy="{cx}" r="{r}" fill="none" stroke="{seg_color}" stroke-width="{sw}"
+                            stroke-dasharray="{dash:.1f} {circ:.1f}"
+                            stroke-dashoffset="-{offset:.1f}" transform="rotate(-90 {cx} {cx})" opacity="0.85"/>""" + circles
+                offset += dash
+            legend = ""
+            for seg_label, seg_val, seg_color in _segments:
+                pct = seg_val / total * 100
+                legend += f"""<div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:{seg_color}; display:inline-block;"></span>
+                            <span style="font-size:0.7rem; font-weight:700; color:{seg_color};">{seg_val:,}</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">{seg_label} ({pct:.0f}%)</span>
+                        </div>"""
             donut_html = f"""
                 <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; flex:1;">
-                    <svg width="75" height="75" viewBox="0 0 75 75" style="flex-shrink:0;">
-                        <circle cx="37.5" cy="37.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
-                            stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="0" transform="rotate(-90 37.5 37.5)" opacity="0.85"/>
-                        <circle cx="37.5" cy="37.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
-                            stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 37.5 37.5)" opacity="0.85"/>
-                        <text x="37.5" y="34" text-anchor="middle" fill="{ACCENT}" font-size="17" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
-                        <text x="37.5" y="45" text-anchor="middle" fill="{TEXT_DIM}" font-size="7" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
+                    <svg width="{sz}" height="{sz}" viewBox="0 0 {sz} {sz}" style="flex-shrink:0;">
+                        {circles}
+                        <text x="{cx}" y="{cx - 4}" text-anchor="middle" fill="{ACCENT}" font-size="19" font-weight="700" font-family="Montserrat,sans-serif">{total:,}</text>
+                        <text x="{cx}" y="{cx + 8}" text-anchor="middle" fill="{TEXT_DIM}" font-size="7" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
                     </svg>
                     <div style="font-family:'Montserrat',sans-serif;">
-                        <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
-                            <span style="width:7px; height:7px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
-                            <span style="font-size:0.7rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
-                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Overturned ({ot_pct:.0f}%)</span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:0.25rem;">
-                            <span style="width:7px; height:7px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
-                            <span style="font-size:0.7rem; font-weight:700; color:{UPHELD};">{up}</span>
-                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Upheld ({up_pct:.0f}%)</span>
-                        </div>
+                        {legend}
                     </div>
                 </div>"""
 
@@ -742,7 +750,9 @@ if single_umpire:
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", subtext=f"{_ump_strike_pct:.1f}% called strikes", delta=f"{_strike_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    _ump_balls = ump_called - int(_ump_strikes) if called_pitches_df is not None else 0
+    _cp_donut = {"Called Strikes": (int(_ump_strikes), ACCENT), "Balls": (int(_ump_balls), "#a8a8b3")} if ump_called > 0 else None
+    col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", delta=f"{_strike_delta:+.1f}pp vs avg", delta_color="normal", donut=_cp_donut), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", delta=f"{_cr_delta:+.1f}pp vs avg", delta_color="normal", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
 else:
@@ -800,7 +810,10 @@ else:
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{all_games:,}"), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", subtext=f"{_lg_strike_pct:.1f}% called strikes"), unsafe_allow_html=True)
+    _all_strikes = int((called_pitches_df["call"] == "Called Strike").sum()) if called_pitches_df is not None else 0
+    _all_balls = total_called - _all_strikes
+    _cp_donut_all = {"Called Strikes": (_all_strikes, ACCENT), "Balls": (_all_balls, "#a8a8b3")} if total_called > 0 else None
+    col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", donut=_cp_donut_all), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
 
@@ -1607,62 +1620,6 @@ if len(bottom_df) > 0 and not single_umpire:
     )
     st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
 
-# ---------------------------------------------------------------------------
-# Rolling overturn rate (all umpires view)
-# ---------------------------------------------------------------------------
-if not single_umpire and len(bottom_df) >= 100:
-    st.markdown("---")
-    st.subheader("Rolling 100 Challenges - Overturn%")
-
-    rolling_df = bottom_df.sort_values("date").reset_index(drop=True)
-    rolling_df["is_overturned"] = (rolling_df["result"] == "overturned").astype(int)
-    rolling_df["rolling_ot_pct"] = rolling_df["is_overturned"].rolling(100, min_periods=100).mean() * 100
-    rolling_valid = rolling_df.dropna(subset=["rolling_ot_pct"])
-
-    if len(rolling_valid) > 0:
-        overall_ot_pct = rolling_df["is_overturned"].mean() * 100
-
-        # One point per date (end-of-day value) to avoid vertical box artifacts
-        daily = rolling_valid.groupby(rolling_valid["date"].dt.date)["rolling_ot_pct"].last().reset_index()
-        daily.columns = ["date", "rolling_ot_pct"]
-
-        roll_fig = go.Figure()
-        roll_fig.add_trace(go.Scatter(
-            x=daily["date"], y=daily["rolling_ot_pct"],
-            mode="lines",
-            line=dict(color=ACCENT, width=2.5, shape="spline", smoothing=1.0),
-            name="Rolling 100",
-            hovertemplate="%{x|%b %d}<br>Overturn rate: %{y:.1f}%<extra></extra>",
-        ))
-        roll_fig.add_hline(
-            y=overall_ot_pct, line_dash="dot", line_color=TEXT_DIM,
-            annotation_text=f"Overall: {overall_ot_pct:.1f}%",
-            annotation_position="top right",
-            annotation_font=dict(size=12, color=TEXT_DIM),
-        )
-        roll_fig.update_layout(
-            plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
-            font=dict(color=TEXT_WHITE),
-            hoverlabel=HOVER_LABEL,
-            hovermode="x unified",
-            xaxis=dict(title="Date", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM),
-            yaxis=dict(
-                title="Overturn %",
-                gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM,
-                range=[
-                    max(0, rolling_valid["rolling_ot_pct"].min() - 5),
-                    min(100, rolling_valid["rolling_ot_pct"].max() + 5),
-                ],
-            ),
-            height=350,
-            margin=dict(l=10, r=10, t=10, b=60),
-            showlegend=False,
-        )
-        roll_fig.update_layout(
-            xaxis=dict(fixedrange=True),
-            yaxis=dict(fixedrange=True),
-        )
-        st.plotly_chart(roll_fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
