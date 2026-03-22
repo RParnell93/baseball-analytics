@@ -286,7 +286,17 @@ st.set_page_config(
 )
 
 st.markdown(f"""
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
 <style>
+    .brand-title {{
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 2.2rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: {TEXT_WHITE} !important;
+        margin-bottom: 0.25rem;
+    }}
     .stApp {{
         background-color: {DARK_BG};
     }}
@@ -367,7 +377,7 @@ all_teams = sorted(df["challenge_team"].unique().tolist())
 # ---------------------------------------------------------------------------
 # Header
 # ---------------------------------------------------------------------------
-st.title("mlbumpviz")
+st.markdown('<div class="brand-title">MLB-UMP-VIZ</div>', unsafe_allow_html=True)
 st.caption("Spring Training 2026")
 
 # ---------------------------------------------------------------------------
