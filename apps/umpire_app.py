@@ -246,6 +246,7 @@ def build_summary_prompt(filt_df, ump, team, league_avgs, called_df):
         )
 
     zone_info = ""
+    accuracy_info = ""
     if called_df is not None and ump != "All Umpires":
         ump_strikes = called_df[(called_df["umpire"] == ump) & (called_df["call"] == "Called Strike")]
         ump_balls = called_df[(called_df["umpire"] == ump) & (called_df["call"] == "Ball")]
@@ -256,6 +257,29 @@ def build_summary_prompt(filt_df, ump, team, league_avgs, called_df):
                 f"  Avg called strike horizontal spread: {avg_strike_px:.2f} ft from center\n"
                 f"  Avg called strike height: {ump_strikes['pZ'].mean():.2f} ft\n"
                 f"  Zone width tendency: {'wider than avg' if avg_strike_px > 0.55 else 'tighter than avg'}\n"
+            )
+        # Zone-geometry accuracy
+        _acc_cp = called_df[called_df["umpire"] == ump].dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+        if len(_acc_cp) > 0:
+            _iz = (
+                (_acc_cp["pX"].abs() <= ZONE_EDGE_FT)
+                & (_acc_cp["pZ"] >= _acc_cp["sz_bottom"])
+                & (_acc_cp["pZ"] <= _acc_cp["sz_top"])
+            )
+            _correct = ((_acc_cp["call"] == "Called Strike") & _iz) | ((_acc_cp["call"] == "Ball") & ~_iz)
+            _total_acc = _correct.mean() * 100
+            _strike_acc = _correct[_acc_cp["call"] == "Called Strike"].mean() * 100 if (_acc_cp["call"] == "Called Strike").sum() > 0 else 0
+            _ball_acc = _correct[_acc_cp["call"] == "Ball"].mean() * 100 if (_acc_cp["call"] == "Ball").sum() > 0 else 0
+            # League averages
+            _lg_cp = called_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+            _lg_iz = (_lg_cp["pX"].abs() <= ZONE_EDGE_FT) & (_lg_cp["pZ"] >= _lg_cp["sz_bottom"]) & (_lg_cp["pZ"] <= _lg_cp["sz_top"])
+            _lg_correct = ((_lg_cp["call"] == "Called Strike") & _lg_iz) | ((_lg_cp["call"] == "Ball") & ~_lg_iz)
+            _lg_total_acc = _lg_correct.mean() * 100
+            accuracy_info = (
+                f"  Overall accuracy (zone geometry): {_total_acc:.1f}% (MLB avg: {_lg_total_acc:.1f}%)\n"
+                f"  Strike accuracy (called strikes actually in zone): {_strike_acc:.1f}%\n"
+                f"  Ball accuracy (called balls actually outside zone): {_ball_acc:.1f}%\n"
+                f"  Total called pitches evaluated: {len(_acc_cp)}\n"
             )
 
     ump_label = ump if ump != "All Umpires" else "all umpires"
@@ -293,8 +317,10 @@ Impact distribution:
 {impact_info}
 Umpire's established zone (from all called pitches):
 {zone_info}
+Zone-geometry accuracy (ball in zone = correct strike call, ball outside = correct ball call):
+{accuracy_info}
 
-Write a 3-4 sentence analyst summary. Be specific with numbers. Note anything unusual - is the overturn rate above or below average? Are challenges clustered in a certain zone? Which pitch types cause the most trouble? If viewing a specific umpire, comment on their zone tendencies and accuracy. Remember: the umpire is the one being evaluated, not the one challenging. Keep the tone sharp and informative, like you're briefing a broadcast booth before a game. No filler, no fluff."""
+Write a 3-4 sentence analyst summary. START with the umpire's overall accuracy rate and how it compares to the MLB average, then break down from there into strike vs ball accuracy, pitch types, and zone tendencies. Be specific with numbers. Note anything unusual. Remember: the umpire is the one being evaluated, not the one challenging. Keep the tone sharp and informative, like you're briefing a broadcast booth before a game. No filler, no fluff."""
 
 
 @st.cache_data
@@ -1175,6 +1201,41 @@ if single_umpire and called_pitches_df is not None:
                             <td style="{_td} border-radius:3px; {ta_style}; cursor:default;" title="{_ta_tip}">{ta_val}</td>
                             <td style="{_td} border-radius:3px; {sa_style}; cursor:default;" title="{_sa_tip}">{sa_val}</td>
                             <td style="{_td} border-radius:3px; {ba_style}; cursor:default;" title="{_ba_tip}">{ba_val}</td>
+                        </tr>"""
+
+            # Totals row
+            _tot_pitches = int(merged["total_pitches"].sum())
+            _tot_challenges = int(merged["challenges"].sum())
+            _tot_ot = int(merged["overturned"].sum())
+            _tot_ot_rate = _tot_ot / max(_tot_challenges, 1) * 100
+            # Overall accuracy from zone geometry (already computed for this umpire)
+            _tot_ta = ""
+            _tot_sa = ""
+            _tot_ba = ""
+            if len(ump_cp) > 0 and all(c in ump_cp.columns for c in ["pX", "pZ", "sz_top", "sz_bottom", "call"]):
+                _tcp = ump_cp.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+                if len(_tcp) > 0:
+                    _tiz = (_tcp["pX"].abs() <= ZONE_EDGE_FT) & (_tcp["pZ"] >= _tcp["sz_bottom"]) & (_tcp["pZ"] <= _tcp["sz_top"])
+                    _tc = ((_tcp["call"] == "Called Strike") & _tiz) | ((_tcp["call"] == "Ball") & ~_tiz)
+                    _tot_ta = f"{_tc.mean() * 100:.1f}%"
+                    _ts = _tcp[_tcp["call"] == "Called Strike"]
+                    if len(_ts) > 0:
+                        _tiz_s = (_ts["pX"].abs() <= ZONE_EDGE_FT) & (_ts["pZ"] >= _ts["sz_bottom"]) & (_ts["pZ"] <= _ts["sz_top"])
+                        _tot_sa = f"{_tiz_s.mean() * 100:.1f}%"
+                    _tb = _tcp[_tcp["call"] == "Ball"]
+                    if len(_tb) > 0:
+                        _tiz_b = ~((_tb["pX"].abs() <= ZONE_EDGE_FT) & (_tb["pZ"] >= _tb["sz_bottom"]) & (_tb["pZ"] <= _tb["sz_top"]))
+                        _tot_ba = f"{_tiz_b.mean() * 100:.1f}%"
+            _tot_style = f"font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"
+            table_html += f"""
+                        <tr style="{_tot_style}">
+                            <td style="padding:0.45rem 0.75rem; color:{ACCENT}; font-weight:800;">TOTAL</td>
+                            {"<td style='" + _td + " font-weight:800;'>" + f"{_tot_pitches:,}" + "</td>" if has_total else ""}
+                            <td style="{_td} font-weight:800;">{_tot_challenges}</td>
+                            <td style="{_td} font-weight:800;">{_tot_ot_rate:.0f}%</td>
+                            <td style="{_td} font-weight:800;">{_tot_ta or '-'}</td>
+                            <td style="{_td} font-weight:800;">{_tot_sa or '-'}</td>
+                            <td style="{_td} font-weight:800;">{_tot_ba or '-'}</td>
                         </tr>"""
 
             table_html += f"""
