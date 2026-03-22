@@ -330,19 +330,9 @@ st.markdown(f"""
         border-color: {ACCENT} !important;
     }}
 
-    /* Result toggle buttons - subtle with colored left accent */
-    [data-testid="stHorizontalBlock"] button[kind="secondary"]:has(+ div),
-    button[data-testid="stBaseButton-default"] {{
-        background-color: transparent !important;
-        border: 1px solid rgba(255,255,255,0.12) !important;
-        color: {TEXT_WHITE} !important;
+    /* Pills styling */
+    [data-testid="stPills"] button {{
         font-size: 0.8rem !important;
-        padding: 0.3rem 0.6rem !important;
-        border-radius: 1rem !important;
-    }}
-    button[data-testid="stBaseButton-default"]:hover {{
-        background-color: rgba(255,255,255,0.05) !important;
-        border-color: rgba(255,255,255,0.25) !important;
     }}
 
     /* Mobile optimizations */
@@ -418,20 +408,17 @@ with col_f3:
         max_value=max_date,
     )
 
-# Result toggle buttons with colored circle indicators
+# Result filter - native pills
 with col_f4:
-    st.markdown("Result")
+    selected_results = st.pills(
+        "Result",
+        options=["🔴 Overturned", "🟢 Upheld"],
+        default=["🔴 Overturned", "🟢 Upheld"],
+        selection_mode="multi",
+    )
 
-    btn_col1, btn_col2 = st.columns([1, 1], gap="small")
-    with btn_col1:
-        ot_circle = f'<span style="color:{OVERTURNED}; font-size:0.6rem; vertical-align:middle;">●</span>'
-        st.markdown(f'{ot_circle} <span style="font-size:0.8rem; color:{TEXT_WHITE};">Overturned</span>', unsafe_allow_html=True)
-        show_overturned = st.checkbox("ot", value=True, key="show_overturned", label_visibility="collapsed")
-
-    with btn_col2:
-        up_circle = f'<span style="color:{UPHELD}; font-size:0.6rem; vertical-align:middle;">●</span>'
-        st.markdown(f'{up_circle} <span style="font-size:0.8rem; color:{TEXT_WHITE};">Upheld</span>', unsafe_allow_html=True)
-        show_upheld = st.checkbox("up", value=True, key="show_upheld", label_visibility="collapsed")
+show_overturned = "🔴 Overturned" in selected_results
+show_upheld = "🟢 Upheld" in selected_results
 
 result_filter = []
 if show_overturned:
