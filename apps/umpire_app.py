@@ -602,13 +602,13 @@ if called_pitches_df is not None:
 
     if single_umpire:
         zone_strikes = all_strikes[all_strikes["umpire"] == selected_umpire]
-        zone_source_label = f"{selected_umpire}'s zone ({len(zone_strikes)} called strikes)"
+        zone_source_label = f"{selected_umpire}'s zone ({len(zone_strikes)} called pitches)"
     elif selected_team != "All Teams" and has_team_col:
         zone_strikes = all_strikes[all_strikes["batting_team"] == selected_team]
-        zone_source_label = f"{selected_team} batting zone ({len(zone_strikes)} called strikes)"
+        zone_source_label = f"{selected_team} batting zone ({len(zone_strikes)} called pitches)"
     else:
         zone_strikes = all_strikes
-        zone_source_label = f"MLB avg zone ({len(zone_strikes):,} called strikes)"
+        zone_source_label = f"MLB avg zone ({len(zone_strikes):,} called pitches)"
 
     if len(zone_strikes) >= 20:
         try:
@@ -1077,11 +1077,11 @@ with st.expander("📖 Data Dictionary"):
 | **Upheld** | The ABS system confirmed the umpire's original call. The umpire got it right. |
 | **Overturn Rate** | Percentage of challenges where the umpire's call was reversed. Higher = more umpire mistakes caught. |
 | **Upheld Rate** | Percentage of challenges where the umpire's call was confirmed correct. Inverse of overturn rate. |
-| **Accuracy** | Percentage of all called pitches (balls and called strikes) where the umpire's call matched the true zone. Calculated as (called pitches - overturned challenges) / called pitches. |
+| **Accuracy** | Percentage of all called pitches (balls and called pitches) where the umpire's call matched the true zone. Calculated as (called pitches - overturned challenges) / called pitches. |
 | **ABS-Adjusted Accuracy** | Accuracy after ABS corrections are applied. Since every overturned call gets fixed, this reflects the effective accuracy with ABS in play. |
 | **Impact Score** | A 0-100 score measuring how much a challenge affected the game. Combines run expectancy change (how the base/out state shifted) with count leverage (how critical the pitch count was). A 90+ score means the challenge significantly changed the game's outcome. |
 | **Called Pitches** | All pitches where the umpire made a ball or called strike ruling (not swings, fouls, or hit-by-pitch). |
-| **Established Zone** | The pink heatmap on the strike zone chart. Shows where an umpire (or the league average) consistently calls strikes, based on kernel density estimation of all called strikes. Denser pink = more called strikes in that area. |
+| **Established Zone** | The pink heatmap on the strike zone chart. Shows where an umpire (or the league average) consistently calls strikes, based on kernel density estimation of all called pitches ruled as strikes. Denser pink = more strikes called in that area. |
 | **Zone Distance** | How far a pitch was from the nearest edge of the strike zone, measured in inches. "Inside zone" means the pitch was within the zone; "outside zone" means it was off the plate. |
 | **Strike Zone** | The white rectangle on the chart. Width is the 17-inch plate. Height is the batter's individual zone (knees to midpoint of torso). |
 | **pX / pZ** | Pitch coordinates in feet. pX is horizontal distance from the center of the plate (0 = middle). pZ is vertical height above the ground. |
