@@ -141,9 +141,9 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         return (
             f'<div style="{_card_style}">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
-            f'{donut_html}'
             f'{sub_html}'
             f'{delta_html}'
+            f'{donut_html}'
             f'</div>'
         )
 
@@ -751,7 +751,7 @@ if single_umpire:
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
     _ump_balls = ump_called - int(_ump_strikes) if called_pitches_df is not None else 0
-    _cp_donut = {"Called Strikes": (int(_ump_strikes), ACCENT), "Balls": (int(_ump_balls), "#a8a8b3")} if ump_called > 0 else None
+    _cp_donut = {"Called Strikes": (int(_ump_strikes), ACCENT), "Balls": (int(_ump_balls), "#7B8FA3")} if ump_called > 0 else None
     col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", delta=f"{_strike_delta:+.1f}pp vs avg", delta_color="normal", donut=_cp_donut), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", delta=f"{_cr_delta:+.1f}pp vs avg", delta_color="normal", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
@@ -812,7 +812,7 @@ else:
     col_m1.markdown(metric_card("Games", f"{all_games:,}"), unsafe_allow_html=True)
     _all_strikes = int((called_pitches_df["call"] == "Called Strike").sum()) if called_pitches_df is not None else 0
     _all_balls = total_called - _all_strikes
-    _cp_donut_all = {"Called Strikes": (_all_strikes, ACCENT), "Balls": (_all_balls, "#a8a8b3")} if total_called > 0 else None
+    _cp_donut_all = {"Called Strikes": (_all_strikes, ACCENT), "Balls": (_all_balls, "#7B8FA3")} if total_called > 0 else None
     col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", donut=_cp_donut_all), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
