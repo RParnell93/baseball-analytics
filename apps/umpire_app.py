@@ -1341,7 +1341,7 @@ fig.update_layout(
     font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="top", y=-0.23,
+        orientation="h", yanchor="top", y=-0.12,
         xanchor="center", x=0.5,
         font=dict(size=11, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
@@ -1350,7 +1350,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=850,
-    margin=dict(t=70, b=130, l=40, r=40),
+    margin=dict(t=70, b=90, l=40, r=40),
 )
 
 # Annotations
@@ -1362,7 +1362,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.28, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.19, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
@@ -1430,7 +1430,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                     </div>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; height:886px; overflow-y:auto;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; height:850px; overflow-y:auto;">
                 <div class="section-header" style="margin-bottom:0.15rem;">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:1rem;">Ranked by distance from zone edge</div>
                 <div style="display:flex; flex-direction:column; gap:0.35rem;">
