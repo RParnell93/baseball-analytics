@@ -1178,7 +1178,7 @@ if len(valid) > 0:
 
     for result_val, color, marker_symbol, label_prefix in [
         ("overturned", OVERTURNED, "circle", "Overturned"),
-        ("upheld", UPHELD, "circle", "Upheld"),
+        ("upheld", UPHELD, "circle", "Stands"),
     ]:
         subset = valid[valid["result"] == result_val]
         if len(subset) == 0:
@@ -1313,12 +1313,14 @@ if "zone_dist" in valid.columns and len(valid) > 0:
             _umpire_name = str(_row.get("umpire", "")).split()[-1] if not single_umpire and _row.get("umpire") else ""
             _badge_bg = 'rgba(227,96,105,0.2)' if _row.get('result', '') == 'overturned' else 'rgba(110,194,120,0.2)'
             _badge_color = OVERTURNED if _row.get('result', '') == 'overturned' else UPHELD
-            _badge_text = 'OVERTURNED' if _row.get('result', '') == 'overturned' else 'UPHELD'
+            _badge_text = 'OVERTURNED' if _row.get('result', '') == 'overturned' else 'STANDS'
             # Determine challenger side: batter or defense
             _half = str(_row.get("half", ""))
             _ct = str(_row.get("challenge_team", ""))
             _batting_team = _home if _half == "bottom" else _away
             _challenger_side = "BAT" if _ct == _batting_team else "DEF"
+            _side_bg = 'rgba(100,149,237,0.2)' if _challenger_side == "BAT" else 'rgba(255,165,0,0.2)'
+            _side_color = '#6495ED' if _challenger_side == "BAT" else '#FFA500'
             _border_top = f'border-top:1px solid rgba(255,255,255,0.06);' if _i > 0 else ''
             _ump_line = f' <span style="color:{ACCENT}; font-weight:700;">{_umpire_name}</span> &middot;' if _umpire_name else ''
             _rows_html += f'''
@@ -1339,7 +1341,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                                     background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
                         <span style="font-size:0.4rem; font-weight:600; font-family:'Montserrat',sans-serif;
                                     padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
-                                    background:rgba(255,255,255,0.08); color:{TEXT_DIM}; white-space:nowrap;">{_challenger_side}</span>
+                                    background:{_side_bg}; color:{_side_color}; white-space:nowrap;">{_challenger_side}</span>
                     </div>
                 </div>'''
         _worst_calls_html = f'''
@@ -1355,7 +1357,7 @@ if _worst_calls_html:
     with _zone_col:
         st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
     with _worst_col:
-        st.html(_worst_calls_html, height=750)
+        st.html(_worst_calls_html)
 else:
     st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
