@@ -131,6 +131,13 @@ Personal baseball analytics platform. Owner is learning Python through this proj
 
 ## Apps (apps/)
 - matchup_app.py - Streamlit hitter vs pitcher matchup explorer
+- umpire_app.py - ABS Challenge Explorer (mlbumpviz)
+  - Deployed: mlbumpviz.streamlit.app
+  - Preview link: rparnell93.github.io/baseball-analytics/mlbumpviz/
+  - Data: output/abs/spring_training_challenges.json + umpire_called_pitches.json
+  - Features: KDE heatmap, challenge dot map, metric cards, AI summary (Claude Haiku), rolling overturn chart
+  - Secrets: ANTHROPIC_API_KEY in Streamlit Cloud secrets
+  - requirements.txt: pin streamlit>=1.31.0, kaleido removed (local-only install)
 
 ## Docs (docs/)
 - ARCHITECTURE.md - data flow diagrams, pipeline details, deployment architecture
