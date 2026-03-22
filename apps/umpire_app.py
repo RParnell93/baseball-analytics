@@ -70,7 +70,16 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
     delta_html = ""
     if delta:
         if delta_color == "normal":
-            d_color = UPHELD if delta.startswith("+") else OVERTURNED
+            # Treat -0.0 / +0.0 as neutral
+            _delta_stripped = delta.lstrip("+-").replace("pp", "").replace("vs avg", "").strip()
+            try:
+                _is_zero = abs(float(_delta_stripped)) < 0.05
+            except ValueError:
+                _is_zero = False
+            if _is_zero:
+                d_color = TEXT_DIM
+            else:
+                d_color = UPHELD if delta.startswith("+") else OVERTURNED
         else:
             d_color = TEXT_DIM
         delta_html = f'<div style="font-size:0.8rem; color:{d_color};">{delta}</div>'
@@ -91,32 +100,32 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_html = f"""
-                <div style="display:flex; align-items:center; justify-content:center; gap:0.75rem; margin-top:0.35rem;">
-                    <svg width="65" height="65" viewBox="0 0 65 65" style="flex-shrink:0;">
-                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
+                <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.25rem;">
+                    <svg width="55" height="55" viewBox="0 0 55 55" style="flex-shrink:0;">
+                        <circle cx="27.5" cy="27.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="5"
                             stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="0" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
-                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
+                            stroke-dashoffset="0" transform="rotate(-90 27.5 27.5)" opacity="0.85"/>
+                        <circle cx="27.5" cy="27.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="5"
                             stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
-                        <text x="32.5" y="31" text-anchor="middle" fill="{ACCENT}" font-size="15" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
-                        <text x="32.5" y="41" text-anchor="middle" fill="{TEXT_DIM}" font-size="6" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
+                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 27.5 27.5)" opacity="0.85"/>
+                        <text x="27.5" y="26" text-anchor="middle" fill="{ACCENT}" font-size="13" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
+                        <text x="27.5" y="35" text-anchor="middle" fill="{TEXT_DIM}" font-size="5" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
                     </svg>
                     <div style="font-family:'Montserrat',sans-serif;">
-                        <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
-                            <span style="width:7px; height:7px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
-                            <span style="font-size:0.7rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
-                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">OT</span>
+                        <div style="display:flex; align-items:center; gap:0.2rem; margin-bottom:0.15rem;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
+                            <span style="font-size:0.6rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
+                            <span style="font-size:0.55rem; font-weight:600; color:{TEXT_DIM};">Overturned</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap:0.25rem;">
-                            <span style="width:7px; height:7px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
-                            <span style="font-size:0.7rem; font-weight:700; color:{UPHELD};">{up}</span>
-                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">UH</span>
+                        <div style="display:flex; align-items:center; gap:0.2rem;">
+                            <span style="width:6px; height:6px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
+                            <span style="font-size:0.6rem; font-weight:700; color:{UPHELD};">{up}</span>
+                            <span style="font-size:0.55rem; font-weight:600; color:{TEXT_DIM};">Upheld</span>
                         </div>
                     </div>
                 </div>"""
 
-    _card_style = f"background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; min-height:150px; display:flex; flex-direction:column; justify-content:space-between;"
+    _card_style = f"background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; height:160px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;"
 
     if donut_html:
         return (
@@ -499,18 +508,25 @@ all_teams = sorted(df["challenge_team"].unique().tolist())
 # Header
 # ---------------------------------------------------------------------------
 _logo_svg = """
-<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Mask shape: rounded trapezoid narrower at top -->
-  <path d="M12 4 C8 4, 4 8, 4 14 L4 28 C4 34, 8 40, 14 40 L30 40 C36 40, 40 34, 40 28 L40 14 C40 8, 36 4, 32 4 Z"
-        stroke="#22D1EE" stroke-width="2.5" fill="none"/>
-  <!-- Horizontal cage bars -->
-  <line x1="6" y1="14" x2="38" y2="14" stroke="#22D1EE" stroke-width="1.8" opacity="0.7"/>
-  <line x1="5" y1="22" x2="39" y2="22" stroke="#22D1EE" stroke-width="1.8" opacity="0.7"/>
-  <line x1="5" y1="30" x2="39" y2="30" stroke="#22D1EE" stroke-width="1.8" opacity="0.7"/>
-  <!-- Vertical cage bar (center) -->
-  <line x1="22" y1="4" x2="22" y2="40" stroke="#22D1EE" stroke-width="1.8" opacity="0.5"/>
-  <!-- Chin guard -->
-  <path d="M14 38 Q22 44, 30 38" stroke="#22D1EE" stroke-width="2" fill="none" opacity="0.6"/>
+<svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer mask frame - rounded rectangle, wider at top, tapers to chin -->
+  <path d="M10 6 Q10 2, 16 2 L32 2 Q38 2, 38 6 L40 14 Q42 18, 42 22 L42 30 Q42 36, 38 38 L30 44 Q24 47, 18 44 L10 38 Q6 36, 6 30 L6 22 Q6 18, 8 14 Z" stroke="#7ec8e3" stroke-width="2.5" fill="none"/>
+  <!-- Forehead padding bar -->
+  <path d="M12 8 Q24 6, 36 8" stroke="#7ec8e3" stroke-width="2.5" fill="none"/>
+  <!-- Horizontal cage wires -->
+  <line x1="9" y1="14" x2="39" y2="14" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
+  <line x1="7" y1="21" x2="41" y2="21" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
+  <line x1="7" y1="28" x2="41" y2="28" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
+  <line x1="9" y1="35" x2="39" y2="35" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
+  <!-- Vertical cage wires -->
+  <line x1="16" y1="8" x2="14" y2="42" stroke="#7ec8e3" stroke-width="1.5" opacity="0.55"/>
+  <line x1="24" y1="6" x2="24" y2="45" stroke="#7ec8e3" stroke-width="1.5" opacity="0.55"/>
+  <line x1="32" y1="8" x2="34" y2="42" stroke="#7ec8e3" stroke-width="1.5" opacity="0.55"/>
+  <!-- Ear guards -->
+  <path d="M6 16 Q1 20, 2 26 Q3 30, 6 32" stroke="#7ec8e3" stroke-width="2.2" fill="none"/>
+  <path d="M42 16 Q47 20, 46 26 Q45 30, 42 32" stroke="#7ec8e3" stroke-width="2.2" fill="none"/>
+  <!-- Throat guard -->
+  <path d="M20 45 Q24 52, 28 45" stroke="#7ec8e3" stroke-width="2" fill="none" opacity="0.5"/>
 </svg>
 """
 
