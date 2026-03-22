@@ -330,11 +330,7 @@ all_teams = sorted(df["challenge_team"].unique().tolist())
 # Header
 # ---------------------------------------------------------------------------
 st.title("ABS Challenge Explorer")
-st.caption(
-    f"Spring Training 2026 | {len(df)} challenges | "
-    f"{(df['result'] == 'overturned').sum()} overturned "
-    f"({(df['result'] == 'overturned').mean() * 100:.0f}%)"
-)
+st.caption("Spring Training 2026")
 
 # ---------------------------------------------------------------------------
 # Filters
@@ -485,10 +481,14 @@ else:
     )
 
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    all_up_pct = 100 - all_ot_pct
+
+    col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", all_games, subtext=games_sub), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Challenges", all_n, subtext=f"Overturned: {all_ot} &nbsp;|&nbsp; Upheld: {all_up}"), unsafe_allow_html=True)
-    col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
+    col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} overturned"), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} upheld"), unsafe_allow_html=True)
+    col_m5.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
 
 st.markdown("---")
 
