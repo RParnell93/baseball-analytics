@@ -1269,7 +1269,7 @@ fig.update_layout(
         itemclick="toggle",
         itemdoubleclick="toggleothers",
     ),
-    height=620,
+    height=700,
     margin=dict(t=90, b=200),
 )
 
@@ -1335,21 +1335,18 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                                 background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; height:100%; box-sizing:border-box;">
-                <div class="section-header">{_wc_title}</div>
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">Ranked by distance from zone edge</div>
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box;">
+                <div class="section-header" style="margin-bottom:0.25rem;">{_wc_title}</div>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.75rem;">Ranked by distance from zone edge</div>
                 {_rows_html}
             </div>'''
 
-# Layout: strike zone card + worst calls card side by side (or full width if no worst calls)
+# Strike zone: full width
+st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
+
+# Worst calls: full-width card section below
 if _worst_calls_html:
-    _zone_col, _worst_col = st.columns([3, 2])
-    with _zone_col:
-        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
-    with _worst_col:
-        st.html(_worst_calls_html)
-else:
-    st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
+    st.html(_worst_calls_html)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
