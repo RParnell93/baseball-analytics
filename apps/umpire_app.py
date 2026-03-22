@@ -90,7 +90,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_right_html = f"""
-            <div style="display:flex; align-items:center; gap:0.6rem; flex-shrink:0;">
+            <div style="display:flex; flex-direction:column; align-items:center; flex-shrink:0; gap:0.3rem;">
                 <svg width="70" height="70" viewBox="0 0 70 70">
                     <circle cx="35" cy="35" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
@@ -98,10 +98,11 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                     <circle cx="35" cy="35" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
                         stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 35 35)" opacity="0.85"/>
+                    <text x="35" y="38" text-anchor="middle" fill="{ACCENT}" font-size="16" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
                 </svg>
-                <div style="font-size:0.7rem; line-height:1.6; white-space:nowrap;">
-                    <div><span style="color:{OVERTURNED}; font-weight:700;">{ot_pct:.0f}%</span> <span style="color:{TEXT_DIM};">OT</span></div>
-                    <div><span style="color:{UPHELD}; font-weight:700;">{up_pct:.0f}%</span> <span style="color:{TEXT_DIM};">UH</span></div>
+                <div style="display:flex; gap:0.6rem; font-size:0.65rem; white-space:nowrap;">
+                    <span><span style="color:{OVERTURNED};">&#9679;</span> {ot} OT</span>
+                    <span><span style="color:{UPHELD};">&#9679;</span> {up} UH</span>
                 </div>
             </div>"""
 
@@ -705,7 +706,7 @@ if single_umpire and called_pitches_df is not None:
              percentile_of(all_ump["ball_accuracy"], ump_row["ball_accuracy"])),
             ("Challenge %", ump_row["challenge_pct"], f"{ump_row['challenge_pct']:.1f}%",
              percentile_of_inverse(all_ump["challenge_pct"], ump_row["challenge_pct"])),
-            ("Overturn Rate", ump_row["overturn_rate"], f"{ump_row['overturn_rate']:.0f}%",
+            ("Overturns", ump_row["overturn_rate"], f"{ump_row['overturn_rate']:.0f}%",
              percentile_of_inverse(all_ump["overturn_rate"], ump_row["overturn_rate"])),
         ]
 
@@ -891,16 +892,17 @@ if single_umpire and called_pitches_df is not None:
             </div>"""
             st.session_state["_table_html"] = table_html
 
-    # Render sliders and table side by side
+    # Render sliders and table side by side in a single HTML block (CSS grid for equal height)
     _s_html = st.session_state.get("_slider_html", "")
     _t_html = st.session_state.get("_table_html", "")
     if _s_html or _t_html:
         if _s_html and _t_html:
-            _col_sl, _col_tb = st.columns(2)
-            with _col_sl:
-                st.markdown(_s_html, unsafe_allow_html=True)
-            with _col_tb:
-                st.markdown(_t_html, unsafe_allow_html=True)
+            combined = f"""
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:stretch;">
+                {_s_html}
+                {_t_html}
+            </div>"""
+            st.markdown(combined, unsafe_allow_html=True)
         elif _s_html:
             st.markdown(_s_html, unsafe_allow_html=True)
         else:
