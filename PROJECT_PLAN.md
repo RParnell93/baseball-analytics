@@ -206,6 +206,163 @@ Separate Twitter account. Daily visuals showing which parks favor hitters today 
 
 ---
 
+## Roadmap (March - September 2026)
+
+### Phase 1: Launch & Prove It (Now - April 15)
+**Goal:** Ship the ABS bot and start posting daily before Opening Day (March 26).
+
+| Week | Target | Deliverable |
+|------|--------|-------------|
+| Mar 21-26 | mlbumpviz live | Done - mlbumpviz.streamlit.app deployed |
+| Mar 22-28 | Twitter API setup | Get @roboumpstats credentials, first test tweets |
+| Mar 26-31 | Opening Day week | First automated daily ABS report posted to Twitter |
+| Apr 1-7 | Daily cadence | One ABS scorecard graphic after every day's games, posted by 11pm ET |
+| Apr 8-15 | Weekly recap | Weekly "ABS Report Card" thread - top/bottom umpires, trends, fun stats |
+
+**Ship list:**
+- Twitter API keys for @roboumpstats (or post from @sabrmagician initially)
+- Daily cron job: `scripts/run_abs_bot.py --post` (or GitHub Action)
+- One consistent visual format for daily reports (strike zone + metrics)
+- Weekly recap thread template
+
+### Phase 2: Build the Habit (Apr 15 - May 31)
+**Goal:** Consistent daily posting. Grow from 0 to 500 followers. Get first media embed.
+
+| Week | Target | Deliverable |
+|------|--------|-------------|
+| Apr 15-30 | Daily ABS + 2 original viz/week | Pitch type breakdowns, umpire deep dives |
+| May 1-15 | Ottoneu content begins | SABR Points value alerts, waiver wire picks |
+| May 16-31 | Weather bot MVP | First daily park weather impact graphic |
+
+**Ship list:**
+- 2-3 original data viz posts per week from @sabrmagician (not just bot output)
+- Ottoneu Value Finder promoted to Ottoneu community (Reddit, Slack, Discord)
+- Weather bot: Open-Meteo API + field orientation data + daily wind/temp graphic
+- First "explainer" thread (what ABS is, how challenges work, with your data)
+
+### Phase 3: Expand & Engage (June - July)
+**Goal:** Multiple content streams running. 1,000+ followers. Community engagement.
+
+| Target | Deliverable |
+|--------|-------------|
+| Player comparison cards | Shareable stat cards for any batter/pitcher |
+| Pitch arsenal analyzer | Interactive notebook or Streamlit app |
+| Quote-tweet analysis | React to big moments with instant data viz |
+| Guest content | Pitch a guest post to FanGraphs Community or reach out to a podcast |
+
+**Ship list:**
+- Player card template (dark theme, percentile bars, headshot, key stats)
+- At least 1 "instant reaction" data viz per week during games
+- Engage with 5-10 analytics accounts daily (replies, quote-tweets, not just likes)
+- sabrmagician.com domain (optional, redirect to GitHub Pages or Streamlit)
+
+### Phase 4: Differentiate (August - September)
+**Goal:** Move beyond daily reporting into original analysis. Establish expertise.
+
+| Target | Deliverable |
+|--------|-------------|
+| ML models | Breakout prediction, projection blending |
+| Original research | 1 deep analysis thread per week |
+| Trade analyzer | Ottoneu trade value tool |
+| Saber Seminar | Attend Aug 2026 in Chicago (networking) |
+
+---
+
+## Marketing Plan
+
+### The Core Problem
+You have good tools and data but no audience yet. The baseball analytics Twitter community is tight-knit but welcoming to people who ship real work. You don't need a marketing budget - you need consistency and engagement.
+
+### Channel Strategy
+
+**Twitter/X (primary - 80% of effort)**
+
+This is where baseball analytics lives. Period. The entire community (media, front offices, fans, content creators) is here.
+
+*Content mix (aim for 5-7 posts/week):*
+- 3-4 automated ABS reports (daily bot output, low effort once set up)
+- 1-2 original data viz posts (pitch breakdowns, player cards, trend analysis)
+- 1 thread or explainer (ABS recap, Ottoneu strategy, metric explainer)
+- Engagement: replies and quote-tweets count as content too
+
+*Growth tactics:*
+1. **Reply to bigger accounts with data.** When @UmpScorecards posts, reply with your ABS angle. When @mike_petriello shares Statcast data, add context from your analysis. Don't self-promote - add value. This is the #1 growth lever for analytics accounts.
+2. **Quote-tweet games in progress.** When a controversial call happens, have a graphic ready within minutes. Timeliness = virality.
+3. **Tag umpires by name.** When your bot posts an umpire's daily report, use their name. Fans searching for umpire names will find you.
+4. **Use the right hashtags sparingly.** #Statcast, #MLB, #ABS, team-specific tags when relevant. Don't stuff.
+5. **Pin your best visual.** The mlbumpviz app or a particularly clean data viz. First impression matters.
+6. **Cross-post to Bluesky if you want** but don't split focus. Twitter first.
+
+*Who to engage with (build relationships, not just followers):*
+- @UmpScorecards (obvious overlap, they may RT you)
+- @would_it_dong (similar automated concept)
+- @mike_petriello (MLB's Statcast voice)
+- @DSzymborski (FanGraphs, ZiPS)
+- @TJStats, @SlangsOnSports (fellow independent data viz)
+- @PitcherList (visual brand, potential collab)
+- Beat writers who cover ABS/umpire topics
+
+**Your Radio Guy (leverage this)**
+
+You mentioned a radio connection. This is valuable:
+- Ask if they'd mention @sabrmagician or mlbumpviz on air when discussing ABS/umpire topics
+- Provide them a weekly "stat sheet" they can reference on air (2-3 interesting ABS facts)
+- If they tweet, ask them to tag you when using your data
+- One on-air mention with a call-to-action ("check out mlbumpviz.streamlit.app") is worth 100 tweets
+
+**Reddit (secondary)**
+
+- r/baseball: Share original analysis posts (not self-promo, genuine contributions). ABS discussion threads are popular.
+- r/Sabermetrics: Smaller but engaged. Your deep analysis fits here.
+- r/fantasybaseball: Ottoneu content, SABR Points strategy
+- r/Ottoneu: Small but dedicated. Your Value Finder notebook is exactly what they want.
+
+**Ottoneu Community (niche but high-value)**
+
+- Ottoneu has its own forums, Slack channels, and Discord
+- Share the Value Finder notebook link directly
+- Post SABR Points strategy content
+- This community is small (~5K active players) but extremely engaged and loyal
+
+### Content Calendar Template (Weekly)
+
+| Day | Content | Channel |
+|-----|---------|---------|
+| Mon | Weekend ABS recap thread | Twitter |
+| Tue | Original data viz (pitch type, player card, etc.) | Twitter |
+| Wed | ABS daily report (automated) | Twitter |
+| Thu | Ottoneu waiver wire / value alert | Twitter + Ottoneu community |
+| Fri | ABS daily report + weekend preview | Twitter |
+| Sat | Game reaction viz (during games) | Twitter |
+| Sun | "Week in ABS" thread or explainer | Twitter |
+
+*Daily (automated):* ABS challenge report after games end
+
+### Metrics to Track
+
+Don't obsess over follower count. Track:
+- **Impressions per post** (are people seeing your stuff?)
+- **Engagement rate** (likes + replies + RTs / impressions)
+- **Profile visits** (people checking you out)
+- **Link clicks** to mlbumpviz.streamlit.app
+- **Quote-tweets and embeds** (other accounts using your content)
+
+Milestones:
+- 100 followers: you exist
+- 500 followers: you're getting noticed
+- 1,000 followers: media people start following
+- 5,000 followers: you're a recognized voice
+
+### What NOT to Do
+
+- Don't buy followers or use engagement bots
+- Don't post low-effort takes or hot takes without data
+- Don't spam hashtags or reply-spam big accounts
+- Don't cross-post identical content to 5 platforms - focus on Twitter
+- Don't wait until everything is perfect to start posting. Ship messy, iterate.
+
+---
+
 ## Reference
 
 ### Ottoneu Scoring (SABR Points)
