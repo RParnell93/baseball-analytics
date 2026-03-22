@@ -1345,11 +1345,11 @@ if "zone_dist" in valid.columns and len(valid) > 0:
 if _worst_calls_html:
     _zone_col, _worst_col = st.columns([3, 2])
     with _zone_col:
-        st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
     with _worst_col:
         st.html(_worst_calls_html)
 else:
-    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
