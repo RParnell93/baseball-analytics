@@ -359,7 +359,16 @@ st.caption("Spring Training 2026")
 col_f1, col_f2, col_f3, col_f4 = st.columns([1, 1, 1, 1])
 
 with col_f1:
-    selected_umpire = st.selectbox("Umpire", ["All Umpires"] + all_umpires)
+    ump_search = st.text_input("Umpire", "", key="ump_search", placeholder="🔍 Search by name...")
+    ump_options = ["All Umpires"] + all_umpires
+    if ump_search.strip():
+        q = ump_search.strip().lower()
+        ump_options = [u for u in ump_options if q in u.lower()]
+        if not ump_options:
+            ump_options = ["All Umpires"]
+    selected_umpire = st.selectbox(
+        "select", ump_options, label_visibility="collapsed"
+    )
 
 # Cross-filter teams based on umpire
 if selected_umpire != "All Umpires":
@@ -465,8 +474,8 @@ if single_umpire:
     ump_n = len(ump_team_all)
     ump_ot = (ump_team_all["result"] == "overturned").sum()
     ump_up = ump_n - ump_ot
-    accuracy = ump_up / max(ump_n, 1) * 100
-    accuracy_delta = accuracy - league_avg["upheld_pct"]
+    upheld_rate = ump_up / max(ump_n, 1) * 100
+    upheld_delta = upheld_rate - league_avg["upheld_pct"]
     ump_avg_impact = ump_team_all["impact_score"].mean() if ump_n > 0 else 0
     impact_delta = ump_avg_impact - league_avg["avg_impact"]
     ump_games = df[df["umpire"] == selected_umpire]["game_id"].nunique()
@@ -482,11 +491,32 @@ if single_umpire:
         f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span>"
     )
 
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-    col_m1.markdown(metric_card("Games", ump_games, subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", ump_n, subtext=f"Overturned: {ump_ot} &nbsp;|&nbsp; Upheld: {ump_up}"), unsafe_allow_html=True)
-    col_m3.markdown(metric_card("Accuracy", f"{accuracy:.0f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
+    # Umpire accuracy: how many called pitches were correct (not overturned)
+    # Overall accuracy = (called pitches - overturned challenges) / called pitches
+    # ABS-adjusted accuracy = after ABS corrections, all calls are now correct
+    if ump_called > 0:
+        overall_accuracy = (ump_called - ump_ot) / ump_called * 100
+        adjusted_accuracy = 100.0  # ABS fixes all overturned calls
+        accuracy_sub = (
+            f"ABS-adjusted: {adjusted_accuracy:.1f}% "
+            f"<span style='font-size:0.7rem;'>({ump_ot} corrected)</span>"
+        )
+    else:
+        overall_accuracy = 0
+        accuracy_sub = ""
+
+    # League avg accuracy for delta
+    league_total_called = len(called_pitches_df) if called_pitches_df is not None else 0
+    league_total_ot = (df["result"] == "overturned").sum()
+    league_accuracy = (league_total_called - league_total_ot) / max(league_total_called, 1) * 100
+    accuracy_delta = overall_accuracy - league_accuracy
+
+    col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
+    col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"Overturned: {ump_ot:,} &nbsp;|&nbsp; Upheld: {ump_up:,}"), unsafe_allow_html=True)
+    col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", subtext=accuracy_sub, delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
     all_n = len(ump_team_all)
@@ -501,15 +531,26 @@ else:
         f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span>"
     )
 
-    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     all_up_pct = 100 - all_ot_pct
 
-    col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
-    col_m1.markdown(metric_card("Games", all_games, subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", all_n, subtext=f"Overturned: {all_ot} &nbsp;|&nbsp; Upheld: {all_up}"), unsafe_allow_html=True)
+    # League-wide accuracy
+    if total_called > 0:
+        league_overall_accuracy = (total_called - all_ot) / total_called * 100
+        league_accuracy_sub = (
+            f"ABS-adjusted: 100.0% "
+            f"<span style='font-size:0.7rem;'>({all_ot} corrected)</span>"
+        )
+    else:
+        league_overall_accuracy = 0
+        league_accuracy_sub = ""
+
+    col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
+    col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"Overturned: {all_ot:,} &nbsp;|&nbsp; Upheld: {all_up:,}"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} overturned"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} upheld"), unsafe_allow_html=True)
-    col_m5.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
+    col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", subtext=league_accuracy_sub), unsafe_allow_html=True)
+    col_m6.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -717,7 +758,7 @@ fig.update_layout(
     ),
     xaxis=dict(
         title="Horizontal Location (ft from center)",
-        range=[-2, 2], autorange=False, fixedrange=True,
+        range=[-1.5, 1.5], autorange=False, fixedrange=True,
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
@@ -901,8 +942,8 @@ if len(bottom_df) > 0:
                 marker=dict(color=OVERTURNED, line=dict(width=1, color=DARK_BG)),
                 text=ump_stats["overturned"].astype(str),
                 textposition="inside",
-                textfont=dict(size=10, color="white"),
-                hovertemplate="%{y}<br>Overturned: %{x}<br>Rate: %{customdata[0]:.0f}%<extra></extra>",
+                textfont=dict(size=11, color="white", family="Arial Black"),
+                hovertemplate="%{y}<br>Overturned: %{x}<br>OT Rate: %{customdata[0]:.0f}%<extra></extra>",
                 customdata=ump_stats[["overturn_rate"]].values,
             ))
             bar_fig.add_trace(go.Bar(
@@ -913,15 +954,16 @@ if len(bottom_df) > 0:
                 marker=dict(color=UPHELD, line=dict(width=1, color=DARK_BG)),
                 text=ump_stats["upheld"].astype(str),
                 textposition="inside",
-                textfont=dict(size=10, color="white"),
+                textfont=dict(size=11, color="white", family="Arial Black"),
                 hovertemplate="%{y}<br>Upheld: %{x}<extra></extra>",
             ))
-            # Overturn rate annotation at end of each bar
+            # Overturn rate label at end of each bar
             for _, row in ump_stats.iterrows():
                 bar_fig.add_annotation(
-                    y=row["umpire"], x=row["challenges"] + 1,
-                    text=f"{row['overturn_rate']:.0f}%",
-                    showarrow=False, font=dict(size=9, color=TEXT_DIM),
+                    y=row["umpire"], x=row["challenges"] + 0.5,
+                    text=f"<b>{row['overturn_rate']:.0f}%</b> OT",
+                    showarrow=False,
+                    font=dict(size=10, color=ACCENT),
                     xanchor="left",
                 )
             bar_fig.update_layout(
@@ -997,6 +1039,33 @@ if not single_umpire and len(bottom_df) >= 100:
             yaxis=dict(fixedrange=True),
         )
         st.plotly_chart(roll_fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+# ---------------------------------------------------------------------------
+# Data Dictionary
+# ---------------------------------------------------------------------------
+st.markdown("---")
+with st.expander("📖 Data Dictionary"):
+    st.markdown(f"""
+| Term | Definition |
+|------|-----------|
+| **ABS (Automated Ball-Strike System)** | MLB's computerized system that tracks pitches and allows teams to challenge ball/strike calls. |
+| **Challenge** | A team's formal request to review a ball/strike call using ABS. Each team gets a limited number per game. |
+| **Overturned** | The ABS system reversed the umpire's original call. The umpire got it wrong. |
+| **Upheld** | The ABS system confirmed the umpire's original call. The umpire got it right. |
+| **Overturn Rate** | Percentage of challenges where the umpire's call was reversed. Higher = more umpire mistakes caught. |
+| **Upheld Rate** | Percentage of challenges where the umpire's call was confirmed correct. Inverse of overturn rate. |
+| **Accuracy** | Percentage of all called pitches (balls and called strikes) where the umpire's call matched the true zone. Calculated as (called pitches - overturned challenges) / called pitches. |
+| **ABS-Adjusted Accuracy** | Accuracy after ABS corrections are applied. Since every overturned call gets fixed, this reflects the effective accuracy with ABS in play. |
+| **Impact Score** | A 0-100 score measuring how much a challenge affected the game. Combines run expectancy change (how the base/out state shifted) with count leverage (how critical the pitch count was). A 90+ score means the challenge significantly changed the game's outcome. |
+| **Called Pitches** | All pitches where the umpire made a ball or called strike ruling (not swings, fouls, or hit-by-pitch). |
+| **Established Zone** | The pink heatmap on the strike zone chart. Shows where an umpire (or the league average) consistently calls strikes, based on kernel density estimation of all called strikes. Denser pink = more called strikes in that area. |
+| **Zone Distance** | How far a pitch was from the nearest edge of the strike zone, measured in inches. "Inside zone" means the pitch was within the zone; "outside zone" means it was off the plate. |
+| **Strike Zone** | The white rectangle on the chart. Width is the 17-inch plate. Height is the batter's individual zone (knees to midpoint of torso). |
+| **pX / pZ** | Pitch coordinates in feet. pX is horizontal distance from the center of the plate (0 = middle). pZ is vertical height above the ground. |
+| **pp (percentage points)** | The unit for comparing percentages. If one umpire has 55% overturn rate vs. 50% league average, that's +5.0pp. |
+
+**Data source:** MLB Stats API, Spring Training 2026. Challenge data and called pitch locations are collected from live game feeds.
+""", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Footer
