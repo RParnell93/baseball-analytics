@@ -1333,12 +1333,12 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                         </div>
                         <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+                    <div style="display:flex; align-items:center; gap:4px;">
                         <span style="font-size:0.4rem; font-weight:700; font-family:'Montserrat',sans-serif;
                                     padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
                                     background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
                         <span style="font-size:0.4rem; font-weight:600; font-family:'Montserrat',sans-serif;
-                                    padding:1px 4px; border-radius:3px; letter-spacing:0.03em;
+                                    padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
                                     background:rgba(255,255,255,0.08); color:{TEXT_DIM}; white-space:nowrap;">{_challenger_side}</span>
                     </div>
                 </div>'''
