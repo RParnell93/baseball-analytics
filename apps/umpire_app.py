@@ -1646,7 +1646,7 @@ if len(bottom_df) > 0 and not single_umpire:
                 acc_fig.add_vline(
                     x=_lg_acc_mean, line_dash="dot", line_color=TEXT_DIM,
                     annotation_text=f"Avg: {_lg_acc_mean:.1f}%",
-                    annotation_position="top",
+                    annotation_position="bottom",
                     annotation_font=dict(size=10, color=TEXT_DIM),
                 )
                 acc_fig.update_layout(
