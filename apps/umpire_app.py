@@ -1052,12 +1052,18 @@ if called_pitches_df is not None:
             density, x_grid, z_grid = compute_kde(
                 zone_strikes["pX"].values, zone_strikes["pZ"].values
             )
-            # Established zone: uniform filled region with outline
+            # Established zone: uniform pink fill INSIDE the contour
             d_max = density.max()
+            threshold = d_max * 0.15
+            # Plotly constraint fillcolor fills the EXCLUDED region,
+            # so use "<" to exclude (and fill) outside, keeping inside clear,
+            # then layer: first trace fills outside with transparent bg,
+            # second trace fills inside with pink using inverted density.
+            neg_density = -density
             fig.add_trace(go.Contour(
-                x=x_grid, y=z_grid, z=density.T,
+                x=x_grid, y=z_grid, z=neg_density.T,
                 contours=dict(
-                    type="constraint", operation=">=", value=d_max * 0.15,
+                    type="constraint", operation="<=", value=-threshold,
                 ),
                 fillcolor="rgba(255,80,180,0.15)",
                 line=dict(width=2, color="rgba(255,80,180,0.6)"),
@@ -1292,22 +1298,22 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _date_str = str(_row.get("date", ""))[:10]
             _away = _row.get("away", "")
             _home = _row.get("home", "")
-            _card = f'''<div style="background:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem;
-                        height:140px; display:flex; flex-direction:column; justify-content:space-between;">
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
-                            font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">
+            _card = f'''<div style="background:{CARD_BG}; padding:0.5rem 0.75rem; border-radius:0.5rem;
+                        display:flex; flex-direction:column; gap:0.15rem;">
+                <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
+                            font-weight:800; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:0.1rem;">
                     Worst #{_i+1}
                 </div>
-                <div style="font-size:1.4rem; font-weight:700; color:{OVERTURNED};
-                            font-family:'Montserrat',sans-serif;">
-                    {_dist_in:.1f}<span style="font-size:0.75rem;">in</span>
+                <div style="font-size:1.3rem; font-weight:700; color:{OVERTURNED};
+                            font-family:'Montserrat',sans-serif; line-height:1.1;">
+                    {_dist_in:.1f} <span style="font-size:0.7rem;">inches</span>
                 </div>
-                <div style="font-size:0.65rem; color:{TEXT_WHITE}; line-height:1.5; font-family:'Montserrat',sans-serif;">
+                <div style="font-size:0.6rem; color:{TEXT_WHITE}; line-height:1.35; font-family:'Montserrat',sans-serif;">
                     <span style="color:{_call_color}; font-weight:700;">{_call_short}</span>
                     &middot; {_count} &middot; {_pitch}<br>
                     {_pitcher} vs {_batter}
                 </div>
-                <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
+                <div style="font-size:0.5rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; line-height:1.2;">{_date_str} &middot; {_away} @ {_home}</div>
             </div>'''
             _wcols[_i].markdown(_card, unsafe_allow_html=True)
 
