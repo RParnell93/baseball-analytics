@@ -560,7 +560,7 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # Filters
 # ---------------------------------------------------------------------------
-col_f1, col_f2, col_f3 = st.columns([1, 1, 1])
+col_f1, col_f2, col_f3, _col_spacer = st.columns([1, 1, 1, 1.5])
 
 with col_f1:
     selected_umpire = st.selectbox("🔍 Umpire", ["All Umpires"] + all_umpires)
