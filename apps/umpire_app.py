@@ -1171,7 +1171,7 @@ if single_umpire and called_pitches_df is not None:
 
             for _, row in merged.iterrows():
                 _lg_ot = _overall_ot_rate
-                ot_style = cell_color_spectrum(row["ot_rate"], _lg_ot, higher_is_better=False, threshold=0.5)
+                ot_style = f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
                 _has_ta = pd.notna(row.get("total_acc")) and row["total_pitches"] > 0
                 _lg_ta = row.get("lg_total_acc", 99) if pd.notna(row.get("lg_total_acc")) else 99
                 ta_style = cell_color_spectrum(float(row["total_acc"]), _lg_ta, higher_is_better=True, threshold=0.1) if _has_ta else f"background:transparent; color:{TEXT_DIM}"
@@ -1234,7 +1234,7 @@ if single_umpire and called_pitches_df is not None:
                         _tot_ba = f"{_tot_ba_num:.1f}%"
             _tot_style = f"font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"
             # Heatmap colors for totals row
-            _tot_ot_style = cell_color_spectrum(_tot_ot_rate, _overall_ot_rate, higher_is_better=False, threshold=0.5)
+            _tot_ot_style = f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
             _lg_ta_overall = _lg_ta_by_pitch["lg_total_acc"].mean() if len(_lg_ta_by_pitch) > 0 else 92
             _tot_ta_style = cell_color_spectrum(_tot_ta_num, _lg_ta_overall, higher_is_better=True, threshold=0.1) if _tot_ta_num else f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
             _tot_sa_style = cell_color_spectrum(_tot_sa_num, _overall_strike_acc, higher_is_better=True, threshold=0.5) if _tot_sa_num else f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
