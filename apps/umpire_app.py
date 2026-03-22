@@ -74,8 +74,8 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None):
     if subtext:
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
     return (
-        f'<div style="background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
-        f'<div style="font-size:0.85rem; color:{TEXT_DIM};">{label}</div>'
+        f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
+        f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
         f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
         f'{delta_html}{sub_html}'
         f'</div>'
@@ -302,6 +302,15 @@ st.markdown(f"""
         color: {TEXT_DIM} !important;
         margin-bottom: 0.75rem;
     }}
+    .section-header {{
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: {TEXT_DIM} !important;
+        margin-bottom: 0.5rem;
+    }}
     .stApp {{
         background-color: {DARK_BG};
     }}
@@ -313,6 +322,12 @@ st.markdown(f"""
     }}
     h1, h2, h3, p, span, label {{
         color: {TEXT_WHITE} !important;
+    }}
+    [data-testid="stSubheader"] {{
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.06em !important;
+        font-size: 1rem !important;
     }}
     div[data-testid="stDataFrame"] {{
         background-color: {CARD_BG};
@@ -511,16 +526,14 @@ if single_umpire:
         ump_called = len(called_pitches_df[called_pitches_df["umpire"] == selected_umpire])
     challenge_pct = ump_n / max(ump_called, 1) * 100
 
-    games_sub = f"{ump_called:,} Pitches | {challenge_pct:.1f}% Challenged"
+    games_sub = f"{ump_called:,} Called Pitches"
 
     # Umpire accuracy: how many called pitches were correct (not overturned)
     # Overall accuracy = (called pitches - overturned challenges) / called pitches
     if ump_called > 0:
         overall_accuracy = (ump_called - ump_ot) / ump_called * 100
-        accuracy_sub = f"{ump_ot:,} Overturned by ABS"
     else:
         overall_accuracy = 0
-        accuracy_sub = ""
 
     # League avg accuracy for delta
     league_total_called = len(called_pitches_df) if called_pitches_df is not None else 0
@@ -530,9 +543,9 @@ if single_umpire:
 
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"Overturned: {ump_ot:,} &nbsp;|&nbsp; Upheld: {ump_up:,}"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span> Overturned: {ump_ot:,} | Upheld: {ump_up:,}"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", subtext=accuracy_sub, delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
@@ -542,24 +555,22 @@ else:
     all_ot_pct = all_ot / max(all_n, 1) * 100
     challenge_pct = all_n / max(total_called, 1) * 100
 
-    games_sub = f"{total_called:,} Pitches | {challenge_pct:.1f}% Challenged"
+    games_sub = f"{total_called:,} Called Pitches"
 
     all_up_pct = 100 - all_ot_pct
 
     # League-wide accuracy
     if total_called > 0:
         league_overall_accuracy = (total_called - all_ot) / total_called * 100
-        league_accuracy_sub = f"{all_ot:,} Overturned by ABS"
     else:
         league_overall_accuracy = 0
-        league_accuracy_sub = ""
 
     col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
     col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"Overturned: {all_ot:,} &nbsp;|&nbsp; Upheld: {all_up:,}"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"<span style='font-size:0.7rem;'>({challenge_pct:.1f}%)</span> Overturned: {all_ot:,} | Upheld: {all_up:,}"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
-    col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", subtext=league_accuracy_sub), unsafe_allow_html=True)
+    col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
     col_m6.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
@@ -567,18 +578,40 @@ else:
 # ---------------------------------------------------------------------------
 if single_umpire and called_pitches_df is not None:
     # Compute stats for ALL umpires (ignoring team/date filters)
-    all_ump_challenges = df.groupby("umpire").agg(
+    # Called pitches by umpire, split by call type
+    cp_by_ump = called_pitches_df.groupby(["umpire", "call"]).size().unstack(fill_value=0).reset_index()
+    if "Called Strike" not in cp_by_ump.columns:
+        cp_by_ump["Called Strike"] = 0
+    if "Ball" not in cp_by_ump.columns:
+        cp_by_ump["Ball"] = 0
+    cp_by_ump["called_pitches"] = cp_by_ump["Called Strike"] + cp_by_ump["Ball"]
+    cp_by_ump = cp_by_ump.rename(columns={"Called Strike": "called_strikes", "Ball": "called_balls"})
+
+    # Challenges by umpire, split by original call
+    ch_by_ump = df.groupby("umpire").agg(
         challenges=("result", "size"),
         overturned=("result", lambda x: (x == "overturned").sum()),
     ).reset_index()
-    all_ump_called = called_pitches_df.groupby("umpire").size().reset_index(name="called_pitches")
-    all_ump = all_ump_challenges.merge(all_ump_called, on="umpire", how="inner")
-    all_ump = all_ump[all_ump["challenges"] >= 5]  # min 5 challenges for meaningful %
 
-    all_ump["challenge_pct"] = all_ump["challenges"] / all_ump["called_pitches"] * 100
-    all_ump["overturn_rate"] = all_ump["overturned"] / all_ump["challenges"] * 100
-    all_ump["upheld_rate"] = 100 - all_ump["overturn_rate"]
-    all_ump["accuracy"] = (all_ump["called_pitches"] - all_ump["overturned"]) / all_ump["called_pitches"] * 100
+    # Strike/ball overturns
+    strike_ot = df[df["original_call"] == "Called Strike"].groupby("umpire").agg(
+        strike_overturned=("result", lambda x: (x == "overturned").sum()),
+    ).reset_index()
+    ball_ot = df[df["original_call"] == "Ball"].groupby("umpire").agg(
+        ball_overturned=("result", lambda x: (x == "overturned").sum()),
+    ).reset_index()
+
+    all_ump = ch_by_ump.merge(cp_by_ump[["umpire", "called_pitches", "called_strikes", "called_balls"]], on="umpire", how="inner")
+    all_ump = all_ump.merge(strike_ot, on="umpire", how="left").fillna(0)
+    all_ump = all_ump.merge(ball_ot, on="umpire", how="left").fillna(0)
+    all_ump = all_ump[all_ump["challenges"] >= 5]
+
+    # Metrics
+    all_ump["total_accuracy"] = (all_ump["called_pitches"] - all_ump["overturned"]) / all_ump["called_pitches"] * 100
+    all_ump["strike_accuracy"] = (all_ump["called_strikes"] - all_ump["strike_overturned"]) / all_ump["called_strikes"].clip(lower=1) * 100
+    all_ump["ball_accuracy"] = (all_ump["called_balls"] - all_ump["ball_overturned"]) / all_ump["called_balls"].clip(lower=1) * 100
+    # Adjusted: after ABS corrections, overturned calls become correct
+    all_ump["adjusted_accuracy"] = (all_ump["called_pitches"] - all_ump["overturned"] + all_ump["overturned"]) / all_ump["called_pitches"] * 100
 
     ump_row = all_ump[all_ump["umpire"] == selected_umpire]
     if len(ump_row) > 0:
@@ -587,48 +620,47 @@ if single_umpire and called_pitches_df is not None:
         def percentile_of(series, value):
             return (series < value).sum() / len(series) * 100
 
+        # Higher percentile = better. All metrics: higher value = better.
         metrics = [
-            ("Challenge %", ump_row["challenge_pct"], f"{ump_row['challenge_pct']:.1f}%",
-             percentile_of(all_ump["challenge_pct"], ump_row["challenge_pct"]), True),
-            ("Accuracy", ump_row["accuracy"], f"{ump_row['accuracy']:.1f}%",
-             percentile_of(all_ump["accuracy"], ump_row["accuracy"]), False),
-            ("Upheld Rate", ump_row["upheld_rate"], f"{ump_row['upheld_rate']:.0f}%",
-             percentile_of(all_ump["upheld_rate"], ump_row["upheld_rate"]), False),
-            ("Overturn Rate", ump_row["overturn_rate"], f"{ump_row['overturn_rate']:.0f}%",
-             percentile_of(all_ump["overturn_rate"], ump_row["overturn_rate"]), True),
+            ("Total Accuracy", ump_row["total_accuracy"], f"{ump_row['total_accuracy']:.1f}%",
+             percentile_of(all_ump["total_accuracy"], ump_row["total_accuracy"])),
+            ("Strike Accuracy", ump_row["strike_accuracy"], f"{ump_row['strike_accuracy']:.1f}%",
+             percentile_of(all_ump["strike_accuracy"], ump_row["strike_accuracy"])),
+            ("Ball Accuracy", ump_row["ball_accuracy"], f"{ump_row['ball_accuracy']:.1f}%",
+             percentile_of(all_ump["ball_accuracy"], ump_row["ball_accuracy"])),
+            ("Adj. Accuracy", ump_row["adjusted_accuracy"], f"{ump_row['adjusted_accuracy']:.2f}%",
+             percentile_of(all_ump["adjusted_accuracy"], ump_row["adjusted_accuracy"])),
         ]
 
-        def pct_color(pct, inverted=False):
-            """Savant-style: red = bad, blue = good. Inverted means higher = worse."""
-            if inverted:
-                pct = 100 - pct
-            if pct >= 90:
-                return "#c0392b"  # dark red (elite)
-            elif pct >= 70:
-                return "#e74c3c"  # red
+        def pct_color(pct):
+            """Blue (low/bad) -> light blue -> light red -> red (high/good)."""
+            if pct >= 80:
+                return "#d63031"   # red (top tier)
+            elif pct >= 60:
+                return "#e17055"   # light red
             elif pct >= 40:
-                return "#f39c12"  # yellow/orange
+                return "#74b9ff"   # light blue
             elif pct >= 20:
-                return "#3498db"  # blue
+                return "#0984e3"   # blue
             else:
-                return "#2980b9"  # dark blue
+                return "#0652DD"   # dark blue (bottom tier)
 
-        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:0.75rem 1rem; margin-bottom:0.75rem;">'
-        slider_html += f'<div style="font-size:0.85rem; color:{TEXT_DIM}; margin-bottom:0.5rem; font-weight:600;">Umpire Percentile Rankings</div>'
+        slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; max-width:900px;">'
+        slider_html += f'<div class="section-header">Umpire Percentile Rankings</div>'
 
-        for label, val, display, pct, inverted in metrics:
-            color = pct_color(pct, inverted)
+        for label, val, display, pct in metrics:
+            color = pct_color(pct)
             pct_int = int(round(pct))
-            bar_width = max(pct_int, 3)  # min width so it's visible
+            bar_width = max(pct_int, 3)
             slider_html += f"""
             <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
-                <div style="width:100px; font-size:0.75rem; color:{TEXT_DIM}; text-align:right; flex-shrink:0;">{label}</div>
+                <div style="width:120px; font-size:0.7rem; color:{TEXT_DIM}; text-align:right; flex-shrink:0; font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:0.03em; text-transform:uppercase;">{label}</div>
                 <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:3px; height:20px; position:relative;">
                     <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:3px; display:flex; align-items:center; justify-content:center;">
                         <span style="font-size:0.7rem; font-weight:700; color:{TEXT_WHITE};">{pct_int}</span>
                     </div>
                 </div>
-                <div style="width:50px; font-size:0.75rem; color:{TEXT_WHITE}; flex-shrink:0;">{display}</div>
+                <div style="width:55px; font-size:0.75rem; color:{TEXT_WHITE}; flex-shrink:0;">{display}</div>
             </div>"""
 
         slider_html += '</div>'
@@ -641,71 +673,100 @@ if single_umpire and called_pitches_df is not None:
         league_pt = df[df["pitch_name"].notna() & (df["pitch_name"] != "")]
 
         if len(ump_pt) > 0:
-            # Umpire stats by pitch type
+            # Umpire stats by pitch type with strike/ball split
             ump_by_pitch = ump_pt.groupby("pitch_name").agg(
                 challenges=("result", "size"),
                 overturned=("result", lambda x: (x == "overturned").sum()),
             ).reset_index()
-            ump_by_pitch["upheld"] = ump_by_pitch["challenges"] - ump_by_pitch["overturned"]
-            ump_by_pitch["overturn_rate"] = (ump_by_pitch["overturned"] / ump_by_pitch["challenges"] * 100).round(1)
-            ump_by_pitch["upheld_rate"] = (100 - ump_by_pitch["overturn_rate"]).round(1)
 
-            # League averages by pitch type
-            league_by_pitch = league_pt.groupby("pitch_name").agg(
-                lg_challenges=("result", "size"),
-                lg_overturned=("result", lambda x: (x == "overturned").sum()),
+            # Strike/ball challenge accuracy per pitch type
+            strike_ch = ump_pt[ump_pt["original_call"] == "Called Strike"].groupby("pitch_name").agg(
+                strike_challenges=("result", "size"),
+                strike_ot=("result", lambda x: (x == "overturned").sum()),
             ).reset_index()
-            league_by_pitch["lg_overturn_rate"] = (league_by_pitch["lg_overturned"] / league_by_pitch["lg_challenges"] * 100).round(1)
-            league_by_pitch["lg_upheld_rate"] = (100 - league_by_pitch["lg_overturn_rate"]).round(1)
+            ball_ch = ump_pt[ump_pt["original_call"] == "Ball"].groupby("pitch_name").agg(
+                ball_challenges=("result", "size"),
+                ball_ot=("result", lambda x: (x == "overturned").sum()),
+            ).reset_index()
 
-            merged = ump_by_pitch.merge(league_by_pitch[["pitch_name", "lg_overturn_rate", "lg_upheld_rate"]], on="pitch_name", how="left")
+            ump_by_pitch = ump_by_pitch.merge(strike_ch, on="pitch_name", how="left").fillna(0)
+            ump_by_pitch = ump_by_pitch.merge(ball_ch, on="pitch_name", how="left").fillna(0)
+
+            ump_by_pitch["challenge_pct"] = (ump_by_pitch["challenges"] / ump_by_pitch["challenges"].sum() * 100).round(1)
+            ump_by_pitch["ot_rate"] = (ump_by_pitch["overturned"] / ump_by_pitch["challenges"] * 100).round(1)
+            ump_by_pitch["strike_acc"] = ((ump_by_pitch["strike_challenges"] - ump_by_pitch["strike_ot"]) / ump_by_pitch["strike_challenges"].clip(lower=1) * 100).round(1)
+            ump_by_pitch["ball_acc"] = ((ump_by_pitch["ball_challenges"] - ump_by_pitch["ball_ot"]) / ump_by_pitch["ball_challenges"].clip(lower=1) * 100).round(1)
+
+            # League averages
+            lg_by_pitch = league_pt.groupby("pitch_name").agg(
+                lg_ch=("result", "size"),
+                lg_ot=("result", lambda x: (x == "overturned").sum()),
+            ).reset_index()
+            lg_strike = league_pt[league_pt["original_call"] == "Called Strike"].groupby("pitch_name").agg(
+                lg_s_ch=("result", "size"), lg_s_ot=("result", lambda x: (x == "overturned").sum()),
+            ).reset_index()
+            lg_ball = league_pt[league_pt["original_call"] == "Ball"].groupby("pitch_name").agg(
+                lg_b_ch=("result", "size"), lg_b_ot=("result", lambda x: (x == "overturned").sum()),
+            ).reset_index()
+
+            lg_by_pitch = lg_by_pitch.merge(lg_strike, on="pitch_name", how="left").fillna(0)
+            lg_by_pitch = lg_by_pitch.merge(lg_ball, on="pitch_name", how="left").fillna(0)
+            lg_by_pitch["lg_ot_rate"] = (lg_by_pitch["lg_ot"] / lg_by_pitch["lg_ch"] * 100).round(1)
+            lg_by_pitch["lg_strike_acc"] = ((lg_by_pitch["lg_s_ch"] - lg_by_pitch["lg_s_ot"]) / lg_by_pitch["lg_s_ch"].clip(lower=1) * 100).round(1)
+            lg_by_pitch["lg_ball_acc"] = ((lg_by_pitch["lg_b_ch"] - lg_by_pitch["lg_b_ot"]) / lg_by_pitch["lg_b_ch"].clip(lower=1) * 100).round(1)
+
+            merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc"]], on="pitch_name", how="left")
             merged = merged.sort_values("challenges", ascending=False)
 
             def cell_color(val, lg_val, higher_is_better=True):
-                """Return background color: blue if better than avg, red if worse."""
                 diff = val - lg_val
                 if not higher_is_better:
                     diff = -diff
                 if abs(diff) < 1.0:
                     return f"background:transparent; color:{TEXT_WHITE}"
                 elif diff > 0:
-                    return f"background:rgba(52,152,219,0.2); color:#5dade2"
-                else:
                     return f"background:rgba(231,76,60,0.2); color:#e74c3c"
+                else:
+                    return f"background:rgba(52,152,219,0.2); color:#5dade2"
 
+            _th = f"text-align:center; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;"
+            _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
             table_html = f"""
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:0.75rem 1rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch;">
-                <div style="font-size:0.85rem; color:{TEXT_DIM}; margin-bottom:0.5rem; font-weight:600;">Pitch Type Breakdown</div>
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem 1.25rem; margin-bottom:0.75rem; max-width:900px; overflow-x:auto; -webkit-overflow-scrolling:touch;">
+                <div class="section-header">Pitch Type Breakdown</div>
                 <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
                     <thead>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
-                            <th style="text-align:left; padding:0.4rem 0.5rem; color:{TEXT_DIM};">Pitch</th>
-                            <th style="text-align:center; padding:0.4rem 0.5rem; color:{TEXT_DIM};">Challenges</th>
-                            <th style="text-align:center; padding:0.4rem 0.5rem; color:{TEXT_DIM};">Overturned</th>
-                            <th style="text-align:center; padding:0.4rem 0.5rem; color:{TEXT_DIM};">Upheld</th>
-                            <th style="text-align:center; padding:0.4rem 0.5rem; color:{TEXT_DIM};">OT Rate</th>
-                            <th style="text-align:center; padding:0.4rem 0.5rem; color:{TEXT_DIM};">Upheld Rate</th>
+                            <th style="text-align:left; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;">Pitch</th>
+                            <th style="{_th}">Challenges</th>
+                            <th style="{_th}">Challenge %</th>
+                            <th style="{_th}">OT Rate</th>
+                            <th style="{_th}">Strike Acc.</th>
+                            <th style="{_th}">Ball Acc.</th>
                         </tr>
                     </thead>
                     <tbody>"""
 
             for _, row in merged.iterrows():
-                ot_style = cell_color(row["overturn_rate"], row.get("lg_overturn_rate", 50), higher_is_better=False)
-                up_style = cell_color(row["upheld_rate"], row.get("lg_upheld_rate", 50), higher_is_better=True)
+                ot_style = cell_color(row["ot_rate"], row.get("lg_ot_rate", 50), higher_is_better=False)
+                sa_style = cell_color(row["strike_acc"], row.get("lg_strike_acc", 50), higher_is_better=True) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                ba_style = cell_color(row["ball_acc"], row.get("lg_ball_acc", 50), higher_is_better=True) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                sa_val = f"{row['strike_acc']:.0f}%" if row["strike_challenges"] > 0 else "-"
+                ba_val = f"{row['ball_acc']:.0f}%" if row["ball_challenges"] > 0 else "-"
                 table_html += f"""
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:0.35rem 0.5rem; color:{TEXT_WHITE};">{row['pitch_name']}</td>
-                            <td style="text-align:center; padding:0.35rem 0.5rem; color:{TEXT_WHITE};">{row['challenges']}</td>
-                            <td style="text-align:center; padding:0.35rem 0.5rem; color:{TEXT_WHITE};">{row['overturned']}</td>
-                            <td style="text-align:center; padding:0.35rem 0.5rem; color:{TEXT_WHITE};">{row['upheld']}</td>
-                            <td style="text-align:center; padding:0.35rem 0.5rem; border-radius:3px; {ot_style};">{row['overturn_rate']:.1f}%</td>
-                            <td style="text-align:center; padding:0.35rem 0.5rem; border-radius:3px; {up_style};">{row['upheld_rate']:.1f}%</td>
+                            <td style="{_td}">{int(row['challenges'])}</td>
+                            <td style="{_td}">{row['challenge_pct']:.0f}%</td>
+                            <td style="{_td} border-radius:3px; {ot_style};">{row['ot_rate']:.0f}%</td>
+                            <td style="{_td} border-radius:3px; {sa_style};">{sa_val}</td>
+                            <td style="{_td} border-radius:3px; {ba_style};">{ba_val}</td>
                         </tr>"""
 
-            table_html += """
+            table_html += f"""
                     </tbody>
                 </table>
-                <div style="font-size:0.65rem; color:""" + TEXT_DIM + """; margin-top:0.4rem;">Blue = better than league avg | Red = worse than league avg</div>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.4rem;">Red = better than league avg | Blue = worse | Strike/Ball Acc. = % of challenged calls upheld by ABS</div>
             </div>"""
             st.markdown(table_html, unsafe_allow_html=True)
 
@@ -1005,7 +1066,7 @@ if HAS_ANTHROPIC:
             st.markdown(
                 f'<div style="background-color:{CARD_BG}; padding:1rem 1.5rem; '
                 f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.5rem 0 1rem 0;">'
-                f'<span style="color:{ACCENT}; font-weight:600; font-size:0.85rem;">AI ANALYSIS</span><br>'
+                f'<span style="color:{ACCENT}; font-family:\'Montserrat\',sans-serif; font-weight:800; font-size:0.75rem; letter-spacing:0.08em;">AI ANALYSIS</span><br>'
                 f'<span style="color:{TEXT_WHITE}; font-size:0.95rem; line-height:1.6;">'
                 f'{st.session_state.ai_summary_text}</span></div>',
                 unsafe_allow_html=True,
@@ -1053,12 +1114,13 @@ if len(bottom_df) > 0:
                 ),
                 hole=0.45,
                 textinfo="label+value+percent",
-                textfont=dict(size=14, color=TEXT_WHITE),
-                textposition="auto",
-                pull=[0.06, 0],
+                textfont=dict(size=13, color=TEXT_WHITE),
+                textposition="outside",
+                pull=[0.03, 0],
                 direction="clockwise",
                 sort=False,
                 hovertemplate="%{label}: %{value} (%{percent})<extra></extra>",
+                insidetextorientation="horizontal",
             ))
             pie_fig.add_annotation(
                 text=f"<b>{pie_ot + pie_up}</b><br><span style='font-size:12px;color:{TEXT_DIM}'>total</span>",
