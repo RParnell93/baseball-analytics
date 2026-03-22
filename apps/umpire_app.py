@@ -1289,7 +1289,7 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
     _worst = _ot_valid.nlargest(5, "zone_dist")
     if len(_worst) > 0:
         st.markdown(
-            f'<div class="section-header" style="margin-top:1rem;">Worst Calls</div>'
+            f'<div class="section-header" style="margin-top:-0.5rem;">Worst Calls</div>'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">Top overturned calls by distance from zone edge</div>',
             unsafe_allow_html=True
         )
