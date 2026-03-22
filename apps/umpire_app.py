@@ -1212,30 +1212,42 @@ if single_umpire and called_pitches_df is not None:
             _tot_ta = ""
             _tot_sa = ""
             _tot_ba = ""
+            _tot_ta_num = None
+            _tot_sa_num = None
+            _tot_ba_num = None
             if len(ump_cp) > 0 and all(c in ump_cp.columns for c in ["pX", "pZ", "sz_top", "sz_bottom", "call"]):
                 _tcp = ump_cp.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
                 if len(_tcp) > 0:
                     _tiz = (_tcp["pX"].abs() <= ZONE_EDGE_FT) & (_tcp["pZ"] >= _tcp["sz_bottom"]) & (_tcp["pZ"] <= _tcp["sz_top"])
                     _tc = ((_tcp["call"] == "Called Strike") & _tiz) | ((_tcp["call"] == "Ball") & ~_tiz)
-                    _tot_ta = f"{_tc.mean() * 100:.1f}%"
+                    _tot_ta_num = _tc.mean() * 100
+                    _tot_ta = f"{_tot_ta_num:.1f}%"
                     _ts = _tcp[_tcp["call"] == "Called Strike"]
                     if len(_ts) > 0:
                         _tiz_s = (_ts["pX"].abs() <= ZONE_EDGE_FT) & (_ts["pZ"] >= _ts["sz_bottom"]) & (_ts["pZ"] <= _ts["sz_top"])
-                        _tot_sa = f"{_tiz_s.mean() * 100:.1f}%"
+                        _tot_sa_num = _tiz_s.mean() * 100
+                        _tot_sa = f"{_tot_sa_num:.1f}%"
                     _tb = _tcp[_tcp["call"] == "Ball"]
                     if len(_tb) > 0:
                         _tiz_b = ~((_tb["pX"].abs() <= ZONE_EDGE_FT) & (_tb["pZ"] >= _tb["sz_bottom"]) & (_tb["pZ"] <= _tb["sz_top"]))
-                        _tot_ba = f"{_tiz_b.mean() * 100:.1f}%"
+                        _tot_ba_num = _tiz_b.mean() * 100
+                        _tot_ba = f"{_tot_ba_num:.1f}%"
             _tot_style = f"font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"
+            # Heatmap colors for totals row
+            _tot_ot_style = cell_color_spectrum(_tot_ot_rate, _overall_ot_rate, higher_is_better=False, threshold=0.5)
+            _lg_ta_overall = _lg_ta_by_pitch["lg_total_acc"].mean() if len(_lg_ta_by_pitch) > 0 else 92
+            _tot_ta_style = cell_color_spectrum(_tot_ta_num, _lg_ta_overall, higher_is_better=True, threshold=0.1) if _tot_ta_num else f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
+            _tot_sa_style = cell_color_spectrum(_tot_sa_num, _overall_strike_acc, higher_is_better=True, threshold=0.5) if _tot_sa_num else f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
+            _tot_ba_style = cell_color_spectrum(_tot_ba_num, _overall_ball_acc, higher_is_better=True, threshold=0.5) if _tot_ba_num else f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
             table_html += f"""
                         <tr style="{_tot_style}">
                             <td style="padding:0.45rem 0.75rem; color:{ACCENT}; font-weight:800;">TOTAL</td>
                             {"<td style='" + _td + " font-weight:800;'>" + f"{_tot_pitches:,}" + "</td>" if has_total else ""}
                             <td style="{_td} font-weight:800;">{_tot_challenges}</td>
-                            <td style="{_td} font-weight:800;">{_tot_ot_rate:.0f}%</td>
-                            <td style="{_td} font-weight:800;">{_tot_ta or '-'}</td>
-                            <td style="{_td} font-weight:800;">{_tot_sa or '-'}</td>
-                            <td style="{_td} font-weight:800;">{_tot_ba or '-'}</td>
+                            <td style="{_td} font-weight:800; border-radius:3px; {_tot_ot_style};" title="MLB avg: {_overall_ot_rate:.0f}%">{_tot_ot_rate:.0f}%</td>
+                            <td style="{_td} font-weight:800; border-radius:3px; {_tot_ta_style};" title="MLB avg: {_lg_ta_overall:.1f}%">{_tot_ta or '-'}</td>
+                            <td style="{_td} font-weight:800; border-radius:3px; {_tot_sa_style};" title="MLB avg: {_overall_strike_acc:.1f}%">{_tot_sa or '-'}</td>
+                            <td style="{_td} font-weight:800; border-radius:3px; {_tot_ba_style};" title="MLB avg: {_overall_ball_acc:.1f}%">{_tot_ba or '-'}</td>
                         </tr>"""
 
             table_html += f"""
