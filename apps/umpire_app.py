@@ -407,12 +407,15 @@ st.markdown(f"""
         margin-bottom: 0.25rem;
     }}
 
-    /* Equal height columns */
+    /* Equal height columns - cascade height through all Streamlit wrappers */
     div[data-testid="stHorizontalBlock"] {{
         align-items: stretch !important;
     }}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div[data-testid="stVerticalBlockBorderWrapper"],
-    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div[data-testid="stVerticalBlockBorderWrapper"] > div {{
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div > div,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div > div > div,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div > div > div > div {{
         height: 100% !important;
     }}
 
