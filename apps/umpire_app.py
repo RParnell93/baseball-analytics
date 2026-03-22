@@ -125,11 +125,11 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                     </div>
                 </div>"""
 
-    _card_style = f"background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; height:185px; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;"
+    _card_style = f"background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; height:185px; display:flex; flex-direction:column; overflow:hidden;"
 
     if donut_html:
         return (
-            f'<div style="{_card_style}">'
+            f'<div style="{_card_style} justify-content:center;">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
             f'{donut_html}'
             f'{sub_html}'
@@ -149,7 +149,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             f"{i * w / (len(vals) - 1):.1f},{h - (v - y_min) / y_range * h:.1f}"
             for i, v in enumerate(vals)
         )
-        spark_html = f"""<div style="margin-top:0.35rem;">
+        spark_html = f"""<div style="margin-top:0.1rem;">
             <div style="font-size:0.55rem; color:{TEXT_DIM}; margin-bottom:2px; font-weight:600; letter-spacing:0.03em;">ROLLING 100-PITCH</div>
             <svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" style="display:block;">
                 <line x1="0" y1="{avg_y:.1f}" x2="{w}" y2="{avg_y:.1f}" stroke="{TEXT_DIM}" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
@@ -157,13 +157,15 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             </svg>
         </div>"""
 
+    spark_wrapper = f'<div style="margin-top:auto;">{spark_html}</div>' if spark_html else ""
     return (
         f'<div style="{_card_style}">'
         f'<div>'
         f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
         f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
+        f'{delta_html}{sub_html}'
         f'</div>'
-        f'<div>{delta_html}{sub_html}{spark_html}</div>'
+        f'{spark_wrapper}'
         f'</div>'
     )
 
