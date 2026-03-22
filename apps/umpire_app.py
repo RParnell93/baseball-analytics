@@ -61,10 +61,11 @@ KDE_COLORSCALE = [
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=None):
+def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=None, sparkline=None):
     """Render a custom metric card with subtext inside the box.
 
     donut: optional dict with keys 'overturned', 'upheld' to render a mini donut.
+    sparkline: optional list of y-values to render as an SVG sparkline.
     """
     delta_html = ""
     if delta:
@@ -109,20 +110,38 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         return (
             f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
-            f'<div style="display:flex; align-items:center; justify-content:space-between;">'
-            f'  <div>'
-            f'    {sub_html}'
-            f'  </div>'
+            f'<div style="display:flex; justify-content:center; margin-top:0.25rem;">'
             f'  {donut_right_html}'
             f'</div>'
+            f'{sub_html}'
             f'</div>'
         )
+
+    spark_html = ""
+    if sparkline and len(sparkline) >= 2:
+        w, h = 120, 32
+        vals = sparkline
+        y_min = min(vals) - 0.5
+        y_max = max(vals) + 0.5
+        y_range = y_max - y_min if y_max != y_min else 1
+        avg_val = sum(vals) / len(vals)
+        avg_y = h - (avg_val - y_min) / y_range * h
+        points = " ".join(
+            f"{i * w / (len(vals) - 1):.1f},{h - (v - y_min) / y_range * h:.1f}"
+            for i, v in enumerate(vals)
+        )
+        spark_html = f"""<div style="margin-top:0.35rem;">
+            <svg width="100%" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="none" style="display:block;">
+                <line x1="0" y1="{avg_y:.1f}" x2="{w}" y2="{avg_y:.1f}" stroke="{TEXT_DIM}" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.5"/>
+                <polyline points="{points}" fill="none" stroke="{ACCENT}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+        </div>"""
 
     return (
         f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
         f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
         f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
-        f'{delta_html}{sub_html}'
+        f'{delta_html}{sub_html}{spark_html}'
         f'</div>'
     )
 
@@ -610,11 +629,34 @@ if single_umpire:
     league_accuracy = (league_total_called - league_total_ot) / max(league_total_called, 1) * 100
     accuracy_delta = overall_accuracy - league_accuracy
 
+    # Compute rolling 100-pitch accuracy sparkline
+    acc_sparkline = None
+    if called_pitches_df is not None:
+        _ump_cp = called_pitches_df[called_pitches_df["umpire"] == selected_umpire].copy()
+        _ump_cp = _ump_cp.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"])
+        if len(_ump_cp) >= 100:
+            _ump_cp = _ump_cp.sort_values("date").reset_index(drop=True)
+            _in_zone = (
+                (_ump_cp["pX"].abs() <= PLATE_HALF_FT)
+                & (_ump_cp["pZ"] >= _ump_cp["sz_bottom"])
+                & (_ump_cp["pZ"] <= _ump_cp["sz_top"])
+            )
+            _ump_cp["_correct"] = (
+                ((_ump_cp["call"] == "Called Strike") & _in_zone)
+                | ((_ump_cp["call"] == "Ball") & ~_in_zone)
+            ).astype(int)
+            _rolling = _ump_cp["_correct"].rolling(100, min_periods=100).mean() * 100
+            _valid = _rolling.dropna()
+            if len(_valid) > 0:
+                # Sample ~30 points for a clean sparkline
+                step = max(1, len(_valid) // 30)
+                acc_sparkline = _valid.iloc[::step].tolist()
+
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"<span style='font-size:0.7rem; white-space:nowrap;'>({challenge_pct:.1f}% of called)</span>", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
@@ -1161,70 +1203,6 @@ fig.add_annotation(x=0.72, y=-0.19, xref="paper", yref="paper",
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
-
-# ---------------------------------------------------------------------------
-# Rolling 100-Pitch Accuracy (single umpire view)
-# ---------------------------------------------------------------------------
-if single_umpire and called_pitches_df is not None:
-    ump_pitches = called_pitches_df[called_pitches_df["umpire"] == selected_umpire].copy()
-    ump_pitches = ump_pitches.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"])
-    if len(ump_pitches) >= 100:
-        ump_pitches = ump_pitches.sort_values("date").reset_index(drop=True)
-        # Determine correctness: called strike in zone = correct, ball outside zone = correct
-        in_zone = (
-            (ump_pitches["pX"].abs() <= PLATE_HALF_FT)
-            & (ump_pitches["pZ"] >= ump_pitches["sz_bottom"])
-            & (ump_pitches["pZ"] <= ump_pitches["sz_top"])
-        )
-        ump_pitches["is_correct"] = (
-            ((ump_pitches["call"] == "Called Strike") & in_zone)
-            | ((ump_pitches["call"] == "Ball") & ~in_zone)
-        ).astype(int)
-        ump_pitches["rolling_acc"] = ump_pitches["is_correct"].rolling(100, min_periods=100).mean() * 100
-        rolling_valid = ump_pitches.dropna(subset=["rolling_acc"])
-
-        if len(rolling_valid) > 0:
-            st.markdown("---")
-            st.subheader("Rolling 100-Pitch Accuracy")
-            overall_acc = ump_pitches["is_correct"].mean() * 100
-
-            # One point per date to keep it clean
-            daily_acc = rolling_valid.groupby("date")["rolling_acc"].last().reset_index()
-
-            acc_fig = go.Figure()
-            acc_fig.add_trace(go.Scatter(
-                x=daily_acc["date"], y=daily_acc["rolling_acc"],
-                mode="lines",
-                line=dict(color=ACCENT, width=2.5, shape="spline", smoothing=1.0),
-                name="Rolling 100",
-                hovertemplate="%{x|%b %d}<br>Accuracy: %{y:.1f}%<extra></extra>",
-            ))
-            acc_fig.add_hline(
-                y=overall_acc, line_dash="dot", line_color=TEXT_DIM,
-                annotation_text=f"Overall: {overall_acc:.1f}%",
-                annotation_position="top right",
-                annotation_font=dict(size=12, color=TEXT_DIM),
-            )
-            acc_fig.update_layout(
-                plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
-                font=dict(color=TEXT_WHITE),
-                hoverlabel=HOVER_LABEL,
-                hovermode="x unified",
-                xaxis=dict(title="Date", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
-                yaxis=dict(
-                    title="Accuracy %",
-                    gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM,
-                    range=[
-                        max(85, rolling_valid["rolling_acc"].min() - 2),
-                        min(100, rolling_valid["rolling_acc"].max() + 2),
-                    ],
-                    fixedrange=True,
-                ),
-                height=350,
-                margin=dict(l=10, r=10, t=10, b=60),
-                showlegend=False,
-            )
-            st.plotly_chart(acc_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
