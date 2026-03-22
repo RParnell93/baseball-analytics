@@ -1256,8 +1256,8 @@ fig.update_layout(
         scaleanchor="x",
         constrain="domain",
     ),
-    plot_bgcolor=DARK_BG,
-    paper_bgcolor=DARK_BG,
+    plot_bgcolor=CARD_BG,
+    paper_bgcolor=CARD_BG,
     font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
@@ -1270,7 +1270,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=700,
-    margin=dict(t=90, b=200),
+    margin=dict(t=90, b=200, l=40, r=40),
 )
 
 # Annotations
