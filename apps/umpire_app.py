@@ -1639,7 +1639,7 @@ if len(bottom_df) > 0 and not single_umpire:
                     marker=dict(color=ACCENT, opacity=0.85),
                     text=[f"{a:.1f}%" for a in _acc_top10["accuracy"]],
                     textposition="inside",
-                    textfont=dict(size=11, color=TEXT_WHITE),
+                    textfont=dict(size=11, color="#1a1b2e", weight="bold"),
                     hovertemplate="%{y}<br>Accuracy: %{x:.1f}%<br>Called pitches: %{customdata[0]:,}<extra></extra>",
                     customdata=_acc_top10[["total"]].values,
                 ))
