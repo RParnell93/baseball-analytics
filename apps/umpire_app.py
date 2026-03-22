@@ -380,6 +380,11 @@ st.markdown(f"""
         margin-bottom: 0.25rem;
     }}
 
+    /* Equal height columns for sliders + table */
+    div[data-testid="stHorizontalBlock"] {{
+        align-items: stretch !important;
+    }}
+
     /* Subtle AI summary button */
     button[data-testid="stBaseButton-secondary"] {{
         background-color: {CARD_BG} !important;
@@ -1124,8 +1129,9 @@ PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
-# AI Summary
+# AI Summary Section
 # ---------------------------------------------------------------------------
+st.markdown("---")
 if HAS_ANTHROPIC:
     summary_src = ump_team_all if len(ump_team_all) > 0 else df
 
@@ -1139,7 +1145,13 @@ if HAS_ANTHROPIC:
             st.session_state.ai_summary_text = ""
             st.session_state.ai_filter_key = filter_key
 
-        if st.button("Generate AI Summary", key="ai_summary_btn", type="secondary"):
+        _ai_col1, _ai_col2 = st.columns([3, 1])
+        with _ai_col1:
+            st.markdown(f'<div class="section-header" style="margin-bottom:0.25rem;">AI Analysis</div>', unsafe_allow_html=True)
+        with _ai_col2:
+            _gen_btn = st.button("Generate", key="ai_summary_btn", type="secondary")
+
+        if _gen_btn:
             api_key = os.environ.get("ANTHROPIC_API_KEY", "")
             if not api_key or api_key == "your-key-here":
                 st.warning("Add your ANTHROPIC_API_KEY to .env (local) or Streamlit secrets (cloud).")
@@ -1161,121 +1173,89 @@ if HAS_ANTHROPIC:
         if st.session_state.ai_summary_text:
             st.markdown(
                 f'<div style="background-color:{CARD_BG}; padding:1rem 1.5rem; '
-                f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.5rem 0 1rem 0;">'
-                f'<span style="color:{ACCENT}; font-family:\'Montserrat\',sans-serif; font-weight:800; font-size:0.75rem; letter-spacing:0.08em;">AI ANALYSIS</span><br>'
+                f'border-radius:0.5rem; border-left:4px solid {ACCENT}; margin:0.25rem 0 1rem 0;">'
                 f'<span style="color:{TEXT_WHITE}; font-size:0.95rem; line-height:1.6;">'
                 f'{st.session_state.ai_summary_text}</span></div>',
                 unsafe_allow_html=True,
             )
-
-st.markdown("---")
+        else:
+            st.markdown(
+                f'<div style="color:{TEXT_DIM}; font-size:0.85rem; margin-bottom:0.5rem;">'
+                f'Click Generate for a Claude-powered analysis of the current umpire data.</div>',
+                unsafe_allow_html=True,
+            )
 
 # ---------------------------------------------------------------------------
-# Bottom section: table + chart
+# Bottom section: bar chart (all umpires only)
 # ---------------------------------------------------------------------------
 bottom_df = ump_team_all if len(ump_team_all) > 0 else df
 
-if len(bottom_df) > 0:
-    col_left, col_right = st.columns(2)
+if len(bottom_df) > 0 and not single_umpire:
+    st.markdown("---")
+    st.subheader("Top Umpires by Challenge Count")
 
-    with col_left:
-        st.subheader("Challenges by Original Call")
-        by_call = (
-            bottom_df[bottom_df["original_call"].notna() & (bottom_df["original_call"] != "")]
-            .groupby("original_call")
-            .agg(
-                Challenges=("result", "size"),
-                Overturned=("result", lambda x: (x == "overturned").sum()),
-            )
-            .reset_index()
+    ump_stats = (
+        bottom_df.groupby("umpire")
+        .agg(
+            challenges=("result", "size"),
+            overturned=("result", lambda x: (x == "overturned").sum()),
         )
-        by_call["Overturn %"] = (by_call["Overturned"] / by_call["Challenges"] * 100).round(1)
-        by_call = by_call.sort_values("Challenges", ascending=False)
-        by_call = by_call.rename(columns={"original_call": "Original Call"})
-        st.dataframe(by_call, use_container_width=True, hide_index=True)
+        .reset_index()
+    )
+    ump_stats["overturn_rate"] = (
+        ump_stats["overturned"] / ump_stats["challenges"] * 100
+    ).round(1)
+    ump_stats = ump_stats.sort_values("challenges", ascending=True).tail(10)
+    ump_stats["upheld"] = ump_stats["challenges"] - ump_stats["overturned"]
 
-    with col_right:
-        if single_umpire:
-            # Challenge results by inning
-            st.subheader("Challenges by Inning")
-            if "inning" in bottom_df.columns:
-                by_inn = bottom_df.groupby("inning").agg(
-                    Challenges=("result", "size"),
-                    Overturned=("result", lambda x: (x == "overturned").sum()),
-                ).reset_index()
-                by_inn["Overturn %"] = (by_inn["Overturned"] / by_inn["Challenges"] * 100).round(1)
-                by_inn = by_inn.rename(columns={"inning": "Inning"})
-                st.dataframe(by_inn, use_container_width=True, hide_index=True)
-            else:
-                st.caption("No inning data available.")
-
-        else:
-            st.subheader("Top Umpires by Challenge Count")
-
-            ump_stats = (
-                bottom_df.groupby("umpire")
-                .agg(
-                    challenges=("result", "size"),
-                    overturned=("result", lambda x: (x == "overturned").sum()),
-                )
-                .reset_index()
-            )
-            ump_stats["overturn_rate"] = (
-                ump_stats["overturned"] / ump_stats["challenges"] * 100
-            ).round(1)
-            ump_stats = ump_stats.sort_values("challenges", ascending=True).tail(10)
-
-            ump_stats["upheld"] = ump_stats["challenges"] - ump_stats["overturned"]
-
-            bar_fig = go.Figure()
-            bar_fig.add_trace(go.Bar(
-                y=ump_stats["umpire"],
-                x=ump_stats["overturned"],
-                name="Overturned",
-                orientation="h",
-                marker=dict(color=OVERTURNED, line=dict(width=1, color=DARK_BG)),
-                text=ump_stats["overturned"].astype(str),
-                textposition="inside",
-                textfont=dict(size=11, color=TEXT_WHITE),
-                hovertemplate="%{y}<br>Overturned: %{x}<br>OT Rate: %{customdata[0]:.0f}%<extra></extra>",
-                customdata=ump_stats[["overturn_rate"]].values,
-            ))
-            bar_fig.add_trace(go.Bar(
-                y=ump_stats["umpire"],
-                x=ump_stats["upheld"],
-                name="Upheld",
-                orientation="h",
-                marker=dict(color=UPHELD, line=dict(width=1, color=DARK_BG)),
-                text=ump_stats["upheld"].astype(str),
-                textposition="inside",
-                textfont=dict(size=11, color=TEXT_WHITE),
-                hovertemplate="%{y}<br>Upheld: %{x}<extra></extra>",
-            ))
-            # Overturn rate label at end of each bar
-            for _, row in ump_stats.iterrows():
-                bar_fig.add_annotation(
-                    y=row["umpire"], x=row["challenges"] + 0.5,
-                    text=f"<b>{row['overturn_rate']:.0f}%</b> OT",
-                    showarrow=False,
-                    font=dict(size=10, color=ACCENT),
-                    xanchor="left",
-                )
-            bar_fig.update_layout(
-                barmode="stack",
-                plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
-                font=dict(color=TEXT_WHITE),
-                hoverlabel=HOVER_LABEL,
-                legend=dict(
-                    orientation="h", yanchor="top", y=-0.25,
-                    xanchor="center", x=0.5,
-                    font=dict(size=12), bgcolor="rgba(0,0,0,0)",
-                ),
-                height=350,
-                xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
-                yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
-                margin=dict(l=10, r=40, t=10, b=80),
-            )
-            st.plotly_chart(bar_fig, use_container_width=True, config=PLOTLY_CONFIG)
+    bar_fig = go.Figure()
+    bar_fig.add_trace(go.Bar(
+        y=ump_stats["umpire"],
+        x=ump_stats["overturned"],
+        name="Overturned",
+        orientation="h",
+        marker=dict(color=OVERTURNED, line=dict(width=1, color=DARK_BG)),
+        text=ump_stats["overturned"].astype(str),
+        textposition="inside",
+        textfont=dict(size=11, color=TEXT_WHITE),
+        hovertemplate="%{y}<br>Overturned: %{x}<br>OT Rate: %{customdata[0]:.0f}%<extra></extra>",
+        customdata=ump_stats[["overturn_rate"]].values,
+    ))
+    bar_fig.add_trace(go.Bar(
+        y=ump_stats["umpire"],
+        x=ump_stats["upheld"],
+        name="Upheld",
+        orientation="h",
+        marker=dict(color=UPHELD, line=dict(width=1, color=DARK_BG)),
+        text=ump_stats["upheld"].astype(str),
+        textposition="inside",
+        textfont=dict(size=11, color=TEXT_WHITE),
+        hovertemplate="%{y}<br>Upheld: %{x}<extra></extra>",
+    ))
+    for _, row in ump_stats.iterrows():
+        bar_fig.add_annotation(
+            y=row["umpire"], x=row["challenges"] + 0.5,
+            text=f"<b>{row['overturn_rate']:.0f}%</b> OT",
+            showarrow=False,
+            font=dict(size=10, color=ACCENT),
+            xanchor="left",
+        )
+    bar_fig.update_layout(
+        barmode="stack",
+        plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
+        font=dict(color=TEXT_WHITE),
+        hoverlabel=HOVER_LABEL,
+        legend=dict(
+            orientation="h", yanchor="top", y=-0.25,
+            xanchor="center", x=0.5,
+            font=dict(size=12), bgcolor="rgba(0,0,0,0)",
+        ),
+        height=400,
+        xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
+        yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
+        margin=dict(l=10, r=40, t=10, b=80),
+    )
+    st.plotly_chart(bar_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # Rolling overturn rate (all umpires view)
