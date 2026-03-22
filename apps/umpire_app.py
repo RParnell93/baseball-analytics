@@ -685,22 +685,9 @@ if zone_source_label:
     subtitle_parts.append(zone_source_label)
 title_line2 = f"<span style='font-size:13px;color:{TEXT_DIM}'>{' | '.join(subtitle_parts)}</span>"
 
-if n_challenges_shown > 0:
-    ch_ot = (valid["result"] == "overturned").sum()
-    ch_up = n_challenges_shown - ch_ot
-    ch_ot_pct = ch_ot / n_challenges_shown * 100
-    title_line3 = (
-        f"<span style='font-size:13px;color:{TEXT_DIM}'>"
-        f"{n_challenges_shown} challenges | "
-        f"{ch_ot} overturned ({ch_ot_pct:.0f}%) | "
-        f"{ch_up} upheld ({100 - ch_ot_pct:.0f}%)</span>"
-    )
-else:
-    title_line3 = f"<span style='font-size:13px;color:{TEXT_DIM}'>No challenges selected</span>"
-
 fig.update_layout(
     title=dict(
-        text=f"{title_line1}<br>{title_line2}<br>{title_line3}",
+        text=f"{title_line1}<br>{title_line2}",
         font=dict(size=18, color="white"),
         x=0.5,
     ),
@@ -724,9 +711,9 @@ fig.update_layout(
     font=dict(color="white"),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="bottom", y=-0.12,
-        xanchor="right", x=0.98,
-        font=dict(size=14, color=TEXT_WHITE),
+        orientation="h", yanchor="top", y=-0.17,
+        xanchor="left", x=0.58,
+        font=dict(size=12, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
         itemsizing="constant",
         itemclick="toggle",
