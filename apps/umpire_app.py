@@ -1575,14 +1575,14 @@ if len(bottom_df) > 0 and not single_umpire:
     bar_fig.add_trace(go.Bar(
         y=ump_stats["umpire"],
         x=ump_stats["overturned"],
-        name="Overturned",
+        name="Overturned (% = Overturn Rate)",
         orientation="h",
         marker=dict(color=OVERTURNED, line=dict(width=1, color=DARK_BG)),
-        text=ump_stats["overturned"].astype(str),
+        text=[f"{int(ot)} ({rate:.0f}%)" for ot, rate in zip(ump_stats["overturned"], ump_stats["overturn_rate"])],
         textposition="inside",
         textfont=dict(size=11, color=TEXT_WHITE),
-        hovertemplate="%{y}<br>Overturned: %{x}<br>OT Rate: %{customdata[0]:.0f}%<extra></extra>",
-        customdata=ump_stats[["overturn_rate"]].values,
+        hovertemplate="%{y}<br>Overturned: %{customdata[0]}<br>Overturn Rate: %{customdata[1]:.0f}%<extra></extra>",
+        customdata=ump_stats[["overturned", "overturn_rate"]].values,
     ))
     bar_fig.add_trace(go.Bar(
         y=ump_stats["umpire"],
@@ -1595,14 +1595,6 @@ if len(bottom_df) > 0 and not single_umpire:
         textfont=dict(size=11, color=TEXT_WHITE),
         hovertemplate="%{y}<br>Upheld: %{x}<extra></extra>",
     ))
-    for _, row in ump_stats.iterrows():
-        bar_fig.add_annotation(
-            y=row["umpire"], x=row["challenges"] + 0.5,
-            text=f"<b>{row['overturn_rate']:.0f}%</b> OT",
-            showarrow=False,
-            font=dict(size=10, color=ACCENT),
-            xanchor="left",
-        )
     bar_fig.update_layout(
         barmode="stack",
         plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
