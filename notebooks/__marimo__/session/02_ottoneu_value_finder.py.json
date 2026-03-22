@@ -1,0 +1,113 @@
+{
+  "version": "1",
+  "metadata": {
+    "marimo_version": "0.21.0",
+    "script_metadata_hash": null
+  },
+  "cells": [
+    {
+      "id": "Hbol",
+      "code_hash": "38a12debf1dfaa45b364c066f4d3578d",
+      "outputs": [
+        {
+          "type": "data",
+          "data": {
+            "text/markdown": "<span class=\"markdown prose dark:prose-invert contents\"><h1 id=\"ottoneu-value-finder\">Ottoneu Value Finder</h1>\n<span class=\"paragraph\">Find undervalued and overvalued players by comparing projected FGPts/SABR production\nto current Ottoneu market salaries.</span></span>"
+          }
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "MJUe",
+      "code_hash": "cdea77f5d61276d5f0f6649601cfe564",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "The option name 'fgpts' is not a valid option. Please use one of the following options: ['FGPts', 'SABR']",
+          "traceback": []
+        }
+      ],
+      "console": [
+        {
+          "type": "stream",
+          "name": "stderr",
+          "text": "<span class=\"codehilite\"><div class=\"highlight\"><pre><span></span><span class=\"gt\">Traceback (most recent call last):</span>\n  File <span class=\"nb\">&quot;/var/folders/cb/t9bpfk0d3qj2grtyjks5rynm0000gp/T/marimo_69724/__marimo__cell_MJUe_.py&quot;</span>, line <span class=\"m\">3</span>, in <span class=\"n\">&lt;module&gt;</span>\n<span class=\"w\">    </span><span class=\"n\">format_picker</span> <span class=\"o\">=</span> <span class=\"n\">mo</span><span class=\"o\">.</span><span class=\"n\">ui</span><span class=\"o\">.</span><span class=\"n\">dropdown</span><span class=\"p\">(</span>\n<span class=\"w\">                    </span><span class=\"pm\">^^^^^^^^^^^^^^^</span>\n  File <span class=\"nb\">&quot;/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/marimo/_plugins/ui/_impl/input.py&quot;</span>, line <span class=\"m\">1029</span>, in <span class=\"n\">__init__</span>\n<span class=\"w\">    </span><span class=\"nb\">super</span><span class=\"p\">()</span><span class=\"o\">.</span><span class=\"fm\">__init__</span><span class=\"p\">(</span>\n  File <span class=\"nb\">&quot;/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/marimo/_plugins/ui/_core/ui_element.py&quot;</span>, line <span class=\"m\">167</span>, in <span class=\"n\">__init__</span>\n<span class=\"w\">    </span><span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_initialize</span><span class=\"p\">(</span><span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_args</span><span class=\"p\">)</span>\n  File <span class=\"nb\">&quot;/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/marimo/_plugins/ui/_core/ui_element.py&quot;</span>, line <span class=\"m\">273</span>, in <span class=\"n\">_initialize</span>\n<span class=\"w\">    </span><span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_value</span> <span class=\"o\">=</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_initial_value</span> <span class=\"o\">=</span> <span class=\"bp\">self</span><span class=\"o\">.</span><span class=\"n\">_convert_value</span><span class=\"p\">(</span><span class=\"n\">initial_value</span><span class=\"p\">)</span>\n<span class=\"w\">                                        </span><span class=\"pm\">^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>\n  File <span class=\"nb\">&quot;/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/marimo/_plugins/ui/_impl/input.py&quot;</span>, line <span class=\"m\">1055</span>, in <span class=\"n\">_convert_value</span>\n<span class=\"w\">    </span><span class=\"k\">raise</span> <span class=\"ne\">ValueError</span><span class=\"p\">(</span>\n<span class=\"gr\">ValueError</span>: <span class=\"n\">The option name &#39;fgpts&#39; is not a valid option. Please use one of the following options: [&#39;FGPts&#39;, &#39;SABR&#39;]</span>\n</pre></div>\n</span>",
+          "mimetype": "application/vnd.marimo+traceback"
+        }
+      ]
+    },
+    {
+      "id": "vblA",
+      "code_hash": "8497e58b17f0f7ef9b386362ee0a8f41",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "multiple-defs",
+          "evalue": "The variable 'fmt' was defined by another cell",
+          "traceback": []
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "bkHC",
+      "code_hash": "3035c7c8e844d18c7e3bcfb41d0987f9",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "multiple-defs",
+          "evalue": "The variable 'fig' was defined by another cell",
+          "traceback": []
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "lEQa",
+      "code_hash": "7809669ffd677514155c09813037dbfb",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (ValueError): ",
+          "traceback": []
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "PKri",
+      "code_hash": "922009a3fe7f3abc2d8ae22d0c1639f6",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "exception",
+          "evalue": "An ancestor raised an exception (ValueError): ",
+          "traceback": []
+        }
+      ],
+      "console": []
+    },
+    {
+      "id": "Xref",
+      "code_hash": "b1b749d9da76624021b35116b47f646a",
+      "outputs": [
+        {
+          "type": "error",
+          "ename": "multiple-defs",
+          "evalue": "The variable 'fig' was defined by another cell",
+          "traceback": []
+        },
+        {
+          "type": "error",
+          "ename": "multiple-defs",
+          "evalue": "The variable 'fmt' was defined by another cell",
+          "traceback": []
+        }
+      ],
+      "console": []
+    }
+  ]
+}
