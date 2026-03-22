@@ -1291,9 +1291,7 @@ PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 # Build worst calls HTML (works for single umpire AND all umpires)
 _worst_calls_html = ""
 if "zone_dist" in valid.columns and len(valid) > 0:
-    _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
-    if len(_ot_valid) == 0:
-        _ot_valid = valid.copy()
+    _ot_valid = valid.copy()
     _ot_valid["_abs_zone_dist"] = _ot_valid["zone_dist"].abs()
     _worst = _ot_valid.nlargest(10, "_abs_zone_dist")
     if len(_worst) > 0:
@@ -1315,7 +1313,12 @@ if "zone_dist" in valid.columns and len(valid) > 0:
             _umpire_name = str(_row.get("umpire", "")).split()[-1] if not single_umpire and _row.get("umpire") else ""
             _badge_bg = 'rgba(227,96,105,0.2)' if _row.get('result', '') == 'overturned' else 'rgba(110,194,120,0.2)'
             _badge_color = OVERTURNED if _row.get('result', '') == 'overturned' else UPHELD
-            _badge_text = 'OT' if _row.get('result', '') == 'overturned' else 'UH'
+            _badge_text = 'OVERTURNED' if _row.get('result', '') == 'overturned' else 'UPHELD'
+            # Determine challenger side: batter or defense
+            _half = str(_row.get("half", ""))
+            _ct = str(_row.get("challenge_team", ""))
+            _batting_team = _home if _half == "bottom" else _away
+            _challenger_side = "BAT" if _ct == _batting_team else "DEF"
             _border_top = f'border-top:1px solid rgba(255,255,255,0.06);' if _i > 0 else ''
             _ump_line = f' <span style="color:{ACCENT}; font-weight:700;">{_umpire_name}</span> &middot;' if _umpire_name else ''
             _rows_html += f'''
@@ -1330,9 +1333,14 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                         </div>
                         <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
                     </div>
-                    <span style="font-size:0.45rem; font-weight:700; font-family:'Montserrat',sans-serif;
-                                padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
-                                background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
+                        <span style="font-size:0.4rem; font-weight:700; font-family:'Montserrat',sans-serif;
+                                    padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
+                                    background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
+                        <span style="font-size:0.4rem; font-weight:600; font-family:'Montserrat',sans-serif;
+                                    padding:1px 4px; border-radius:3px; letter-spacing:0.03em;
+                                    background:rgba(255,255,255,0.08); color:{TEXT_DIM}; white-space:nowrap;">{_challenger_side}</span>
+                    </div>
                 </div>'''
         _worst_calls_html = f'''
             <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box; height:700px; overflow-y:auto;">
