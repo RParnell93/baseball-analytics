@@ -711,6 +711,7 @@ if single_umpire and called_pitches_df is not None:
 
             ump_by_pitch["challenge_pct"] = (ump_by_pitch["challenges"] / ump_by_pitch["challenges"].sum() * 100).round(1)
             ump_by_pitch["ot_rate"] = (ump_by_pitch["overturned"] / ump_by_pitch["challenges"] * 100).round(1)
+            ump_by_pitch["total_acc"] = ((ump_by_pitch["total_pitches"] - ump_by_pitch["overturned"]) / ump_by_pitch["total_pitches"].clip(lower=1) * 100).round(1)
             ump_by_pitch["strike_acc"] = ((ump_by_pitch["strike_challenges"] - ump_by_pitch["strike_ot"]) / ump_by_pitch["strike_challenges"].clip(lower=1) * 100).round(1)
             ump_by_pitch["ball_acc"] = ((ump_by_pitch["ball_challenges"] - ump_by_pitch["ball_ot"]) / ump_by_pitch["ball_challenges"].clip(lower=1) * 100).round(1)
 
@@ -732,7 +733,15 @@ if single_umpire and called_pitches_df is not None:
             lg_by_pitch["lg_strike_acc"] = ((lg_by_pitch["lg_s_ch"] - lg_by_pitch["lg_s_ot"]) / lg_by_pitch["lg_s_ch"].clip(lower=1) * 100).round(1)
             lg_by_pitch["lg_ball_acc"] = ((lg_by_pitch["lg_b_ch"] - lg_by_pitch["lg_b_ot"]) / lg_by_pitch["lg_b_ch"].clip(lower=1) * 100).round(1)
 
-            merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc"]], on="pitch_name", how="left")
+            # League total accuracy per pitch type (from called pitches)
+            if called_pitches_df is not None and "pitch_name" in called_pitches_df.columns:
+                lg_cp_by_pitch = called_pitches_df[called_pitches_df["pitch_name"].notna() & (called_pitches_df["pitch_name"] != "")].groupby("pitch_name").size().reset_index(name="lg_total_pitches")
+                lg_by_pitch = lg_by_pitch.merge(lg_cp_by_pitch, on="pitch_name", how="left").fillna(0)
+                lg_by_pitch["lg_total_acc"] = ((lg_by_pitch["lg_total_pitches"] - lg_by_pitch["lg_ot"]) / lg_by_pitch["lg_total_pitches"].clip(lower=1) * 100).round(1)
+            else:
+                lg_by_pitch["lg_total_acc"] = 0
+
+            merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]], on="pitch_name", how="left")
             merged = merged.sort_values("challenges", ascending=False)
 
             def cell_color_spectrum(val, lg_val, higher_is_better=True):
@@ -767,9 +776,10 @@ if single_umpire and called_pitches_df is not None:
                     <thead>
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
                             <th style="text-align:left; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;">Pitch</th>
-                            {"<th style='" + _th + "'>Pitches</th>" if has_total else ""}
+                            {"<th style='" + _th + "'>PITCHES</th>" if has_total else ""}
                             <th style="{_th}">Challenges</th>
                             <th style="{_th}">OT Rate</th>
+                            <th style="{_th}">Accuracy</th>
                             <th style="{_th}">Strike Acc.</th>
                             <th style="{_th}">Ball Acc.</th>
                         </tr>
@@ -778,8 +788,10 @@ if single_umpire and called_pitches_df is not None:
 
             for _, row in merged.iterrows():
                 ot_style = cell_color_spectrum(row["ot_rate"], row.get("lg_ot_rate", 50), higher_is_better=False)
+                ta_style = cell_color_spectrum(row["total_acc"], row.get("lg_total_acc", 99), higher_is_better=True) if row["total_pitches"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 sa_style = cell_color_spectrum(row["strike_acc"], row.get("lg_strike_acc", 50), higher_is_better=True) if row["strike_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
                 ba_style = cell_color_spectrum(row["ball_acc"], row.get("lg_ball_acc", 50), higher_is_better=True) if row["ball_challenges"] > 0 else f"background:transparent; color:{TEXT_DIM}"
+                ta_val = f"{row['total_acc']:.1f}%" if row["total_pitches"] > 0 else "-"
                 sa_val = f"{row['strike_acc']:.0f}%" if row["strike_challenges"] > 0 else "-"
                 ba_val = f"{row['ball_acc']:.0f}%" if row["ball_challenges"] > 0 else "-"
                 tp_val = f"{int(row['total_pitches']):,}" if row["total_pitches"] > 0 else "-"
@@ -789,6 +801,7 @@ if single_umpire and called_pitches_df is not None:
                             {"<td style='" + _td + "'>" + tp_val + "</td>" if has_total else ""}
                             <td style="{_td}">{int(row['challenges'])}</td>
                             <td style="{_td} border-radius:3px; {ot_style};">{row['ot_rate']:.0f}%</td>
+                            <td style="{_td} border-radius:3px; {ta_style};">{ta_val}</td>
                             <td style="{_td} border-radius:3px; {sa_style};">{sa_val}</td>
                             <td style="{_td} border-radius:3px; {ba_style};">{ba_val}</td>
                         </tr>"""
