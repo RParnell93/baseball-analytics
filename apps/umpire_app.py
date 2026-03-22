@@ -509,24 +509,26 @@ all_teams = sorted(df["challenge_team"].unique().tolist())
 # ---------------------------------------------------------------------------
 _logo_svg = """
 <svg width="48" height="56" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Outer mask frame - rounded rectangle, wider at top, tapers to chin -->
-  <path d="M10 6 Q10 2, 16 2 L32 2 Q38 2, 38 6 L40 14 Q42 18, 42 22 L42 30 Q42 36, 38 38 L30 44 Q24 47, 18 44 L10 38 Q6 36, 6 30 L6 22 Q6 18, 8 14 Z" stroke="#7ec8e3" stroke-width="2.5" fill="none"/>
-  <!-- Forehead padding bar -->
-  <path d="M12 8 Q24 6, 36 8" stroke="#7ec8e3" stroke-width="2.5" fill="none"/>
-  <!-- Horizontal cage wires -->
-  <line x1="9" y1="14" x2="39" y2="14" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
-  <line x1="7" y1="21" x2="41" y2="21" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
-  <line x1="7" y1="28" x2="41" y2="28" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
-  <line x1="9" y1="35" x2="39" y2="35" stroke="#7ec8e3" stroke-width="1.8" opacity="0.8"/>
-  <!-- Vertical cage wires -->
-  <line x1="16" y1="8" x2="14" y2="42" stroke="#7ec8e3" stroke-width="1.5" opacity="0.55"/>
-  <line x1="24" y1="6" x2="24" y2="45" stroke="#7ec8e3" stroke-width="1.5" opacity="0.55"/>
-  <line x1="32" y1="8" x2="34" y2="42" stroke="#7ec8e3" stroke-width="1.5" opacity="0.55"/>
-  <!-- Ear guards -->
-  <path d="M6 16 Q1 20, 2 26 Q3 30, 6 32" stroke="#7ec8e3" stroke-width="2.2" fill="none"/>
-  <path d="M42 16 Q47 20, 46 26 Q45 30, 42 32" stroke="#7ec8e3" stroke-width="2.2" fill="none"/>
-  <!-- Throat guard -->
-  <path d="M20 45 Q24 52, 28 45" stroke="#7ec8e3" stroke-width="2" fill="none" opacity="0.5"/>
+  <!-- Outer mask frame - classic umpire mask: dome top, wide cheeks, narrow chin -->
+  <path d="M8 20 C8 8, 14 3, 24 3 C34 3, 40 8, 40 20 L41 28 C41 35, 36 42, 24 44 C12 42, 7 35, 7 28 Z" stroke="#7ec8e3" stroke-width="2.8" fill="rgba(126,200,227,0.06)"/>
+  <!-- Top padding/visor bar -->
+  <path d="M11 12 Q24 9, 37 12" stroke="#7ec8e3" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Horizontal cage bars (thick, prominent) -->
+  <line x1="10" y1="18" x2="38" y2="18" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="9" y1="24" x2="39" y2="24" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="9" y1="30" x2="39" y2="30" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
+  <line x1="11" y1="36" x2="37" y2="36" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Vertical cage bars (thinner, behind horizontals) -->
+  <line x1="17" y1="11" x2="15" y2="42" stroke="#7ec8e3" stroke-width="1.3" opacity="0.5"/>
+  <line x1="24" y1="9" x2="24" y2="44" stroke="#7ec8e3" stroke-width="1.3" opacity="0.5"/>
+  <line x1="31" y1="11" x2="33" y2="42" stroke="#7ec8e3" stroke-width="1.3" opacity="0.5"/>
+  <!-- Ear guards - curved pads on sides -->
+  <path d="M8 17 C3 19, 2 25, 4 30 C5 33, 7 34, 8 33" stroke="#7ec8e3" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M40 17 C45 19, 46 25, 44 30 C43 33, 41 34, 40 33" stroke="#7ec8e3" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Chin guard -->
+  <path d="M18 43 Q24 48, 30 43" stroke="#7ec8e3" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <!-- Throat protector -->
+  <path d="M20 48 Q24 54, 28 48" stroke="#7ec8e3" stroke-width="1.8" fill="none" opacity="0.35"/>
 </svg>
 """
 
@@ -1259,37 +1261,24 @@ fig.add_annotation(x=0.5, y=-0.17, xref="paper", yref="paper",
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
-# Side-by-side: challenge map (left) + worst calls (right) for single umpire
+# Challenge map - always full width
+st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
+
+# Worst Calls cards (single umpire only)
 if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
-    _map_col, _worst_col = st.columns([3, 1])
-    with _map_col:
-        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
-    with _worst_col:
-        _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
-        if len(_ot_valid) == 0:
-            _ot_valid = valid.copy()
-        _worst = _ot_valid.nlargest(5, "zone_dist")
-        _th_style = f"padding:0.25rem 0.3rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.55rem; letter-spacing:0.03em; text-transform:uppercase; text-align:left; white-space:nowrap;"
-        _td_style = f"padding:0.2rem 0.3rem; color:{TEXT_WHITE}; font-size:0.65rem; border-bottom:1px solid rgba(255,255,255,0.05);"
-        _worst_html = f"""
-        <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem; height:100%; box-sizing:border-box;">
-            <div class="section-header" style="margin-bottom:0.5rem; font-size:0.85rem;">Worst Calls</div>
-            <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">By distance from zone edge</div>
-            <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr>
-                        <th style="{_th_style}">Call</th>
-                        <th style="{_th_style}">Pitcher</th>
-                        <th style="{_th_style}">Batter</th>
-                        <th style="{_th_style}">Count</th>
-                        <th style="{_th_style}">Pitch</th>
-                        <th style="{_th_style} text-align:right;">Dist</th>
-                    </tr>
-                </thead>
-                <tbody>"""
-        for _, _row in _worst.iterrows():
-            _call = _row.get("original_call", "")
-            _call_short = "STK" if "trike" in str(_call) else "BALL"
+    _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
+    if len(_ot_valid) == 0:
+        _ot_valid = valid.copy()
+    _worst = _ot_valid.nlargest(5, "zone_dist")
+    if len(_worst) > 0:
+        st.markdown(
+            f'<div class="section-header" style="margin-top:1rem;">Worst Calls</div>'
+            f'<div style="font-size:0.75rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">Top overturned calls by distance from zone edge</div>',
+            unsafe_allow_html=True
+        )
+        _wcols = st.columns(min(len(_worst), 5))
+        for _i, (_, _row) in enumerate(_worst.iterrows()):
+            _call_short = "STK" if "trike" in str(_row.get("original_call", "")) else "BALL"
             _call_color = OVERTURNED if _row.get("result", "") == "overturned" else UPHELD
             _pitch_raw = _row.get("pitch_name", _row.get("pitch_type", ""))
             _pitch_abbrevs = {"Four-Seam Fastball": "4-Seam", "Two-Seam Fastball": "2-Seam", "Split-Finger": "Splitter", "Knuckle Curve": "K-Curve"}
@@ -1297,32 +1286,28 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _dist_in = abs(_row["zone_dist"]) * 12
             _pitcher = str(_row.get("pitcher", "")).split()[-1] if _row.get("pitcher") else ""
             _batter = str(_row.get("batter", "")).split()[-1] if _row.get("batter") else ""
-            _balls = int(_row.get("balls", 0))
-            _strikes = int(_row.get("strikes", 0))
-            _count = f"{_balls}-{_strikes}"
-            # Tooltip with date, matchup, score
+            _count = f"{int(_row.get('balls', 0))}-{int(_row.get('strikes', 0))}"
             _date_str = str(_row.get("date", ""))[:10]
             _away = _row.get("away", "")
             _home = _row.get("home", "")
-            _away_score = int(_row.get("away_score", 0))
-            _home_score = int(_row.get("home_score", 0))
-            _tooltip = f"{_date_str} | {_away} {_away_score} @ {_home} {_home_score}"
-            _worst_html += f"""
-                    <tr title="{_tooltip}">
-                        <td style="{_td_style} white-space:nowrap;"><span style="color:{_call_color}; font-weight:700;">{_call_short}</span></td>
-                        <td style="{_td_style} white-space:nowrap;">{_pitcher}</td>
-                        <td style="{_td_style} white-space:nowrap;">{_batter}</td>
-                        <td style="{_td_style} text-align:center; white-space:nowrap;">{_count}</td>
-                        <td style="{_td_style} white-space:nowrap;">{_pitch}</td>
-                        <td style="{_td_style} text-align:right; font-weight:700; color:{OVERTURNED}; white-space:nowrap;">{_dist_in:.1f}in</td>
-                    </tr>"""
-        _worst_html += """
-                </tbody>
-            </table>
-        </div>"""
-        st.markdown(_worst_html, unsafe_allow_html=True)
-else:
-    st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
+            _card = f'''<div style="background:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem;
+                        height:140px; display:flex; flex-direction:column; justify-content:space-between;">
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;
+                            font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">
+                    Worst #{_i+1}
+                </div>
+                <div style="font-size:1.4rem; font-weight:700; color:{OVERTURNED};
+                            font-family:'Montserrat',sans-serif;">
+                    {_dist_in:.1f}<span style="font-size:0.75rem;">in</span>
+                </div>
+                <div style="font-size:0.65rem; color:{TEXT_WHITE}; line-height:1.5; font-family:'Montserrat',sans-serif;">
+                    <span style="color:{_call_color}; font-weight:700;">{_call_short}</span>
+                    &middot; {_count} &middot; {_pitch}<br>
+                    {_pitcher} vs {_batter}
+                </div>
+                <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
+            </div>'''
+            _wcols[_i].markdown(_card, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
