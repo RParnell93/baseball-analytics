@@ -85,22 +85,24 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         if total > 0:
             ot_pct = ot / total * 100
             up_pct = up / total * 100
-            r = 16
+            r = 28
             circ = 2 * 3.14159 * r
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_right_html = f"""
-            <div style="position:relative; width:60px; height:60px; flex-shrink:0;">
-                <svg width="60" height="60" viewBox="0 0 60 60">
-                    <circle cx="30" cy="30" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
+            <div style="display:flex; align-items:center; gap:0.6rem; flex-shrink:0;">
+                <svg width="70" height="70" viewBox="0 0 70 70">
+                    <circle cx="35" cy="35" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="7"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 30 30)" opacity="0.85"/>
-                    <circle cx="30" cy="30" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
+                        stroke-dashoffset="0" transform="rotate(-90 35 35)" opacity="0.85"/>
+                    <circle cx="35" cy="35" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="7"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 30 30)" opacity="0.85"/>
-                    <text x="30" y="27" text-anchor="middle" fill="{OVERTURNED}" font-size="8.5" font-weight="700" font-family="Montserrat,sans-serif">{ot_pct:.0f}%</text>
-                    <text x="30" y="37" text-anchor="middle" fill="{UPHELD}" font-size="8.5" font-weight="700" font-family="Montserrat,sans-serif">{up_pct:.0f}%</text>
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 35 35)" opacity="0.85"/>
                 </svg>
+                <div style="font-size:0.7rem; line-height:1.6; white-space:nowrap;">
+                    <div><span style="color:{OVERTURNED}; font-weight:700;">{ot_pct:.0f}%</span> <span style="color:{TEXT_DIM};">OT</span></div>
+                    <div><span style="color:{UPHELD}; font-weight:700;">{up_pct:.0f}%</span> <span style="color:{TEXT_DIM};">UH</span></div>
+                </div>
             </div>"""
 
     if donut_right_html:
