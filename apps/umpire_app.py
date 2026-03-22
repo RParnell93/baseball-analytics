@@ -1131,28 +1131,37 @@ if single_umpire and called_pitches_df is not None:
             _overall_ball_acc = _lg_ba_by_pitch["lg_ball_acc"].mean() if len(_lg_ba_by_pitch) > 0 else 95
 
             for _, row in merged.iterrows():
-                ot_style = cell_color_spectrum(row["ot_rate"], _overall_ot_rate, higher_is_better=False, threshold=0.5)
+                _lg_ot = _overall_ot_rate
+                ot_style = cell_color_spectrum(row["ot_rate"], _lg_ot, higher_is_better=False, threshold=0.5)
                 _has_ta = pd.notna(row.get("total_acc")) and row["total_pitches"] > 0
-                ta_style = cell_color_spectrum(float(row["total_acc"]), row.get("lg_total_acc", 99) if pd.notna(row.get("lg_total_acc")) else 99, higher_is_better=True, threshold=0.1) if _has_ta else f"background:transparent; color:{TEXT_DIM}"
+                _lg_ta = row.get("lg_total_acc", 99) if pd.notna(row.get("lg_total_acc")) else 99
+                ta_style = cell_color_spectrum(float(row["total_acc"]), _lg_ta, higher_is_better=True, threshold=0.1) if _has_ta else f"background:transparent; color:{TEXT_DIM}"
                 _sa_val_raw = row.get("strike_acc")
                 _ba_val_raw = row.get("ball_acc")
                 _has_sa = pd.notna(_sa_val_raw) and row.get("called_strikes", 0) > 0
                 _has_ba = pd.notna(_ba_val_raw) and row.get("called_balls", 0) > 0
-                sa_style = cell_color_spectrum(float(_sa_val_raw), row.get("lg_strike_acc", _overall_strike_acc) if pd.notna(row.get("lg_strike_acc")) else _overall_strike_acc, higher_is_better=True, threshold=0.5) if _has_sa else f"background:transparent; color:{TEXT_DIM}"
-                ba_style = cell_color_spectrum(float(_ba_val_raw), row.get("lg_ball_acc", _overall_ball_acc) if pd.notna(row.get("lg_ball_acc")) else _overall_ball_acc, higher_is_better=True, threshold=0.5) if _has_ba else f"background:transparent; color:{TEXT_DIM}"
+                _lg_sa = row.get("lg_strike_acc", _overall_strike_acc) if pd.notna(row.get("lg_strike_acc")) else _overall_strike_acc
+                _lg_ba = row.get("lg_ball_acc", _overall_ball_acc) if pd.notna(row.get("lg_ball_acc")) else _overall_ball_acc
+                sa_style = cell_color_spectrum(float(_sa_val_raw), _lg_sa, higher_is_better=True, threshold=0.5) if _has_sa else f"background:transparent; color:{TEXT_DIM}"
+                ba_style = cell_color_spectrum(float(_ba_val_raw), _lg_ba, higher_is_better=True, threshold=0.5) if _has_ba else f"background:transparent; color:{TEXT_DIM}"
                 ta_val = f"{float(row['total_acc']):.1f}%" if _has_ta else "-"
                 sa_val = f"{float(_sa_val_raw):.1f}%" if _has_sa else "-"
                 ba_val = f"{float(_ba_val_raw):.1f}%" if _has_ba else "-"
                 tp_val = f"{int(row['total_pitches']):,}" if row["total_pitches"] > 0 else "-"
+                # Tooltip with MLB avg for colored cells
+                _ot_tip = f"MLB avg: {_lg_ot:.0f}%"
+                _ta_tip = f"MLB avg: {_lg_ta:.1f}%" if _has_ta else ""
+                _sa_tip = f"MLB avg: {_lg_sa:.1f}%" if _has_sa else ""
+                _ba_tip = f"MLB avg: {_lg_ba:.1f}%" if _has_ba else ""
                 table_html += f"""
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:0.45rem 0.75rem; color:{TEXT_WHITE};">{row['pitch_name']}</td>
                             {"<td style='" + _td + "'>" + tp_val + "</td>" if has_total else ""}
                             <td style="{_td}">{int(row['challenges'])}</td>
-                            <td style="{_td} border-radius:3px; {ot_style};">{row['ot_rate']:.0f}%</td>
-                            <td style="{_td} border-radius:3px; {ta_style};">{ta_val}</td>
-                            <td style="{_td} border-radius:3px; {sa_style};">{sa_val}</td>
-                            <td style="{_td} border-radius:3px; {ba_style};">{ba_val}</td>
+                            <td style="{_td} border-radius:3px; {ot_style}; cursor:default;" title="{_ot_tip}">{row['ot_rate']:.0f}%</td>
+                            <td style="{_td} border-radius:3px; {ta_style}; cursor:default;" title="{_ta_tip}">{ta_val}</td>
+                            <td style="{_td} border-radius:3px; {sa_style}; cursor:default;" title="{_sa_tip}">{sa_val}</td>
+                            <td style="{_td} border-radius:3px; {ba_style}; cursor:default;" title="{_ba_tip}">{ba_val}</td>
                         </tr>"""
 
             table_html += f"""
