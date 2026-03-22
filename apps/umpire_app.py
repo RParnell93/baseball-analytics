@@ -514,15 +514,16 @@ _logo_svg = """
   <path d="M8 20 C8 8, 14 3, 24 3 C34 3, 40 8, 40 20 L41 28 C41 35, 36 42, 24 44 C12 42, 7 35, 7 28 Z" stroke="#7ec8e3" stroke-width="2.8" fill="rgba(126,200,227,0.06)"/>
   <!-- Top padding/visor bar -->
   <path d="M11 12 Q24 9, 37 12" stroke="#7ec8e3" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <!-- Horizontal cage bars (thick, prominent) -->
-  <line x1="10" y1="18" x2="38" y2="18" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
-  <line x1="9" y1="24" x2="39" y2="24" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
-  <line x1="9" y1="30" x2="39" y2="30" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
-  <line x1="11" y1="36" x2="37" y2="36" stroke="#7ec8e3" stroke-width="2.2" stroke-linecap="round"/>
-  <!-- Vertical cage bars (thinner, behind horizontals) -->
-  <line x1="17" y1="11" x2="15" y2="42" stroke="#7ec8e3" stroke-width="1.3" opacity="0.5"/>
-  <line x1="24" y1="9" x2="24" y2="44" stroke="#7ec8e3" stroke-width="1.3" opacity="0.5"/>
-  <line x1="31" y1="11" x2="33" y2="42" stroke="#7ec8e3" stroke-width="1.3" opacity="0.5"/>
+  <!-- Horizontal cage bars -->
+  <line x1="10" y1="16" x2="38" y2="16" stroke="#7ec8e3" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="9" y1="24" x2="39" y2="24" stroke="#7ec8e3" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+  <line x1="9" y1="32" x2="39" y2="32" stroke="#7ec8e3" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+  <!-- Bar chart inside mask (data grid look) -->
+  <rect x="12" y="28" width="4" height="10" rx="1" fill="#7ec8e3" opacity="0.7"/>
+  <rect x="18" y="22" width="4" height="16" rx="1" fill="#7ec8e3" opacity="0.8"/>
+  <rect x="24" y="18" width="4" height="20" rx="1" fill="#7ec8e3" opacity="0.9"/>
+  <rect x="30" y="25" width="4" height="13" rx="1" fill="#7ec8e3" opacity="0.75"/>
+  <rect x="36" y="30" width="4" height="8" rx="1" fill="#7ec8e3" opacity="0.65"/>
   <!-- Ear guards - curved pads on sides -->
   <path d="M8 17 C3 19, 2 25, 4 30 C5 33, 7 34, 8 33" stroke="#7ec8e3" stroke-width="2.5" fill="none" stroke-linecap="round"/>
   <path d="M40 17 C45 19, 46 25, 44 30 C43 33, 41 34, 40 33" stroke="#7ec8e3" stroke-width="2.5" fill="none" stroke-linecap="round"/>
