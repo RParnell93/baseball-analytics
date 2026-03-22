@@ -688,8 +688,8 @@ title_line2 = f"<span style='font-size:13px;color:{TEXT_DIM}'>{' | '.join(subtit
 fig.update_layout(
     title=dict(
         text=f"{title_line1}<br>{title_line2}",
-        font=dict(size=18, color="white"),
-        x=0.5,
+        font=dict(size=24, color="white"),
+        x=0.5, xanchor="center",
     ),
     xaxis=dict(
         title="Horizontal Location (ft from center)",
