@@ -817,7 +817,7 @@ if single_umpire and called_pitches_df is not None:
                 lg_by_pitch["lg_total_acc"] = 0
 
             merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]], on="pitch_name", how="left")
-            merged = merged.sort_values("challenges", ascending=False)
+            merged = merged.sort_values("total_pitches", ascending=False)
 
             def cell_color_spectrum(val, lg_val, higher_is_better=True, threshold=1.0):
                 """Spectrum color: deep red (much better) -> light red -> neutral -> light blue -> deep blue (much worse)."""
