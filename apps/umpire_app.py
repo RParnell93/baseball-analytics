@@ -77,8 +77,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
     if subtext:
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
 
-    donut_html = ""
-    donut_value_html = ""
+    donut_right_html = ""
     if donut:
         ot = donut["overturned"]
         up = donut["upheld"]
@@ -86,30 +85,46 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         if total > 0:
             ot_pct = ot / total * 100
             up_pct = up / total * 100
-            r = 14
+            r = 16
             circ = 2 * 3.14159 * r
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
-            # Inline donut next to the big number
-            donut_value_html = f"""
-                <svg width="32" height="32" viewBox="0 0 36 36" style="flex-shrink:0; margin-left:0.5rem; vertical-align:middle;">
-                    <circle cx="18" cy="18" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="5"
+            donut_right_html = f"""
+            <div style="display:flex; flex-direction:column; align-items:center; gap:0.25rem;">
+                <svg width="44" height="44" viewBox="0 0 40 40" style="flex-shrink:0;">
+                    <circle cx="20" cy="20" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="5"
                         stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="0" transform="rotate(-90 18 18)" opacity="0.85"/>
-                    <circle cx="18" cy="18" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="5"
+                        stroke-dashoffset="0" transform="rotate(-90 20 20)" opacity="0.85"/>
+                    <circle cx="20" cy="20" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="5"
                         stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 18 18)" opacity="0.85"/>
-                </svg>"""
-            donut_html = f"""<div style="font-size:0.7rem; color:{TEXT_DIM}; margin-top:0.15rem;">
-                <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)
-                <span style="color:{UPHELD}; margin-left:0.25rem;">&#9679;</span> {up} UH ({up_pct:.0f}%)
+                        stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 20 20)" opacity="0.85"/>
+                </svg>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; text-align:center; line-height:1.4; white-space:nowrap;">
+                    <span style="color:{OVERTURNED};">&#9679;</span> {ot} OT ({ot_pct:.0f}%)<br>
+                    <span style="color:{UPHELD};">&#9679;</span> {up} UH ({up_pct:.0f}%)
+                </div>
             </div>"""
+
+    if donut_right_html:
+        # Two-column layout: left = number + subtext, right = donut + legend
+        return (
+            f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
+            f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
+            f'<div style="display:flex; align-items:center; justify-content:space-between; margin-top:0.25rem;">'
+            f'  <div>'
+            f'    <div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
+            f'    {delta_html}{sub_html}'
+            f'  </div>'
+            f'  {donut_right_html}'
+            f'</div>'
+            f'</div>'
+        )
 
     return (
         f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
         f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
-        f'<div style="display:flex; align-items:center; font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}{donut_value_html}</div>'
-        f'{delta_html}{sub_html}{donut_html}'
+        f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
+        f'{delta_html}{sub_html}'
         f'</div>'
     )
 
