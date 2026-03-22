@@ -926,7 +926,6 @@ fig.update_layout(
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
-        scaleanchor="x",
     ),
     plot_bgcolor=DARK_BG,
     paper_bgcolor=DARK_BG,
