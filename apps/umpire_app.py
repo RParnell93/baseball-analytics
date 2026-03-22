@@ -923,7 +923,7 @@ if len(bottom_df) > 0:
 # ---------------------------------------------------------------------------
 if not single_umpire and len(bottom_df) >= 100:
     st.markdown("---")
-    st.subheader("Rolling Overturn Rate (100-Challenge Window)")
+    st.subheader("Rolling 100 Challenges - Overturn%")
 
     rolling_df = bottom_df.sort_values("date").reset_index(drop=True)
     rolling_df["is_overturned"] = (rolling_df["result"] == "overturned").astype(int)
