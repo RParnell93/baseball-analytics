@@ -125,6 +125,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             f'</div>'
         )
 
+    spark_html = ""
     if sparkline and len(sparkline) >= 2:
         w, h = 120, 32
         vals = sparkline
@@ -1209,7 +1210,52 @@ fig.add_annotation(x=0.72, y=-0.19, xref="paper", yref="paper",
                    text="Core zone", showarrow=False, font=dict(size=9, color=TEXT_DIM))
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
-st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+# Side-by-side: challenge map (left) + worst calls (right) for single umpire
+if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
+    _map_col, _worst_col = st.columns([3, 1])
+    with _map_col:
+        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
+    with _worst_col:
+        _ot_valid = valid[valid["result"] == "overturned"].copy() if "result" in valid.columns else valid.copy()
+        if len(_ot_valid) == 0:
+            _ot_valid = valid.copy()
+        _worst = _ot_valid.nlargest(5, "zone_dist")
+        _th_style = f"padding:0.4rem 0.5rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.6rem; letter-spacing:0.03em; text-transform:uppercase; text-align:left;"
+        _td_style = f"padding:0.35rem 0.5rem; color:{TEXT_WHITE}; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05);"
+        _worst_html = f"""
+        <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem; height:100%; box-sizing:border-box;">
+            <div class="section-header" style="margin-bottom:0.5rem; font-size:0.85rem;">Worst Calls</div>
+            <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">By distance from zone edge</div>
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="{_th_style}">Call</th>
+                        <th style="{_th_style}">Pitch</th>
+                        <th style="{_th_style} text-align:right;">Dist</th>
+                    </tr>
+                </thead>
+                <tbody>"""
+        for _, _row in _worst.iterrows():
+            _call = _row.get("original_call", "")
+            _call_short = "STK" if "trike" in str(_call) else "BALL"
+            _call_color = OVERTURNED if _row.get("result", "") == "overturned" else UPHELD
+            _pitch = _row.get("pitch_name", _row.get("pitch_type", ""))
+            _dist_val = abs(_row["zone_dist"])
+            _team = _row.get("batting_team", "")
+            _worst_html += f"""
+                    <tr>
+                        <td style="{_td_style}"><span style="color:{_call_color}; font-weight:700;">{_call_short}</span> <span style="color:{TEXT_DIM}; font-size:0.6rem;">{_team}</span></td>
+                        <td style="{_td_style} font-size:0.65rem;">{_pitch}</td>
+                        <td style="{_td_style} text-align:right; font-weight:700; color:{OVERTURNED};">{_dist_val:.2f}ft</td>
+                    </tr>"""
+        _worst_html += """
+                </tbody>
+            </table>
+        </div>"""
+        st.markdown(_worst_html, unsafe_allow_html=True)
+else:
+    st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
@@ -1345,7 +1391,7 @@ if len(bottom_df) > 0 and not single_umpire:
         yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
         margin=dict(l=10, r=40, t=10, b=80),
     )
-    st.plotly_chart(bar_fig, use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # Rolling overturn rate (all umpires view)
@@ -1402,7 +1448,7 @@ if not single_umpire and len(bottom_df) >= 100:
             xaxis=dict(fixedrange=True),
             yaxis=dict(fixedrange=True),
         )
-        st.plotly_chart(roll_fig, use_container_width=True, config=PLOTLY_CONFIG)
+        st.plotly_chart(roll_fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # Data Dictionary
