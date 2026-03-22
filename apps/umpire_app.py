@@ -558,7 +558,7 @@ st.markdown(
 # ---------------------------------------------------------------------------
 # Filters
 # ---------------------------------------------------------------------------
-col_f1, col_f2, col_f3, col_f4 = st.columns([1, 1, 1, 1])
+col_f1, col_f2, col_f3 = st.columns([1, 1, 1])
 
 with col_f1:
     selected_umpire = st.selectbox("🔍 Umpire", ["All Umpires"] + all_umpires)
@@ -584,23 +584,10 @@ with col_f3:
         max_value=max_date,
     )
 
-# Result filter - native pills
-with col_f4:
-    selected_results = st.pills(
-        "Result",
-        options=["🔴 Overturned", "🟢 Upheld"],
-        default=["🔴 Overturned", "🟢 Upheld"],
-        selection_mode="multi",
-    )
-
-show_overturned = "🔴 Overturned" in selected_results
-show_upheld = "🟢 Upheld" in selected_results
-
-result_filter = []
-if show_overturned:
-    result_filter.append("overturned")
-if show_upheld:
-    result_filter.append("upheld")
+# Always show both results
+show_overturned = True
+show_upheld = True
+result_filter = ["overturned", "upheld"]
 
 # Apply filters
 filtered = df
