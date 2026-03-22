@@ -116,9 +116,11 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                     </div>
                 </div>"""
 
+    _card_style = f"background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; min-height:150px; display:flex; flex-direction:column; justify-content:space-between;"
+
     if donut_html:
         return (
-            f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
+            f'<div style="{_card_style}">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
             f'{donut_html}'
             f'{sub_html}'
@@ -146,10 +148,12 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         </div>"""
 
     return (
-        f'<div style="background-color:{CARD_BG}; padding:1rem 1.25rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem;">'
+        f'<div style="{_card_style}">'
+        f'<div>'
         f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
         f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
-        f'{delta_html}{sub_html}{spark_html}'
+        f'</div>'
+        f'<div>{delta_html}{sub_html}{spark_html}</div>'
         f'</div>'
     )
 
@@ -495,17 +499,18 @@ all_teams = sorted(df["challenge_team"].unique().tolist())
 # Header
 # ---------------------------------------------------------------------------
 _logo_svg = """
-<svg width="44" height="44" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Umpire mask outline -->
-  <rect x="4" y="6" width="28" height="22" rx="8" stroke="#22D1EE" stroke-width="2" fill="none"/>
-  <!-- Mask bars -->
-  <line x1="4" y1="14" x2="32" y2="14" stroke="#22D1EE" stroke-width="1.5" opacity="0.6"/>
-  <line x1="4" y1="21" x2="32" y2="21" stroke="#22D1EE" stroke-width="1.5" opacity="0.6"/>
-  <!-- Data bars (mini chart inside mask) -->
-  <rect x="10" y="23" width="3" height="3" rx="0.5" fill="#ff6b6b" opacity="0.8"/>
-  <rect x="15" y="19" width="3" height="7" rx="0.5" fill="#51cf66" opacity="0.8"/>
-  <rect x="20" y="16" width="3" height="10" rx="0.5" fill="#22D1EE" opacity="0.8"/>
-  <rect x="25" y="21" width="3" height="5" rx="0.5" fill="#ff6b6b" opacity="0.8"/>
+<svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Mask shape: rounded trapezoid narrower at top -->
+  <path d="M12 4 C8 4, 4 8, 4 14 L4 28 C4 34, 8 40, 14 40 L30 40 C36 40, 40 34, 40 28 L40 14 C40 8, 36 4, 32 4 Z"
+        stroke="#22D1EE" stroke-width="2.5" fill="none"/>
+  <!-- Horizontal cage bars -->
+  <line x1="6" y1="14" x2="38" y2="14" stroke="#22D1EE" stroke-width="1.8" opacity="0.7"/>
+  <line x1="5" y1="22" x2="39" y2="22" stroke="#22D1EE" stroke-width="1.8" opacity="0.7"/>
+  <line x1="5" y1="30" x2="39" y2="30" stroke="#22D1EE" stroke-width="1.8" opacity="0.7"/>
+  <!-- Vertical cage bar (center) -->
+  <line x1="22" y1="4" x2="22" y2="40" stroke="#22D1EE" stroke-width="1.8" opacity="0.5"/>
+  <!-- Chin guard -->
+  <path d="M14 38 Q22 44, 30 38" stroke="#22D1EE" stroke-width="2" fill="none" opacity="0.6"/>
 </svg>
 """
 
@@ -660,11 +665,27 @@ if single_umpire:
                 step = max(1, len(_valid) // 30)
                 acc_sparkline = _valid.iloc[::step].tolist()
 
+    # Check if this umpire has #1 accuracy in MLB (min 3 games)
+    _is_top_accuracy = False
+    if called_pitches_df is not None:
+        _cp_umps = called_pitches_df.groupby("umpire").size().reset_index(name="cp")
+        _ot_umps = df.groupby("umpire").agg(ot=("result", lambda x: (x == "overturned").sum()), games=("game_id", "nunique")).reset_index()
+        _acc_umps = _cp_umps.merge(_ot_umps, on="umpire")
+        _acc_umps = _acc_umps[_acc_umps["games"] >= 3]
+        _acc_umps["accuracy"] = (_acc_umps["cp"] - _acc_umps["ot"]) / _acc_umps["cp"] * 100
+        if len(_acc_umps) > 0:
+            _best_ump = _acc_umps.loc[_acc_umps["accuracy"].idxmax(), "umpire"]
+            _is_top_accuracy = (_best_ump == selected_umpire)
+
+    _acc_label = "Accuracy"
+    if _is_top_accuracy:
+        _acc_label = 'Accuracy <span style="background:linear-gradient(90deg,#ffd700,#ffaa00); color:#1a1a2e; font-size:0.55rem; font-weight:800; padding:1px 6px; border-radius:8px; margin-left:6px; vertical-align:middle;">#1 MLB</span>'
+
     col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of Called Pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Upheld Rate", f"{upheld_rate:.0f}%", delta=f"{upheld_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Accuracy", f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
+    col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Avg Impact", f"{ump_avg_impact:.1f}", delta=f"{impact_delta:+.1f} vs avg"), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
@@ -995,18 +1016,16 @@ if called_pitches_df is not None:
             density, x_grid, z_grid = compute_kde(
                 zone_strikes["pX"].values, zone_strikes["pZ"].values
             )
+            # Established zone: single filled contour at 15% of max density
+            threshold = density.max() * 0.15
             fig.add_trace(go.Contour(
                 x=x_grid, y=z_grid, z=density.T,
-                colorscale=KDE_COLORSCALE,
-                ncontours=KDE_NCONTOURS,
-                contours=dict(coloring="fill", showlines=True, showlabels=False),
-                line=dict(width=0.5, color="rgba(255,255,255,0.08)"),
-                showscale=True,
-                colorbar=dict(
-                    title="", orientation="h",
-                    y=-0.17, yanchor="top", x=0.5, xanchor="center",
-                    len=0.45, thickness=10, tickvals=[], ticktext=[],
+                contours=dict(
+                    type="constraint", operation=">=", value=threshold,
                 ),
+                fillcolor="rgba(200,40,140,0.25)",
+                line=dict(width=2, color="rgba(255,80,180,0.6)"),
+                showscale=False,
                 hoverinfo="skip",
                 showlegend=False,
             ))
@@ -1201,13 +1220,10 @@ fig.add_annotation(x=1.5, y=4.3, text="Ump's right", showarrow=False,
 fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=False,
                    font=dict(size=10, color=TEXT_DIM))
 
-# Colorbar legend (aligned with bar at x=0.5, len=0.45 -> spans 0.275 to 0.725)
-fig.add_annotation(x=0.28, y=-0.19, xref="paper", yref="paper",
-                   text="No strikes", showarrow=False, font=dict(size=9, color=TEXT_DIM))
-fig.add_annotation(x=0.5, y=-0.19, xref="paper", yref="paper",
-                   text="Fringe", showarrow=False, font=dict(size=9, color=TEXT_DIM))
-fig.add_annotation(x=0.72, y=-0.19, xref="paper", yref="paper",
-                   text="Core zone", showarrow=False, font=dict(size=9, color=TEXT_DIM))
+# Established zone legend
+fig.add_annotation(x=0.5, y=-0.17, xref="paper", yref="paper",
+                   text="<span style='color:rgba(255,80,180,0.8);'>&#9632;</span> Established Zone (where ump calls strikes)",
+                   showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
@@ -1221,8 +1237,8 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
         if len(_ot_valid) == 0:
             _ot_valid = valid.copy()
         _worst = _ot_valid.nlargest(5, "zone_dist")
-        _th_style = f"padding:0.4rem 0.5rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.6rem; letter-spacing:0.03em; text-transform:uppercase; text-align:left;"
-        _td_style = f"padding:0.35rem 0.5rem; color:{TEXT_WHITE}; font-size:0.75rem; border-bottom:1px solid rgba(255,255,255,0.05);"
+        _th_style = f"padding:0.25rem 0.3rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.55rem; letter-spacing:0.03em; text-transform:uppercase; text-align:left; white-space:nowrap;"
+        _td_style = f"padding:0.2rem 0.3rem; color:{TEXT_WHITE}; font-size:0.65rem; border-bottom:1px solid rgba(255,255,255,0.05);"
         _worst_html = f"""
         <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem; height:100%; box-sizing:border-box;">
             <div class="section-header" style="margin-bottom:0.5rem; font-size:0.85rem;">Worst Calls</div>
@@ -1243,10 +1259,12 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _call = _row.get("original_call", "")
             _call_short = "STK" if "trike" in str(_call) else "BALL"
             _call_color = OVERTURNED if _row.get("result", "") == "overturned" else UPHELD
-            _pitch = _row.get("pitch_name", _row.get("pitch_type", ""))
+            _pitch_raw = _row.get("pitch_name", _row.get("pitch_type", ""))
+            _pitch_abbrevs = {"Four-Seam Fastball": "4-Seam", "Two-Seam Fastball": "2-Seam", "Split-Finger": "Splitter", "Knuckle Curve": "K-Curve"}
+            _pitch = _pitch_abbrevs.get(_pitch_raw, _pitch_raw)
             _dist_in = abs(_row["zone_dist"]) * 12
-            _pitcher = _row.get("pitcher", "")
-            _batter = _row.get("batter", "")
+            _pitcher = str(_row.get("pitcher", "")).split()[-1] if _row.get("pitcher") else ""
+            _batter = str(_row.get("batter", "")).split()[-1] if _row.get("batter") else ""
             _balls = int(_row.get("balls", 0))
             _strikes = int(_row.get("strikes", 0))
             _count = f"{_balls}-{_strikes}"
@@ -1259,12 +1277,12 @@ if single_umpire and "zone_dist" in valid.columns and len(valid) > 0:
             _tooltip = f"{_date_str} | {_away} {_away_score} @ {_home} {_home_score}"
             _worst_html += f"""
                     <tr title="{_tooltip}">
-                        <td style="{_td_style}"><span style="color:{_call_color}; font-weight:700;">{_call_short}</span></td>
-                        <td style="{_td_style} font-size:0.65rem;">{_pitcher}</td>
-                        <td style="{_td_style} font-size:0.65rem;">{_batter}</td>
-                        <td style="{_td_style} font-size:0.7rem; text-align:center;">{_count}</td>
-                        <td style="{_td_style} font-size:0.65rem;">{_pitch}</td>
-                        <td style="{_td_style} text-align:right; font-weight:700; color:{OVERTURNED};">{_dist_in:.1f}in</td>
+                        <td style="{_td_style} white-space:nowrap;"><span style="color:{_call_color}; font-weight:700;">{_call_short}</span></td>
+                        <td style="{_td_style} white-space:nowrap;">{_pitcher}</td>
+                        <td style="{_td_style} white-space:nowrap;">{_batter}</td>
+                        <td style="{_td_style} text-align:center; white-space:nowrap;">{_count}</td>
+                        <td style="{_td_style} white-space:nowrap;">{_pitch}</td>
+                        <td style="{_td_style} text-align:right; font-weight:700; color:{OVERTURNED}; white-space:nowrap;">{_dist_in:.1f}in</td>
                     </tr>"""
         _worst_html += """
                 </tbody>
@@ -1484,7 +1502,7 @@ with st.expander("📖 Data Dictionary"):
 | **Accuracy** | Percentage of all called pitches (balls and called pitches) where the umpire's call matched the true zone. Calculated as (called pitches - overturned challenges) / called pitches. |
 | **Impact Score** | A 0-100 score measuring how much a challenge affected the game. Combines run expectancy change (how the base/out state shifted) with count leverage (how critical the pitch count was). A 90+ score means the challenge significantly changed the game's outcome. |
 | **Called Pitches** | All pitches where the umpire made a ball or called strike ruling (not swings, fouls, or hit-by-pitch). |
-| **Established Zone** | The pink heatmap on the strike zone chart. Shows where an umpire (or the league average) consistently calls strikes, based on kernel density estimation of all called pitches ruled as strikes. Denser pink = more strikes called in that area. |
+| **Established Zone** | The pink filled region on the strike zone chart. Shows the boundary where an umpire (or the league average) consistently calls strikes, based on kernel density estimation of all called pitches ruled as strikes. |
 | **Zone Distance** | How far a pitch was from the nearest edge of the strike zone, measured in inches. "Inside zone" means the pitch was within the zone; "outside zone" means it was off the plate. |
 | **Strike Zone** | The white rectangle on the chart. Width is the 17-inch plate. Height is the batter's individual zone (knees to midpoint of torso). |
 | **pX / pZ** | Pitch coordinates in feet. pX is horizontal distance from the center of the plate (0 = middle). pZ is vertical height above the ground. |
