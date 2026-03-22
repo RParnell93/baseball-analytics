@@ -125,7 +125,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                     </div>
                 </div>"""
 
-    _card_style = f"background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; height:185px; display:flex; flex-direction:column; overflow:hidden;"
+    _card_style = f"background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word; margin-bottom:0.5rem; min-height:185px; display:flex; flex-direction:column; overflow:hidden;"
 
     if donut_html:
         return (
@@ -133,6 +133,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
             f'{donut_html}'
             f'{sub_html}'
+            f'{delta_html}'
             f'</div>'
         )
 
@@ -379,9 +380,10 @@ def compute_kde(px_values, pz_values, bw=KDE_BW):
 # ---------------------------------------------------------------------------
 # Page config and CSS
 # ---------------------------------------------------------------------------
+_favicon_path = Path(__file__).parent / "favicon_umpire.svg"
 st.set_page_config(
     page_title="mlbumpviz | ABS Challenge Explorer",
-    page_icon="baseball",
+    page_icon=str(_favicon_path) if _favicon_path.exists() else "baseball",
     layout="wide",
 )
 
@@ -703,10 +705,22 @@ if single_umpire:
     _lg_challenge_rate = _lg_total_challenges / max(total_called, 1) * 100
     _cr_delta = challenge_pct - _lg_challenge_rate
 
+    # Strike % for this umpire
+    _ump_strike_pct = 0
+    _lg_strike_pct = 0
+    _strike_delta = 0
+    if called_pitches_df is not None:
+        _ump_cp = called_pitches_df[called_pitches_df["umpire"] == selected_umpire]
+        _ump_strikes = (_ump_cp["call"] == "Called Strike").sum()
+        _ump_strike_pct = _ump_strikes / max(len(_ump_cp), 1) * 100
+        _lg_strikes = (called_pitches_df["call"] == "Called Strike").sum()
+        _lg_strike_pct = _lg_strikes / max(len(called_pitches_df), 1) * 100
+        _strike_delta = _ump_strike_pct - _lg_strike_pct
+
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{ump_games:,}", subtext=games_sub), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", delta=f"{_cr_delta:+.1f}pp vs avg challenge rate", delta_color="normal"), unsafe_allow_html=True)
-    col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", subtext=f"{_ump_strike_pct:.1f}% called strikes", delta=f"{_strike_delta:+.1f}pp vs avg", delta_color="normal"), unsafe_allow_html=True)
+    col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", delta=f"{_cr_delta:+.1f}pp vs avg", delta_color="normal", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
@@ -724,9 +738,15 @@ else:
     else:
         league_overall_accuracy = 0
 
+    # League-wide strike %
+    _lg_strike_pct = 0
+    if called_pitches_df is not None and len(called_pitches_df) > 0:
+        _lg_strikes = (called_pitches_df["call"] == "Called Strike").sum()
+        _lg_strike_pct = _lg_strikes / len(called_pitches_df) * 100
+
     col_m1, col_m2, col_m3, col_m4 = st.columns(4)
     col_m1.markdown(metric_card("Games", f"{all_games:,}"), unsafe_allow_html=True)
-    col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}"), unsafe_allow_html=True)
+    col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", subtext=f"{_lg_strike_pct:.1f}% called strikes"), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
     col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%"), unsafe_allow_html=True)
 
@@ -996,7 +1016,9 @@ if single_umpire and called_pitches_df is not None:
     if _s_html or _t_html:
         if _s_html and _t_html:
             combined = f"""
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:stretch;">
+            <style>.resp-grid {{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; align-items:stretch; }}
+            @media (max-width: 768px) {{ .resp-grid {{ grid-template-columns:1fr; }} }}</style>
+            <div class="resp-grid">
                 {_s_html}
                 {_t_html}
             </div>"""
@@ -1324,7 +1346,8 @@ if _worst_calls_html:
     _zone_col, _worst_col = st.columns([3, 2])
     with _zone_col:
         st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
-    _worst_col.markdown(_worst_calls_html, unsafe_allow_html=True)
+    with _worst_col:
+        st.html(_worst_calls_html)
 else:
     st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 

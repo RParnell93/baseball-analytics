@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1b2e"/>
+      <stop offset="100%" stop-color="#232D3F"/>
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#bg)" stroke="#22D1EE" stroke-width="2.5"/>
+  <!-- Umpire mask outline -->
+  <path d="M18 24 C18 14, 22 10, 32 10 C42 10, 46 14, 46 24 L47 30 C47 36, 42 42, 32 44 C22 42, 17 36, 17 30 Z"
+        stroke="#22D1EE" stroke-width="2" fill="none" opacity="0.9"/>
+  <!-- Visor bar -->
+  <path d="M20 17 Q32 14, 44 17" stroke="#22D1EE" stroke-width="2.5" fill="none" opacity="0.8"/>
+  <!-- Cage bars -->
+  <line x1="19" y1="22" x2="45" y2="22" stroke="#22D1EE" stroke-width="1.2" opacity="0.35"/>
+  <line x1="18" y1="28" x2="46" y2="28" stroke="#22D1EE" stroke-width="1.2" opacity="0.35"/>
+  <line x1="18" y1="34" x2="46" y2="34" stroke="#22D1EE" stroke-width="1.2" opacity="0.35"/>
+  <!-- Bar chart inside mask -->
+  <rect x="21" y="30" width="4" height="8" rx="0.8" fill="#22D1EE" opacity="0.7"/>
+  <rect x="26" y="25" width="4" height="13" rx="0.8" fill="#22D1EE" opacity="0.8"/>
+  <rect x="31" y="22" width="4" height="16" rx="0.8" fill="#22D1EE" opacity="0.9"/>
+  <rect x="36" y="27" width="4" height="11" rx="0.8" fill="#22D1EE" opacity="0.75"/>
+  <rect x="41" y="31" width="4" height="7" rx="0.8" fill="#22D1EE" opacity="0.65"/>
+  <!-- Chin guard -->
+  <path d="M27 44 Q32 48, 37 44" stroke="#22D1EE" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <!-- Throat protector -->
+  <rect x="28" y="49" width="8" height="3" rx="1.5" stroke="#22D1EE" stroke-width="1" fill="none" opacity="0.4"/>
+</svg>
