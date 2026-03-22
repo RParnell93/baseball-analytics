@@ -667,8 +667,9 @@ if single_umpire:
             ((_acc_cp["call"] == "Called Strike") & _acc_in_zone)
             | ((_acc_cp["call"] == "Ball") & ~_acc_in_zone)
         )
-        # League avg
-        league_accuracy = _acc_cp["_correct"].mean() * 100 if len(_acc_cp) > 0 else 0
+        # League avg (per-umpire mean, not pitch-level, for meaningful delta)
+        _per_ump_acc = _acc_cp.groupby("umpire")["_correct"].mean() * 100
+        league_accuracy = _per_ump_acc.mean() if len(_per_ump_acc) > 0 else 0
         # This umpire
         _acc_ump = _acc_cp[_acc_cp["umpire"] == selected_umpire]
         overall_accuracy = _acc_ump["_correct"].mean() * 100 if len(_acc_ump) > 0 else 0
@@ -1077,24 +1078,29 @@ if single_umpire and called_pitches_df is not None:
             merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]], on="pitch_name", how="left")
             merged = merged.sort_values("total_pitches", ascending=False)
 
+            def _table_pct_color(pct):
+                """Same 4-stop gradient as percentile sliders: blue(0)->light blue(33)->light red(66)->red(100)."""
+                pct = max(0, min(100, pct))
+                stops = [(0, 40, 80, 160), (33, 100, 160, 210), (66, 210, 130, 120), (100, 200, 60, 60)]
+                for i in range(len(stops) - 1):
+                    p0, r0, g0, b0 = stops[i]
+                    p1, r1, g1, b1 = stops[i + 1]
+                    if pct <= p1:
+                        t = (pct - p0) / (p1 - p0) if p1 != p0 else 0
+                        return int(r0 + t * (r1 - r0)), int(g0 + t * (g1 - g0)), int(b0 + t * (b1 - b0))
+                return 200, 60, 60
+
             def cell_color_spectrum(val, lg_val, higher_is_better=True, threshold=1.0):
-                """Spectrum color: deep red (much better) -> light red -> neutral -> light blue -> deep blue (much worse)."""
+                """Percentile-style gradient matching slider colors."""
                 diff = val - lg_val
                 if not higher_is_better:
                     diff = -diff
-                if abs(diff) < threshold:
-                    return f"background:transparent; color:{TEXT_WHITE}"
-                # Clamp to [-20, 20] so colors saturate faster and look uniform
-                clamped = max(-20, min(20, diff))
-                intensity = abs(clamped) / 20  # 0 to 1
-                if clamped > 0:
-                    # Better: red spectrum
-                    alpha = 0.18 + intensity * 0.27  # 0.18 to 0.45
-                    return f"background:rgba(180,50,40,{alpha:.2f}); color:rgb({int(220 + intensity * 35)},{int(100 - intensity * 40)},{int(80 - intensity * 30)})"
-                else:
-                    # Worse: blue spectrum
-                    alpha = 0.18 + intensity * 0.27
-                    return f"background:rgba(40,90,160,{alpha:.2f}); color:rgb({int(100 + intensity * 50)},{int(170 + intensity * 30)},{int(220 + intensity * 35)})"
+                # Map diff to 0-100 percentile scale: 0 at -15pp, 50 at 0pp, 100 at +15pp
+                pct = 50 + (diff / 15) * 50
+                pct = max(0, min(100, pct))
+                r, g, b = _table_pct_color(pct)
+                alpha = 0.15 + abs(pct - 50) / 50 * 0.30  # 0.15 at center, 0.45 at extremes
+                return f"background:rgba({r},{g},{b},{alpha:.2f}); color:rgb({r},{g},{b})"
 
             _th = f"text-align:center; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;"
             _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
@@ -1152,7 +1158,7 @@ if single_umpire and called_pitches_df is not None:
             table_html += f"""
                     </tbody>
                 </table>
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.4rem;">Red = better than league avg | Blue = worse | Strike/Ball Acc. = correct calls / total calls (zone geometry)</div>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.4rem;">Red = above league avg | Blue = below | Strike/Ball Acc. = correct calls / total calls (zone geometry)</div>
             </div>"""
             st.session_state["_table_html"] = table_html
 
