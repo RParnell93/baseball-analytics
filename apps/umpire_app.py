@@ -194,17 +194,29 @@ def build_summary_prompt(filt_df, ump, team, league_avgs, called_df):
     ump_label = ump if ump != "All Umpires" else "all umpires"
     team_label = team if team != "All Teams" else "all teams"
 
+    scope_desc = ""
+    if ump != "All Umpires" and team != "All Teams":
+        scope_desc = f"Umpire: {ump} (the home plate umpire whose calls are being challenged by teams). Filtered to challenges from {team}."
+    elif ump != "All Umpires":
+        scope_desc = f"Umpire: {ump} (the home plate umpire whose ball/strike calls are being challenged by batting teams). All teams included."
+    elif team != "All Teams":
+        scope_desc = f"Team: {team} (the batting team initiating challenges against umpires). All umpires included."
+    else:
+        scope_desc = "All umpires and all teams (league-wide view)."
+
     return f"""You are a baseball analytics expert providing a broadcast-ready summary for a radio color commentator. Analyze this ABS (Automated Ball-Strike) challenge data from Spring Training 2026.
 
-Current view: {ump_label}, {team_label}
-Total challenges: {n}
-Overturned: {n_ot} ({ot_rate:.1f}%)
-Upheld: {n_up} ({100-ot_rate:.1f}%)
+IMPORTANT CONTEXT: In ABS, the BATTING TEAM challenges the HOME PLATE UMPIRE's ball/strike call. When a challenge is "overturned", the umpire's original call was wrong. A high overturn rate means the umpire is making more incorrect calls. A low overturn rate means the umpire's calls are holding up well.
+
+Scope: {scope_desc}
+Total challenges against this umpire: {n}
+Overturned (umpire was wrong): {n_ot} ({ot_rate:.1f}%)
+Upheld (umpire was correct): {n_up} ({100-ot_rate:.1f}%)
 Avg impact score: {avg_imp:.1f}
 MLB avg overturn rate: {league_avgs['overturn_pct']:.1f}%
 MLB avg impact: {league_avgs['avg_impact']:.1f}
 
-Breakdown by original call:
+Breakdown by original call (what the umpire called before the challenge):
 {call_breakdown}
 Top pitch types challenged:
 {pitch_breakdown}
@@ -215,7 +227,7 @@ Impact distribution:
 Umpire's established zone (from all called pitches):
 {zone_info}
 
-Write a 3-4 sentence analyst summary. Be specific with numbers. Note anything unusual - is the overturn rate above or below average? Are challenges clustered in a certain zone? Which pitch types cause the most trouble? If viewing a specific umpire, comment on their zone tendencies. Keep the tone sharp and informative, like you're briefing a broadcast booth before a game. No filler, no fluff."""
+Write a 3-4 sentence analyst summary. Be specific with numbers. Note anything unusual - is the overturn rate above or below average? Are challenges clustered in a certain zone? Which pitch types cause the most trouble? If viewing a specific umpire, comment on their zone tendencies and accuracy. Remember: the umpire is the one being evaluated, not the one challenging. Keep the tone sharp and informative, like you're briefing a broadcast booth before a game. No filler, no fluff."""
 
 
 @st.cache_data
