@@ -1341,12 +1341,15 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                 {_rows_html}
             </div>'''
 
-# Strike zone: full width
-st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
-
-# Worst calls: full-width card section below
+# Strike zone + Worst calls side by side
 if _worst_calls_html:
-    st.html(_worst_calls_html)
+    _zone_col, _worst_col = st.columns([3, 2])
+    with _zone_col:
+        st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
+    with _worst_col:
+        st.html(_worst_calls_html)
+else:
+    st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # AI Summary Section
