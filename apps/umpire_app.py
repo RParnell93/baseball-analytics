@@ -1251,7 +1251,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=620,
-    margin=dict(t=90, b=180),
+    margin=dict(t=90, b=200),
 )
 
 # Annotations
@@ -1263,7 +1263,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.32, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.40, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8);'>&#9632;</span> Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
