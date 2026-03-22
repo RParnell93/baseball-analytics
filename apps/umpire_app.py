@@ -511,13 +511,13 @@ if single_umpire:
         ump_called = len(called_pitches_df[called_pitches_df["umpire"] == selected_umpire])
     challenge_pct = ump_n / max(ump_called, 1) * 100
 
-    games_sub = f"{ump_called:,} pitches | {challenge_pct:.1f}% challenged"
+    games_sub = f"{ump_called:,} Pitches | {challenge_pct:.1f}% Challenged"
 
     # Umpire accuracy: how many called pitches were correct (not overturned)
     # Overall accuracy = (called pitches - overturned challenges) / called pitches
     if ump_called > 0:
         overall_accuracy = (ump_called - ump_ot) / ump_called * 100
-        accuracy_sub = f"{ump_ot:,} overturned by ABS"
+        accuracy_sub = f"{ump_ot:,} Overturned by ABS"
     else:
         overall_accuracy = 0
         accuracy_sub = ""
@@ -542,14 +542,14 @@ else:
     all_ot_pct = all_ot / max(all_n, 1) * 100
     challenge_pct = all_n / max(total_called, 1) * 100
 
-    games_sub = f"{total_called:,} pitches | {challenge_pct:.1f}% challenged"
+    games_sub = f"{total_called:,} Pitches | {challenge_pct:.1f}% Challenged"
 
     all_up_pct = 100 - all_ot_pct
 
     # League-wide accuracy
     if total_called > 0:
         league_overall_accuracy = (total_called - all_ot) / total_called * 100
-        league_accuracy_sub = f"{all_ot:,} overturned by ABS"
+        league_accuracy_sub = f"{all_ot:,} Overturned by ABS"
     else:
         league_overall_accuracy = 0
         league_accuracy_sub = ""
@@ -557,8 +557,8 @@ else:
     col_m1, col_m2, col_m3, col_m4, col_m5, col_m6 = st.columns(6)
     col_m1.markdown(metric_card("Games", f"{all_games:,}", subtext=games_sub), unsafe_allow_html=True)
     col_m2.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"Overturned: {all_ot:,} &nbsp;|&nbsp; Upheld: {all_up:,}"), unsafe_allow_html=True)
-    col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} overturned"), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} upheld"), unsafe_allow_html=True)
+    col_m3.markdown(metric_card("Overturn Rate", f"{all_ot_pct:.0f}%", subtext=f"{all_ot:,} Overturned"), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Upheld Rate", f"{all_up_pct:.0f}%", subtext=f"{all_up:,} Upheld"), unsafe_allow_html=True)
     col_m5.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", subtext=league_accuracy_sub), unsafe_allow_html=True)
     col_m6.markdown(metric_card("Avg Impact", f"{ump_team_all['impact_score'].mean():.1f}" if all_n > 0 else "0"), unsafe_allow_html=True)
 
@@ -915,10 +915,11 @@ fig.update_layout(
     ),
     xaxis=dict(
         title="Horizontal Location (ft from center)",
-        range=[-1.5, 1.5], autorange=False, fixedrange=True,
+        range=[-2, 2], autorange=False, fixedrange=True,
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
+        constrain="domain",
     ),
     yaxis=dict(
         title="Vertical Location (ft)",
@@ -926,6 +927,8 @@ fig.update_layout(
         zeroline=False,
         gridcolor="rgba(255,255,255,0.05)",
         color=TEXT_DIM,
+        scaleanchor="x",
+        constrain="domain",
     ),
     plot_bgcolor=DARK_BG,
     paper_bgcolor=DARK_BG,
