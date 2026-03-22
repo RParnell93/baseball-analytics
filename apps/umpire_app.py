@@ -978,9 +978,11 @@ if not single_umpire and len(bottom_df) >= 100:
             margin=dict(l=10, r=10, t=10, b=60),
             showlegend=False,
         )
-        st.plotly_chart(roll_fig, use_container_width=True, config={
-            "displayModeBar": False, "scrollZoom": False, "staticPlot": True,
-        })
+        roll_fig.update_layout(
+            xaxis=dict(fixedrange=True),
+            yaxis=dict(fixedrange=True),
+        )
+        st.plotly_chart(roll_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # Footer
