@@ -705,20 +705,20 @@ if single_umpire and called_pitches_df is not None:
         ]
 
         def pct_color(pct):
-            """Smooth gradient: dark blue (0) -> light blue (25) -> gray (50) -> light red (75) -> deep red (100)."""
+            """Smooth gradient: dark navy (0) -> steel blue (30) -> light blue (50) -> light red (70) -> deep red (100)."""
             pct = max(0, min(100, pct))
             if pct <= 50:
-                # Blue side: dark navy (0) -> steel blue (25) -> muted gray-blue (50)
+                # Blue side: dark navy (0) -> light steel blue (50)
                 t = pct / 50  # 0..1
-                r = int(21 + t * (120 - 21))    # 21 -> 120
-                g = int(67 + t * (120 - 67))    # 67 -> 120
-                b = int(96 + t * (140 - 96))    # 96 -> 140
+                r = int(21 + t * (80 - 21))     # 21 -> 80
+                g = int(67 + t * (140 - 67))    # 67 -> 140
+                b = int(120 + t * (190 - 120))  # 120 -> 190
             else:
-                # Red side: muted gray-red (50) -> light red (75) -> deep red (100)
+                # Red side: light red (50) -> deep red (100)
                 t = (pct - 50) / 50  # 0..1
-                r = int(120 + t * (183 - 120))  # 120 -> 183
-                g = int(120 - t * (92))          # 120 -> 28
-                b = int(140 - t * (112))         # 140 -> 28
+                r = int(160 + t * (183 - 160))  # 160 -> 183
+                g = int(100 - t * (72))          # 100 -> 28
+                b = int(100 - t * (72))          # 100 -> 28
             return f"rgb({r},{g},{b})"
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box;">'
