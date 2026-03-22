@@ -1340,7 +1340,7 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                         </div>
                         <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; margin-top:2px;">{_date_str} &middot; {_away} @ {_home}</div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0;">
+                    <div style="display:flex; flex-direction:row; align-items:center; gap:4px; flex-shrink:0;">
                         <span style="font-size:0.5rem; font-weight:700; font-family:'Montserrat',sans-serif;
                                     padding:3px 7px; border-radius:4px; letter-spacing:0.04em;
                                     background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
@@ -1350,10 +1350,10 @@ if "zone_dist" in valid.columns and len(valid) > 0:
                     </div>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box;">
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box; max-height:680px; display:flex; flex-direction:column;">
                 <div class="section-header" style="margin-bottom:0.15rem;">{_wc_title}</div>
                 <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:1rem;">Ranked by distance from zone edge</div>
-                <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                <div style="display:flex; flex-direction:column; gap:0.35rem; overflow-y:auto; flex:1;">
                     {_rows_html}
                 </div>
             </div>'''
