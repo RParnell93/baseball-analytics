@@ -74,9 +74,9 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None):
     if subtext:
         sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
     return (
-        f'<div style="background-color:{CARD_BG}; padding:1rem; border-radius:0.5rem;">'
+        f'<div style="background-color:{CARD_BG}; padding:0.75rem 1rem; border-radius:0.5rem; overflow-wrap:break-word;">'
         f'<div style="font-size:0.85rem; color:{TEXT_DIM};">{label}</div>'
-        f'<div style="font-size:2rem; font-weight:600; color:{ACCENT};">{value}</div>'
+        f'<div style="font-size:clamp(1.3rem, 4vw, 2rem); font-weight:600; color:{ACCENT};">{value}</div>'
         f'{delta_html}{sub_html}'
         f'</div>'
     )
@@ -308,6 +308,19 @@ st.markdown(f"""
         color: {TEXT_DIM};
         font-size: 0.85rem;
         padding: 0.5rem 1rem;
+    }}
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {{
+        .stMainBlockContainer {{
+            padding: 1rem 0.5rem;
+        }}
+        h1 {{ font-size: 1.5rem !important; }}
+        h2 {{ font-size: 1.2rem !important; }}
+        .stButton button {{
+            min-height: 44px;
+            font-size: 0.85rem;
+        }}
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -719,8 +732,8 @@ fig.update_layout(
         itemclick="toggle",
         itemdoubleclick="toggleothers",
     ),
-    height=750,
-    margin=dict(t=120, b=150),
+    height=620,
+    margin=dict(t=90, b=140),
 )
 
 # Annotations
@@ -739,7 +752,8 @@ fig.add_annotation(x=0.35, y=-0.19, xref="paper", yref="paper",
 fig.add_annotation(x=0.52, y=-0.19, xref="paper", yref="paper",
                    text="Core zone", showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
-st.plotly_chart(fig, use_container_width=True)
+PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
+st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # AI Summary
@@ -847,7 +861,7 @@ if len(bottom_df) > 0:
                 showlegend=False, height=350,
                 margin=dict(l=40, r=40, t=20, b=40),
             )
-            st.plotly_chart(pie_fig, use_container_width=True)
+            st.plotly_chart(pie_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
         else:
             st.subheader("Top Umpires by Challenge Count")
@@ -863,7 +877,7 @@ if len(bottom_df) > 0:
             ump_stats["overturn_rate"] = (
                 ump_stats["overturned"] / ump_stats["challenges"] * 100
             ).round(1)
-            ump_stats = ump_stats.sort_values("challenges", ascending=True).tail(15)
+            ump_stats = ump_stats.sort_values("challenges", ascending=True).tail(10)
 
             bar_fig = go.Figure()
             bar_fig.add_trace(go.Bar(
@@ -898,12 +912,12 @@ if len(bottom_df) > 0:
                     xanchor="center", x=0.5,
                     font=dict(size=12), bgcolor="rgba(0,0,0,0)",
                 ),
-                height=500,
+                height=400,
                 xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM),
                 yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True),
                 margin=dict(l=10, r=10, t=10, b=80),
             )
-            st.plotly_chart(bar_fig, use_container_width=True)
+            st.plotly_chart(bar_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # Rolling overturn rate (all umpires view)
@@ -956,7 +970,7 @@ if not single_umpire and len(bottom_df) >= 100:
             margin=dict(l=10, r=10, t=10, b=60),
             showlegend=False,
         )
-        st.plotly_chart(roll_fig, use_container_width=True)
+        st.plotly_chart(roll_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
 # Footer
