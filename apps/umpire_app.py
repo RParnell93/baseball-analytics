@@ -1264,7 +1264,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
 
 # Established zone legend (below dot legend)
 fig.add_annotation(x=0.5, y=-0.40, xref="paper", yref="paper",
-                   text="<img src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"36\" height=\"12\"><path d=\"M2 8 Q9 2,18 6 Q27 10,34 4\" fill=\"none\" stroke=\"rgba(255,80,180,0.8)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/></svg>' style='vertical-align:middle; margin-right:4px;'/> Established Zone (where ump calls strikes)",
+                   text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span> Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
 PLOTLY_CONFIG = {"displayModeBar": False, "scrollZoom": False}
