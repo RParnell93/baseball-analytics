@@ -1555,8 +1555,6 @@ bottom_df = ump_team_all if len(ump_team_all) > 0 else df
 
 if len(bottom_df) > 0 and not single_umpire:
     st.markdown("---")
-    st.subheader("Top Umpires by Challenge Count")
-
     ump_stats = (
         bottom_df.groupby("umpire")
         .agg(
@@ -1610,7 +1608,67 @@ if len(bottom_df) > 0 and not single_umpire:
         yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
         margin=dict(l=10, r=40, t=10, b=80),
     )
-    st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
+    # --- Accuracy rankings chart (side by side) ---
+    acc_fig = None
+    if called_pitches_df is not None:
+        _acc_cp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+        if len(_acc_cp) > 0:
+            _iz = (
+                (_acc_cp["pX"].abs() <= ZONE_EDGE_FT)
+                & (_acc_cp["pZ"] >= _acc_cp["sz_bottom"])
+                & (_acc_cp["pZ"] <= _acc_cp["sz_top"])
+            )
+            _acc_cp["_correct"] = (
+                ((_acc_cp["call"] == "Called Strike") & _iz)
+                | ((_acc_cp["call"] == "Ball") & ~_iz)
+            )
+            _acc_by_ump = _acc_cp.groupby("umpire").agg(
+                total=("_correct", "size"), correct=("_correct", "sum")
+            ).reset_index()
+            _acc_by_ump["accuracy"] = (_acc_by_ump["correct"] / _acc_by_ump["total"] * 100).round(1)
+            # Min 200 called pitches for meaningful accuracy
+            _acc_by_ump = _acc_by_ump[_acc_by_ump["total"] >= 200]
+            _acc_top10 = _acc_by_ump.nlargest(10, "accuracy").sort_values("accuracy")
+            if len(_acc_top10) > 0:
+                _lg_acc_mean = _acc_by_ump["accuracy"].mean()
+                acc_fig = go.Figure()
+                acc_fig.add_trace(go.Bar(
+                    y=_acc_top10["umpire"],
+                    x=_acc_top10["accuracy"],
+                    orientation="h",
+                    marker=dict(color=ACCENT, opacity=0.85),
+                    text=[f"{a:.1f}%" for a in _acc_top10["accuracy"]],
+                    textposition="inside",
+                    textfont=dict(size=11, color=TEXT_WHITE),
+                    hovertemplate="%{y}<br>Accuracy: %{x:.1f}%<br>Called pitches: %{customdata[0]:,}<extra></extra>",
+                    customdata=_acc_top10[["total"]].values,
+                ))
+                acc_fig.add_vline(
+                    x=_lg_acc_mean, line_dash="dot", line_color=TEXT_DIM,
+                    annotation_text=f"Avg: {_lg_acc_mean:.1f}%",
+                    annotation_position="top",
+                    annotation_font=dict(size=10, color=TEXT_DIM),
+                )
+                acc_fig.update_layout(
+                    plot_bgcolor=DARK_BG, paper_bgcolor=DARK_BG,
+                    font=dict(color=TEXT_WHITE),
+                    hoverlabel=HOVER_LABEL,
+                    showlegend=False,
+                    height=400,
+                    xaxis=dict(title="Accuracy %", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True,
+                               range=[min(_acc_top10["accuracy"].min() - 0.5, _lg_acc_mean - 0.5), _acc_top10["accuracy"].max() + 0.3]),
+                    yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
+                    margin=dict(l=10, r=10, t=10, b=80),
+                )
+
+    _ch_col, _acc_col = st.columns(2)
+    with _ch_col:
+        st.subheader("Top Umpires by Challenge Count")
+        st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
+    with _acc_col:
+        if acc_fig:
+            st.subheader("Top Umpires by Accuracy")
+            st.plotly_chart(acc_fig, width="stretch", config=PLOTLY_CONFIG)
 
 
 # ---------------------------------------------------------------------------
