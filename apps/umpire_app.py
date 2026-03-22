@@ -1113,7 +1113,7 @@ if single_umpire and called_pitches_df is not None:
                 pct = max(0, min(100, pct))
                 r, g, b = _table_pct_color(pct)
                 alpha = 0.15 + abs(pct - 50) / 50 * 0.30  # 0.15 at center, 0.45 at extremes
-                return f"background:rgba({r},{g},{b},{alpha:.2f}); color:rgb({r},{g},{b})"
+                return f"background:rgba({r},{g},{b},{alpha:.2f}); color:{TEXT_WHITE}; font-weight:600"
 
             _th = f"text-align:center; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;"
             _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
