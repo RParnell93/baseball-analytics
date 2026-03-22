@@ -486,7 +486,7 @@ st.markdown(
     f'<div>'
     f'<div style="display:flex; align-items:center; gap:0.6rem;">'
     f'<div style="flex-shrink:0; line-height:0;">{_logo_svg}</div>'
-    f'<div class="brand-title" style="line-height:1;">MLB-UMP-VIZ</div>'
+    f'<div class="brand-title" style="line-height:1;">UMP STATS</div>'
     f'</div>'
     f'<div class="brand-subtitle" style="margin-left:54px;">🌴 Spring Training 2026</div>'
     f'</div>',
