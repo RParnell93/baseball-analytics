@@ -286,16 +286,21 @@ st.set_page_config(
 )
 
 st.markdown(f"""
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap" rel="stylesheet">
 <style>
     .brand-title {{
         font-family: 'Montserrat', sans-serif;
         font-weight: 800;
-        font-size: 2.2rem;
+        font-size: clamp(1.6rem, 5vw, 2.2rem);
         letter-spacing: 0.15em;
         text-transform: uppercase;
         color: {TEXT_WHITE} !important;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.1rem;
+    }}
+    .brand-subtitle {{
+        font-size: 0.85rem;
+        color: {TEXT_DIM} !important;
+        margin-bottom: 0.75rem;
     }}
     .stApp {{
         background-color: {DARK_BG};
@@ -352,6 +357,7 @@ st.markdown(f"""
         }}
         h1 {{ font-size: 1.5rem !important; }}
         h2 {{ font-size: 1.1rem !important; }}
+        .brand-title {{ font-size: 1.6rem !important; }}
         .stButton button {{
             min-height: 44px;
             font-size: 0.85rem;
@@ -377,8 +383,29 @@ all_teams = sorted(df["challenge_team"].unique().tolist())
 # ---------------------------------------------------------------------------
 # Header
 # ---------------------------------------------------------------------------
-st.markdown('<div class="brand-title">MLB-UMP-VIZ</div>', unsafe_allow_html=True)
-st.caption("Spring Training 2026")
+_logo_svg = """
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Umpire mask outline -->
+  <rect x="4" y="6" width="28" height="22" rx="8" stroke="#22D1EE" stroke-width="2" fill="none"/>
+  <!-- Mask bars -->
+  <line x1="4" y1="14" x2="32" y2="14" stroke="#22D1EE" stroke-width="1.5" opacity="0.6"/>
+  <line x1="4" y1="21" x2="32" y2="21" stroke="#22D1EE" stroke-width="1.5" opacity="0.6"/>
+  <!-- Data bars (mini chart inside mask) -->
+  <rect x="10" y="23" width="3" height="3" rx="0.5" fill="#ff6b6b" opacity="0.8"/>
+  <rect x="15" y="19" width="3" height="7" rx="0.5" fill="#51cf66" opacity="0.8"/>
+  <rect x="20" y="16" width="3" height="10" rx="0.5" fill="#22D1EE" opacity="0.8"/>
+  <rect x="25" y="21" width="3" height="5" rx="0.5" fill="#ff6b6b" opacity="0.8"/>
+</svg>
+"""
+
+st.markdown(
+    f'<div style="display:flex; align-items:center; gap:0.6rem;">'
+    f'{_logo_svg}'
+    f'<div><div class="brand-title">MLB-UMP-VIZ</div>'
+    f'<div class="brand-subtitle">Spring Training 2026</div></div>'
+    f'</div>',
+    unsafe_allow_html=True,
+)
 
 # ---------------------------------------------------------------------------
 # Filters
@@ -712,10 +739,10 @@ if len(valid) > 0:
             mode=dot_mode,
             marker=dict(
                 size=dot_size, color=color, opacity=dot_opacity, symbol=marker_symbol,
-                line=dict(width=1 if n_dots > 200 else 2, color="white"),
+                line=dict(width=1 if n_dots > 200 else 2, color=TEXT_WHITE),
             ),
             text=subset["challenge_team"] if dot_text_size > 0 else None,
-            textfont=dict(size=dot_text_size if dot_text_size > 0 else 7, color="white"),
+            textfont=dict(size=dot_text_size if dot_text_size > 0 else 7, color=TEXT_WHITE),
             textposition="middle center",
             name=f"{label_prefix} ({len(subset)})",
             customdata=np.stack([
@@ -759,7 +786,7 @@ title_line2 = f"<span style='font-size:13px;color:{TEXT_DIM}'>{' | '.join(subtit
 fig.update_layout(
     title=dict(
         text=f"{title_line1}<br>{title_line2}",
-        font=dict(size=22, color="white"),
+        font=dict(size=22, color=TEXT_WHITE),
         x=0.5, xanchor="center",
     ),
     xaxis=dict(
@@ -779,7 +806,7 @@ fig.update_layout(
     ),
     plot_bgcolor=DARK_BG,
     paper_bgcolor=DARK_BG,
-    font=dict(color="white"),
+    font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
         orientation="h", yanchor="top", y=-0.23,
@@ -948,7 +975,7 @@ if len(bottom_df) > 0:
                 marker=dict(color=OVERTURNED, line=dict(width=1, color=DARK_BG)),
                 text=ump_stats["overturned"].astype(str),
                 textposition="inside",
-                textfont=dict(size=11, color="white", family="Arial Black"),
+                textfont=dict(size=11, color=TEXT_WHITE),
                 hovertemplate="%{y}<br>Overturned: %{x}<br>OT Rate: %{customdata[0]:.0f}%<extra></extra>",
                 customdata=ump_stats[["overturn_rate"]].values,
             ))
@@ -960,7 +987,7 @@ if len(bottom_df) > 0:
                 marker=dict(color=UPHELD, line=dict(width=1, color=DARK_BG)),
                 text=ump_stats["upheld"].astype(str),
                 textposition="inside",
-                textfont=dict(size=11, color="white", family="Arial Black"),
+                textfont=dict(size=11, color=TEXT_WHITE),
                 hovertemplate="%{y}<br>Upheld: %{x}<extra></extra>",
             ))
             # Overturn rate label at end of each bar
@@ -982,7 +1009,7 @@ if len(bottom_df) > 0:
                     xanchor="center", x=0.5,
                     font=dict(size=12), bgcolor="rgba(0,0,0,0)",
                 ),
-                height=400,
+                height=350,
                 xaxis=dict(title="Challenges", gridcolor="rgba(255,255,255,0.05)", color=TEXT_DIM, fixedrange=True),
                 yaxis=dict(gridcolor="rgba(255,255,255,0.05)", color=TEXT_WHITE, automargin=True, fixedrange=True),
                 margin=dict(l=10, r=40, t=10, b=80),
