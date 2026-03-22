@@ -477,10 +477,15 @@ st.markdown(f"""
         font-size: 0.8rem !important;
     }}
 
+    /* Reduce default top padding */
+    .stMainBlockContainer {{
+        padding-top: 1.5rem !important;
+    }}
+
     /* Mobile optimizations */
     @media (max-width: 768px) {{
         .stMainBlockContainer {{
-            padding: 1rem 0.5rem;
+            padding: 0.5rem 0.5rem !important;
         }}
         h1 {{ font-size: 1.5rem !important; }}
         h2 {{ font-size: 1.1rem !important; }}
