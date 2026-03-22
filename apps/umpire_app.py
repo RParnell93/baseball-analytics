@@ -318,6 +318,18 @@ st.markdown(f"""
         margin-bottom: 0.25rem;
     }}
 
+    /* Subtle AI summary button */
+    button[data-testid="stBaseButton-secondary"] {{
+        background-color: {CARD_BG} !important;
+        color: {TEXT_DIM} !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }}
+    button[data-testid="stBaseButton-secondary"]:hover {{
+        background-color: rgba(34,209,238,0.1) !important;
+        color: {ACCENT} !important;
+        border-color: {ACCENT} !important;
+    }}
+
     /* Mobile optimizations */
     @media (max-width: 768px) {{
         .stMainBlockContainer {{
@@ -391,33 +403,28 @@ with col_f3:
         max_value=max_date,
     )
 
-# Result circle buttons
+# Result toggle buttons with colored circle indicators
 with col_f4:
     st.markdown("Result")
-    btn_col1, btn_col2 = st.columns(2)
 
     if "show_overturned" not in st.session_state:
         st.session_state.show_overturned = True
     if "show_upheld" not in st.session_state:
         st.session_state.show_upheld = True
 
+    ot_active = st.session_state.show_overturned
+    up_active = st.session_state.show_upheld
+
+    btn_col1, btn_col2 = st.columns(2)
     with btn_col1:
-        ot_active = st.session_state.show_overturned
-        if st.button(
-            f"{'●' if ot_active else '○'} Overturned",
-            key="btn_ot",
-            use_container_width=True,
-        ):
+        ot_label = "🔴 Overturned" if ot_active else "⚪ Overturned"
+        if st.button(ot_label, key="btn_ot", use_container_width=True):
             st.session_state.show_overturned = not st.session_state.show_overturned
             st.rerun()
 
     with btn_col2:
-        up_active = st.session_state.show_upheld
-        if st.button(
-            f"{'●' if up_active else '○'} Upheld",
-            key="btn_up",
-            use_container_width=True,
-        ):
+        up_label = "🟢 Upheld" if up_active else "⚪ Upheld"
+        if st.button(up_label, key="btn_up", use_container_width=True):
             st.session_state.show_upheld = not st.session_state.show_upheld
             st.rerun()
 
@@ -823,7 +830,7 @@ if HAS_ANTHROPIC:
             st.session_state.ai_summary_text = ""
             st.session_state.ai_filter_key = filter_key
 
-        if st.button("Generate AI Summary", key="ai_summary_btn", type="primary"):
+        if st.button("Generate AI Summary", key="ai_summary_btn", type="secondary"):
             api_key = os.environ.get("ANTHROPIC_API_KEY", "")
             if not api_key or api_key == "your-key-here":
                 st.warning("Add your ANTHROPIC_API_KEY to .env (local) or Streamlit secrets (cloud).")
