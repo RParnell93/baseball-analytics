@@ -95,32 +95,32 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
         if total > 0:
             ot_pct = ot / total * 100
             up_pct = up / total * 100
-            r = 22
+            r = 27
             circ = 2 * 3.14159 * r
             ot_dash = circ * ot_pct / 100
             up_dash = circ * up_pct / 100
             donut_html = f"""
-                <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:0.25rem;">
-                    <svg width="55" height="55" viewBox="0 0 55 55" style="flex-shrink:0;">
-                        <circle cx="27.5" cy="27.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="5"
+                <div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; margin-top:0.25rem;">
+                    <svg width="65" height="65" viewBox="0 0 65 65" style="flex-shrink:0;">
+                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{UPHELD}" stroke-width="6"
                             stroke-dasharray="{up_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="0" transform="rotate(-90 27.5 27.5)" opacity="0.85"/>
-                        <circle cx="27.5" cy="27.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="5"
+                            stroke-dashoffset="0" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
+                        <circle cx="32.5" cy="32.5" r="{r}" fill="none" stroke="{OVERTURNED}" stroke-width="6"
                             stroke-dasharray="{ot_dash:.1f} {circ:.1f}"
-                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 27.5 27.5)" opacity="0.85"/>
-                        <text x="27.5" y="26" text-anchor="middle" fill="{ACCENT}" font-size="13" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
-                        <text x="27.5" y="35" text-anchor="middle" fill="{TEXT_DIM}" font-size="5" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
+                            stroke-dashoffset="-{up_dash:.1f}" transform="rotate(-90 32.5 32.5)" opacity="0.85"/>
+                        <text x="32.5" y="30" text-anchor="middle" fill="{ACCENT}" font-size="15" font-weight="700" font-family="Montserrat,sans-serif">{total}</text>
+                        <text x="32.5" y="40" text-anchor="middle" fill="{TEXT_DIM}" font-size="6" font-weight="600" font-family="Montserrat,sans-serif" letter-spacing="0.5">TOTAL</text>
                     </svg>
                     <div style="font-family:'Montserrat',sans-serif;">
-                        <div style="display:flex; align-items:center; gap:0.2rem; margin-bottom:0.15rem;">
-                            <span style="width:6px; height:6px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
-                            <span style="font-size:0.6rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
-                            <span style="font-size:0.55rem; font-weight:600; color:{TEXT_DIM};">Overturned</span>
+                        <div style="display:flex; align-items:center; gap:0.25rem; margin-bottom:0.2rem;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:{OVERTURNED}; display:inline-block;"></span>
+                            <span style="font-size:0.7rem; font-weight:700; color:{OVERTURNED};">{ot}</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Overturned</span>
                         </div>
-                        <div style="display:flex; align-items:center; gap:0.2rem;">
-                            <span style="width:6px; height:6px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
-                            <span style="font-size:0.6rem; font-weight:700; color:{UPHELD};">{up}</span>
-                            <span style="font-size:0.55rem; font-weight:600; color:{TEXT_DIM};">Upheld</span>
+                        <div style="display:flex; align-items:center; gap:0.25rem;">
+                            <span style="width:7px; height:7px; border-radius:50%; background:{UPHELD}; display:inline-block;"></span>
+                            <span style="font-size:0.7rem; font-weight:700; color:{UPHELD};">{up}</span>
+                            <span style="font-size:0.65rem; font-weight:600; color:{TEXT_DIM};">Upheld</span>
                         </div>
                     </div>
                 </div>"""
@@ -129,7 +129,7 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
 
     if donut_html:
         return (
-            f'<div style="{_card_style} justify-content:center;">'
+            f'<div style="{_card_style}">'
             f'<div style="font-size:0.75rem; color:{TEXT_DIM}; font-family:\'Montserrat\',sans-serif; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;">{label}</div>'
             f'{donut_html}'
             f'{sub_html}'
