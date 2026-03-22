@@ -1323,32 +1323,39 @@ if "zone_dist" in valid.columns and len(valid) > 0:
             _side_color = '#6495ED' if _challenger_side == "BAT" else '#FFA500'
             _border_top = f'border-top:1px solid rgba(255,255,255,0.06);' if _i > 0 else ''
             _ump_line = f' <span style="color:{ACCENT}; font-weight:700;">{_umpire_name}</span> &middot;' if _umpire_name else ''
+            _row_bg = 'rgba(255,255,255,0.02)' if _i % 2 == 0 else 'transparent'
+            _accent_bar = _badge_color
             _rows_html += f'''
-                <div style="display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; {_border_top}">
-                    <div style="font-size:0.7rem; color:{TEXT_DIM}; font-weight:800; font-family:'Montserrat',sans-serif; min-width:1.2rem;">#{_i+1}</div>
-                    <div style="font-size:1.2rem; font-weight:700; color:{OVERTURNED}; font-family:'Montserrat',sans-serif; min-width:4.5rem; white-space:nowrap;">
-                        {_dist_in:.1f}<span style="font-size:0.65rem; color:{TEXT_DIM};"> in</span>
+                <div style="display:flex; align-items:center; gap:1rem; padding:0.75rem 0.75rem; margin:0 -0.5rem;
+                            background:{_row_bg}; border-radius:6px; border-left:3px solid {_accent_bar};">
+                    <div style="font-size:0.75rem; color:{TEXT_DIM}; font-weight:800; font-family:'Montserrat',sans-serif; min-width:1.8rem; text-align:center;">#{_i+1}</div>
+                    <div style="min-width:5rem;">
+                        <div style="font-size:1.4rem; font-weight:800; color:{OVERTURNED}; font-family:'Montserrat',sans-serif; line-height:1; white-space:nowrap;">
+                            {_dist_in:.1f}<span style="font-size:0.7rem; color:{TEXT_DIM}; font-weight:600;"> in</span>
+                        </div>
                     </div>
                     <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.65rem; color:{TEXT_WHITE}; font-family:'Montserrat',sans-serif; line-height:1.3;">
-                            {_ump_line}<span style="color:{_call_color}; font-weight:700;">{_call_short}</span> &middot; {_count} &middot; {_pitch} &middot; {_pitcher} v {_batter}
+                        <div style="font-size:0.75rem; color:{TEXT_WHITE}; font-family:'Montserrat',sans-serif; line-height:1.4; font-weight:600;">
+                            {_ump_line}<span style="color:{_call_color}; font-weight:800;">{_call_short}</span> &middot; {_count} &middot; {_pitch} &middot; {_pitcher} v {_batter}
                         </div>
-                        <div style="font-size:0.55rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif;">{_date_str} &middot; {_away} @ {_home}</div>
+                        <div style="font-size:0.6rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; margin-top:2px;">{_date_str} &middot; {_away} @ {_home}</div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:4px;">
-                        <span style="font-size:0.4rem; font-weight:700; font-family:'Montserrat',sans-serif;
-                                    padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0;">
+                        <span style="font-size:0.5rem; font-weight:700; font-family:'Montserrat',sans-serif;
+                                    padding:3px 7px; border-radius:4px; letter-spacing:0.04em;
                                     background:{_badge_bg}; color:{_badge_color}; white-space:nowrap;">{_badge_text}</span>
-                        <span style="font-size:0.4rem; font-weight:600; font-family:'Montserrat',sans-serif;
-                                    padding:2px 5px; border-radius:3px; letter-spacing:0.03em;
+                        <span style="font-size:0.5rem; font-weight:600; font-family:'Montserrat',sans-serif;
+                                    padding:3px 7px; border-radius:4px; letter-spacing:0.04em;
                                     background:{_side_bg}; color:{_side_color}; white-space:nowrap;">{_challenger_side}</span>
                     </div>
                 </div>'''
         _worst_calls_html = f'''
-            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; box-sizing:border-box; height:100%; min-height:700px; overflow-y:auto;">
-                <div class="section-header" style="margin-bottom:0.25rem;">{_wc_title}</div>
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.75rem;">Ranked by distance from zone edge</div>
-                {_rows_html}
+            <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.5rem; box-sizing:border-box;">
+                <div class="section-header" style="margin-bottom:0.15rem;">{_wc_title}</div>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:1rem;">Ranked by distance from zone edge</div>
+                <div style="display:flex; flex-direction:column; gap:0.35rem;">
+                    {_rows_html}
+                </div>
             </div>'''
 
 # Strike zone + Worst calls side by side
