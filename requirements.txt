@@ -27,5 +27,8 @@ MLB-StatsAPI
 requests
 python-dotenv
 
+# AI summaries
+anthropic
+
 # Notebooks
 marimo

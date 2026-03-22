@@ -47,6 +47,7 @@ Thumbs.db
 output/
 !output/abs/
 !output/abs/spring_training_challenges.json
+!output/abs/umpire_called_pitches.json
 
 # Jupyter
 .ipynb_checkpoints/
