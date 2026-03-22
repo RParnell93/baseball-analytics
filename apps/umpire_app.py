@@ -330,6 +330,21 @@ st.markdown(f"""
         border-color: {ACCENT} !important;
     }}
 
+    /* Result toggle buttons - subtle with colored left accent */
+    [data-testid="stHorizontalBlock"] button[kind="secondary"]:has(+ div),
+    button[data-testid="stBaseButton-default"] {{
+        background-color: transparent !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        color: {TEXT_WHITE} !important;
+        font-size: 0.8rem !important;
+        padding: 0.3rem 0.6rem !important;
+        border-radius: 1rem !important;
+    }}
+    button[data-testid="stBaseButton-default"]:hover {{
+        background-color: rgba(255,255,255,0.05) !important;
+        border-color: rgba(255,255,255,0.25) !important;
+    }}
+
     /* Mobile optimizations */
     @media (max-width: 768px) {{
         .stMainBlockContainer {{
@@ -415,16 +430,17 @@ with col_f4:
     ot_active = st.session_state.show_overturned
     up_active = st.session_state.show_upheld
 
-    btn_col1, btn_col2 = st.columns(2)
+    st.markdown('<div style="height:0.3rem;"></div>', unsafe_allow_html=True)
+    btn_col1, btn_col2 = st.columns([1, 1], gap="small")
     with btn_col1:
-        ot_label = "🔴 Overturned" if ot_active else "⚪ Overturned"
-        if st.button(ot_label, key="btn_ot", use_container_width=True):
+        ot_dot = "●" if ot_active else "○"
+        if st.button(f"{ot_dot}  Overturned", key="btn_ot", use_container_width=True):
             st.session_state.show_overturned = not st.session_state.show_overturned
             st.rerun()
 
     with btn_col2:
-        up_label = "🟢 Upheld" if up_active else "⚪ Upheld"
-        if st.button(up_label, key="btn_up", use_container_width=True):
+        up_dot = "●" if up_active else "○"
+        if st.button(f"{up_dot}  Upheld", key="btn_up", use_container_width=True):
             st.session_state.show_upheld = not st.session_state.show_upheld
             st.rerun()
 
