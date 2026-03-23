@@ -32,8 +32,8 @@ CARD_BG = "#232D3F"
 ACCENT = "#22D1EE"
 TEXT_WHITE = "#E8E8E8"
 TEXT_DIM = "#7A8BA0"
-OVERTURNED = "#ff6b6b"
-UPHELD = "#51cf66"
+OVERTURNED = "#51cf66"
+UPHELD = "#ff6b6b"
 
 PLATE_HALF_FT = 0.7083  # half plate width: 17 inches / 2 / 12
 BALL_RADIUS_FT = 0.121  # baseball radius (~1.45 in / 12)
