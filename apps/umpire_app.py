@@ -303,14 +303,14 @@ def build_zone_grid_html(zones, umpire=None):
     def _zone_color(acc, lg_acc):
         """Red if below avg, blue if above. 4-tier scale."""
         if acc is None or lg_acc is None:
-            return "#3a4060"  # muted slate for missing data
+            return "#5a7888"  # muted blue for missing data
         diff = acc - lg_acc
         if diff < -5:
             return "#c0392b"  # red
         elif diff < -1:
             return "#d4756a"  # light red
-        elif diff < 1:
-            return "#506070"  # neutral slate
+        elif diff <= 1:
+            return "#8faabb"  # very light blue (neutral)
         elif diff < 5:
             return "#6a9fb5"  # light blue
         else:
@@ -1144,10 +1144,7 @@ if single_umpire:
     _cp_donut = {"Called Strikes": (int(_ump_strikes), ACCENT), "Balls": (int(_ump_balls), "#7B8FA3")} if ump_called > 0 else None
     col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", delta=f"{_strike_delta:+.1f}pp vs avg", delta_color="normal", donut=_cp_donut), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", delta=f"{_cr_delta:+.1f}pp vs avg", delta_color="normal", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
-    _blown_sub = None
-    if _ump_blown and _ump_blown[0] > 0:
-        _blown_sub = f"{_ump_blown[0]} blown call{'s' if _ump_blown[0] != 1 else ''} ({_ump_blown[2]:.1f} per 1K)"
-    col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", subtext=_blown_sub, delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
+    col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
     all_n = len(ump_team_all)
@@ -1208,11 +1205,7 @@ else:
     _cp_donut_all = {"Called Strikes": (_all_strikes, ACCENT), "Balls": (_all_balls, "#7B8FA3")} if total_called > 0 else None
     col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", donut=_cp_donut_all), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
-    _lg_blown_total = compute_blown_calls(called_pitches_df) if called_pitches_df is not None else None
-    _lg_blown_sub = None
-    if _lg_blown_total and _lg_blown_total[0] > 0:
-        _lg_blown_sub = f"{_lg_blown_total[0]} blown calls league-wide ({_lg_blown_total[2]:.1f} per 1K)"
-    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", subtext=_lg_blown_sub, sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
+    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Percentile Sliders (single umpire only, unfiltered by team)
@@ -1939,7 +1932,7 @@ fig.update_layout(
     font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="top", y=-0.06,
+        orientation="h", yanchor="top", y=-0.10,
         xanchor="center", x=0.5,
         font=dict(size=11, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
@@ -1960,7 +1953,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.12, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.15, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
