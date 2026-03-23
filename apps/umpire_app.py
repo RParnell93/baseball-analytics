@@ -2039,7 +2039,8 @@ if called_pitches_df is not None:
         with _hm_col:
             st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
         with _zg_col:
-            st.html(_zone_html, height=440)
+            import streamlit.components.v1 as components
+            components.html(_zone_html, height=440)
     elif _hm_fig:
         st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
