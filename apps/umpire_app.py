@@ -1941,7 +1941,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=850,
-    margin=dict(t=70, b=100, l=40, r=40),
+    margin=dict(t=70, b=120, l=40, r=40),
 )
 
 # Annotations
@@ -1953,7 +1953,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.15, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.17, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
@@ -2078,7 +2078,7 @@ if called_pitches_df is not None:
             st.html(_hm_legend)
         with _zg_col:
             import streamlit.components.v1 as components
-            components.html(_zone_html, height=440)
+            components.html(_zone_html, height=480)
     elif _hm_fig:
         st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
         st.html(_hm_legend)
