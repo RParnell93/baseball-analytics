@@ -2068,12 +2068,12 @@ if called_pitches_df is not None:
     _zone_grid = _compute_zone_acc_grid(called_pitches_df, umpire=_hm_ump)
     _zone_html = build_zone_grid_html(_zone_grid, umpire=_hm_ump) if _zone_grid else ""
 
-    _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; font-size:0.65rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem; flex-wrap:wrap;">
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#d1307a;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">-5pp+ below</span></span>
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#c47aa0;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">-2 to -5pp</span></span>
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#5a6a80;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">At avg (±2pp)</span></span>
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#5ac4d6;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">+2 to +5pp</span></span>
-        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#22D1EE;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">+5pp+ above</span></span>
+    _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.6rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem; flex-wrap:wrap;">
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#c43070;display:inline-block;"></span> -5pp+</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#a03868;display:inline-block;"></span> -2 to -5pp</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3a4858;display:inline-block;"></span> At avg</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3a9aa8;display:inline-block;"></span> +2 to +5pp</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3aacb8;display:inline-block;"></span> +5pp+</span>
     </div>'''
 
     if _hm_fig and _zone_html:
