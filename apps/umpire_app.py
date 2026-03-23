@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from scipy.stats import gaussian_kde
+from scipy.ndimage import gaussian_filter
 
 try:
     import anthropic
@@ -37,6 +38,8 @@ UPHELD = "#51cf66"
 PLATE_HALF_FT = 0.7083  # half plate width: 17 inches / 2 / 12
 BALL_RADIUS_FT = 0.121  # baseball radius (~1.45 in / 12)
 ZONE_EDGE_FT = PLATE_HALF_FT + BALL_RADIUS_FT  # 0.8293 ft - strike if any part of ball crosses zone
+BLOWN_CALL_THRESHOLD_IN = 3.0  # inches from zone edge - one baseball diameter
+BLOWN_CALL_THRESHOLD_FT = BLOWN_CALL_THRESHOLD_IN / 12  # 0.25 ft
 DEFAULT_SZ_TOP = 3.4
 DEFAULT_SZ_BOT = 1.6
 KDE_BW = 0.3
@@ -195,6 +198,237 @@ def vectorized_zone_distance(px, pz, sz_top, sz_bot):
         np.minimum(pz - sz_bot, sz_top - pz),
     )
     return np.where(outside, outside_dist, inside_dist)
+
+
+def compute_blown_calls(cp_df, umpire=None):
+    """Count blown calls (incorrect calls 3+ inches from zone edge).
+    Returns (blown_count, total_incorrect, blown_per_1k) or None if insufficient data.
+    """
+    _cp = cp_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+    if umpire:
+        _cp = _cp[_cp["umpire"] == umpire]
+    if len(_cp) == 0:
+        return None
+    _iz = (
+        (_cp["pX"].abs() <= ZONE_EDGE_FT)
+        & (_cp["pZ"] >= _cp["sz_bottom"])
+        & (_cp["pZ"] <= _cp["sz_top"])
+    )
+    _correct = ((_cp["call"] == "Called Strike") & _iz) | ((_cp["call"] == "Ball") & ~_iz)
+    _incorrect = _cp[~_correct].copy()
+    if len(_incorrect) == 0:
+        return (0, 0, 0.0)
+    _dist = vectorized_zone_distance(
+        _incorrect["pX"].values, _incorrect["pZ"].values,
+        _incorrect["sz_top"].values, _incorrect["sz_bottom"].values,
+    )
+    _blown = (np.abs(_dist) >= BLOWN_CALL_THRESHOLD_FT).sum()
+    _per_1k = _blown / len(_cp) * 1000
+    return (int(_blown), int(len(_incorrect)), float(_per_1k))
+
+
+def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEFAULT_SZ_BOT,
+                           n_bins=40, sigma=1.5, min_pitches_per_bin=3):
+    """Build a zone accuracy heatmap figure.
+
+    Returns a Plotly figure showing accuracy as a continuous heatmap,
+    extending 0.5 ft beyond zone edges. Includes zone rectangle overlay.
+    For league view (umpire=None), overlays 3x3 + 4-strip grid with numbers.
+    """
+    _cp = cp_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+    if umpire:
+        _cp = _cp[_cp["umpire"] == umpire]
+    if len(_cp) < 50:
+        return None
+
+    # Use per-pitch sz for zone classification, but fixed grid for display
+    _iz = (
+        (_cp["pX"].abs() <= ZONE_EDGE_FT)
+        & (_cp["pZ"] >= _cp["sz_bottom"])
+        & (_cp["pZ"] <= _cp["sz_top"])
+    )
+    _cp["_correct"] = (
+        ((_cp["call"] == "Called Strike") & _iz)
+        | ((_cp["call"] == "Ball") & ~_iz)
+    ).astype(int)
+
+    # Bin boundaries: zone + 0.5 ft border
+    x_min, x_max = -(ZONE_EDGE_FT + 0.5), (ZONE_EDGE_FT + 0.5)
+    z_min, z_max = sz_bot - 0.5, sz_top + 0.5
+    x_edges = np.linspace(x_min, x_max, n_bins + 1)
+    z_edges = np.linspace(z_min, z_max, n_bins + 1)
+    x_centers = (x_edges[:-1] + x_edges[1:]) / 2
+    z_centers = (z_edges[:-1] + z_edges[1:]) / 2
+
+    # Bin pitches
+    x_idx = np.digitize(_cp["pX"].values, x_edges) - 1
+    z_idx = np.digitize(_cp["pZ"].values, z_edges) - 1
+    # Clamp to valid range
+    x_idx = np.clip(x_idx, 0, n_bins - 1)
+    z_idx = np.clip(z_idx, 0, n_bins - 1)
+
+    correct_grid = np.zeros((n_bins, n_bins), dtype=float)
+    total_grid = np.zeros((n_bins, n_bins), dtype=float)
+    for i in range(len(_cp)):
+        xi, zi = x_idx[i], z_idx[i]
+        correct_grid[zi, xi] += _cp["_correct"].values[i]
+        total_grid[zi, xi] += 1
+
+    # Compute accuracy, mask sparse bins
+    with np.errstate(divide="ignore", invalid="ignore"):
+        acc_grid = np.where(total_grid >= min_pitches_per_bin,
+                            correct_grid / total_grid * 100, np.nan)
+
+    # Smooth (only non-NaN regions)
+    mask = ~np.isnan(acc_grid)
+    acc_filled = np.where(mask, acc_grid, 0)
+    weight = mask.astype(float)
+    smoothed_acc = gaussian_filter(acc_filled, sigma=sigma)
+    smoothed_weight = gaussian_filter(weight, sigma=sigma)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        acc_smooth = np.where(smoothed_weight > 0.1, smoothed_acc / smoothed_weight, np.nan)
+
+    # Diverging colorscale: red (low accuracy) -> neutral -> blue (high accuracy)
+    # Center at league average (~92%)
+    lg_avg = np.nanmean(acc_smooth) if np.any(~np.isnan(acc_smooth)) else 92
+    _colorscale = [
+        [0.0, "rgba(200,60,60,0.85)"],
+        [0.25, "rgba(210,130,120,0.7)"],
+        [0.5, "rgba(80,80,100,0.3)"],
+        [0.75, "rgba(100,180,220,0.7)"],
+        [1.0, "rgba(40,180,220,0.85)"],
+    ]
+
+    # Normalize to center the colorscale on the mean
+    acc_min = max(np.nanmin(acc_smooth), lg_avg - 20) if np.any(~np.isnan(acc_smooth)) else 72
+    acc_max = min(np.nanmax(acc_smooth), lg_avg + 10) if np.any(~np.isnan(acc_smooth)) else 100
+
+    hm_fig = go.Figure()
+    hm_fig.add_trace(go.Heatmap(
+        x=x_centers, y=z_centers, z=acc_smooth,
+        colorscale=_colorscale,
+        zmin=acc_min, zmax=acc_max,
+        colorbar=dict(
+            title=dict(text="Accuracy %", font=dict(size=11, color=TEXT_DIM)),
+            tickfont=dict(size=10, color=TEXT_DIM),
+            bgcolor="rgba(0,0,0,0)",
+            len=0.6,
+        ),
+        hovertemplate="pX: %{x:.2f} ft<br>pZ: %{y:.2f} ft<br>Accuracy: %{z:.1f}%<extra></extra>",
+    ))
+
+    # Zone rectangle overlay
+    for x0, x1, y0, y1 in [
+        (-PLATE_HALF_FT, PLATE_HALF_FT, sz_bot, sz_bot),
+        (-PLATE_HALF_FT, PLATE_HALF_FT, sz_top, sz_top),
+        (-PLATE_HALF_FT, -PLATE_HALF_FT, sz_bot, sz_top),
+        (PLATE_HALF_FT, PLATE_HALF_FT, sz_bot, sz_top),
+    ]:
+        hm_fig.add_shape(type="line", x0=x0, x1=x1, y0=y0, y1=y1,
+                         line=dict(color="rgba(255,255,255,0.7)", width=2))
+
+    # Grid overlay with accuracy numbers (league view only - enough sample per cell)
+    is_league = umpire is None
+    if is_league:
+        third_w = PLATE_HALF_FT * 2 / 3
+        third_h = (sz_top - sz_bot) / 3
+        # Inner grid lines
+        for i in range(1, 3):
+            hm_fig.add_shape(type="line",
+                             x0=-PLATE_HALF_FT, x1=PLATE_HALF_FT,
+                             y0=sz_bot + third_h * i, y1=sz_bot + third_h * i,
+                             line=dict(color="rgba(255,255,255,0.25)", width=1, dash="dot"))
+            hm_fig.add_shape(type="line",
+                             x0=-PLATE_HALF_FT + third_w * i, x1=-PLATE_HALF_FT + third_w * i,
+                             y0=sz_bot, y1=sz_top,
+                             line=dict(color="rgba(255,255,255,0.25)", width=1, dash="dot"))
+
+        # Compute accuracy in each of the 9 inner cells + 4 shadow strips
+        _zones = []
+        # 3x3 inner grid
+        for row in range(3):
+            for col in range(3):
+                _x0 = -PLATE_HALF_FT + third_w * col
+                _x1 = _x0 + third_w
+                _z0 = sz_bot + third_h * row
+                _z1 = _z0 + third_h
+                _mask = (_cp["pX"] >= _x0) & (_cp["pX"] < _x1) & (_cp["pZ"] >= _z0) & (_cp["pZ"] < _z1)
+                _n = _mask.sum()
+                _acc = _cp.loc[_mask, "_correct"].mean() * 100 if _n > 10 else np.nan
+                _cx = (_x0 + _x1) / 2
+                _cz = (_z0 + _z1) / 2
+                _zones.append((_cx, _cz, _acc, _n, "inner"))
+
+        # 4 shadow strips
+        _shadow_defs = [
+            ("Top", -PLATE_HALF_FT, PLATE_HALF_FT, sz_top, sz_top + 0.4),
+            ("Bottom", -PLATE_HALF_FT, PLATE_HALF_FT, sz_bot - 0.4, sz_bot),
+            ("Left", -(PLATE_HALF_FT + 0.4), -PLATE_HALF_FT, sz_bot, sz_top),
+            ("Right", PLATE_HALF_FT, PLATE_HALF_FT + 0.4, sz_bot, sz_top),
+        ]
+        for _name, _x0, _x1, _z0, _z1 in _shadow_defs:
+            _mask = (_cp["pX"] >= _x0) & (_cp["pX"] < _x1) & (_cp["pZ"] >= _z0) & (_cp["pZ"] < _z1)
+            _n = _mask.sum()
+            _acc = _cp.loc[_mask, "_correct"].mean() * 100 if _n > 10 else np.nan
+            _cx = (_x0 + _x1) / 2
+            _cz = (_z0 + _z1) / 2
+            _zones.append((_cx, _cz, _acc, _n, "shadow"))
+
+        for _cx, _cz, _acc, _n, _type in _zones:
+            if np.isnan(_acc):
+                continue
+            _font_size = 13 if _type == "inner" else 11
+            _text_color = TEXT_WHITE if _acc < lg_avg - 3 or _acc > lg_avg + 3 else "rgba(255,255,255,0.8)"
+            hm_fig.add_annotation(
+                x=_cx, y=_cz,
+                text=f"<b>{_acc:.0f}%</b>",
+                showarrow=False,
+                font=dict(size=_font_size, color=_text_color),
+            )
+
+    # Title
+    _hm_title = f"Zone Accuracy: {umpire}" if umpire else "Zone Accuracy: All Umpires"
+    _hm_n = len(_cp)
+    _hm_subtitle = f"<span style='font-size:12px;color:{TEXT_DIM}'>{_hm_n:,} called pitches | Accuracy by location</span>"
+
+    hm_fig.update_layout(
+        title=dict(
+            text=f"<b>{_hm_title}</b><br>{_hm_subtitle}",
+            font=dict(size=18, color=TEXT_WHITE),
+            x=0.5, xanchor="center",
+        ),
+        xaxis=dict(
+            title="Horizontal Location (ft)",
+            range=[x_min, x_max], fixedrange=True,
+            zeroline=False, gridcolor="rgba(255,255,255,0.03)",
+            color=TEXT_DIM, constrain="domain",
+        ),
+        yaxis=dict(
+            title="Vertical Location (ft)",
+            range=[z_min, z_max], fixedrange=True,
+            zeroline=False, gridcolor="rgba(255,255,255,0.03)",
+            color=TEXT_DIM, scaleanchor="x", constrain="domain",
+        ),
+        plot_bgcolor=DARK_BG,
+        paper_bgcolor=DARK_BG,
+        font=dict(color=TEXT_WHITE),
+        hoverlabel=HOVER_LABEL,
+        height=500,
+        margin=dict(t=60, b=40, l=40, r=80),
+    )
+
+    # Home plate
+    plate_y = z_min + 0.1
+    hm_fig.add_trace(go.Scatter(
+        x=[-PLATE_HALF_FT, -PLATE_HALF_FT, 0, PLATE_HALF_FT, PLATE_HALF_FT, -PLATE_HALF_FT],
+        y=[plate_y, plate_y - 0.1, plate_y - 0.2, plate_y - 0.1, plate_y, plate_y],
+        mode="lines",
+        line=dict(color="rgba(255,255,255,0.25)", width=1),
+        fill="toself", fillcolor="rgba(255,255,255,0.03)",
+        showlegend=False, hoverinfo="skip",
+    ))
+
+    return hm_fig
 
 
 def build_summary_prompt(filt_df, ump, team, league_avgs, called_df):
@@ -709,6 +943,13 @@ if single_umpire:
         overall_accuracy = _acc_ump["_correct"].mean() * 100 if len(_acc_ump) > 0 else 0
     accuracy_delta = overall_accuracy - league_accuracy
 
+    # Blown calls for this umpire
+    _ump_blown = compute_blown_calls(called_pitches_df, selected_umpire) if called_pitches_df is not None else None
+    _lg_blown_per_1k = 0.0
+    if called_pitches_df is not None:
+        _all_blown = compute_blown_calls(called_pitches_df)
+        _lg_blown_per_1k = _all_blown[2] if _all_blown else 0.0
+
     # Compute rolling 100-pitch accuracy sparkline
     acc_sparkline = None
     if called_pitches_df is not None:
@@ -780,7 +1021,10 @@ if single_umpire:
     _cp_donut = {"Called Strikes": (int(_ump_strikes), ACCENT), "Balls": (int(_ump_balls), "#7B8FA3")} if ump_called > 0 else None
     col_m2.markdown(metric_card("Called Pitches", f"{ump_called:,}", delta=f"{_strike_delta:+.1f}pp vs avg", delta_color="normal", donut=_cp_donut), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{ump_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", delta=f"{_cr_delta:+.1f}pp vs avg", delta_color="normal", donut={"overturned": ump_ot, "upheld": ump_up}), unsafe_allow_html=True)
-    col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
+    _blown_sub = None
+    if _ump_blown and _ump_blown[0] > 0:
+        _blown_sub = f"{_ump_blown[0]} blown call{'s' if _ump_blown[0] != 1 else ''} ({_ump_blown[2]:.1f} per 1K)"
+    col_m4.markdown(metric_card(_acc_label, f"{overall_accuracy:.1f}%", subtext=_blown_sub, delta=f"{accuracy_delta:+.1f}pp vs avg", delta_color="normal", sparkline=acc_sparkline), unsafe_allow_html=True)
 else:
     all_games = df["game_id"].nunique()
     all_n = len(ump_team_all)
@@ -841,7 +1085,11 @@ else:
     _cp_donut_all = {"Called Strikes": (_all_strikes, ACCENT), "Balls": (_all_balls, "#7B8FA3")} if total_called > 0 else None
     col_m2.markdown(metric_card("Called Pitches", f"{total_called:,}", donut=_cp_donut_all), unsafe_allow_html=True)
     col_m3.markdown(metric_card("Challenges", f"{all_n:,}", subtext=f"{challenge_pct:.1f}% of called pitches", donut={"overturned": all_ot, "upheld": all_up}), unsafe_allow_html=True)
-    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
+    _lg_blown_total = compute_blown_calls(called_pitches_df) if called_pitches_df is not None else None
+    _lg_blown_sub = None
+    if _lg_blown_total and _lg_blown_total[0] > 0:
+        _lg_blown_sub = f"{_lg_blown_total[0]} blown calls league-wide ({_lg_blown_total[2]:.1f} per 1K)"
+    col_m4.markdown(metric_card("Accuracy", f"{league_overall_accuracy:.1f}%", subtext=_lg_blown_sub, sparkline=_lg_acc_sparkline), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Percentile Sliders (single umpire only, unfiltered by team)
@@ -904,6 +1152,14 @@ if single_umpire and called_pitches_df is not None:
     all_ump["challenge_pct"] = all_ump["challenges"] / all_ump["called_pitches"] * 100
     all_ump["overturn_rate"] = all_ump["overturned"] / all_ump["challenges"] * 100
 
+    # Blown calls per umpire (for percentile slider)
+    _blown_by_ump = {}
+    for _u in all_ump["umpire"].unique():
+        _b = compute_blown_calls(called_pitches_df, _u)
+        if _b:
+            _blown_by_ump[_u] = _b[2]  # per 1K rate
+    all_ump["blown_per_1k"] = all_ump["umpire"].map(_blown_by_ump).fillna(0)
+
     ump_row = all_ump[all_ump["umpire"] == selected_umpire]
     if len(ump_row) > 0:
         ump_row = ump_row.iloc[0]
@@ -936,6 +1192,8 @@ if single_umpire and called_pitches_df is not None:
              percentile_of_inverse(all_ump["challenge_pct"], ump_row["challenge_pct"])),
             ("Overturns", ump_row["overturn_rate"], f"{ump_row['overturn_rate']:.0f}%",
              percentile_of_inverse(all_ump["overturn_rate"], ump_row["overturn_rate"])),
+            ("Blown Calls", ump_row["blown_per_1k"], f"{ump_row['blown_per_1k']:.1f}/1K",
+             percentile_of_inverse(all_ump["blown_per_1k"], ump_row["blown_per_1k"])),
         ]
 
         def pct_color(pct):
@@ -1054,9 +1312,43 @@ if single_umpire and called_pitches_df is not None:
                         _bg["ball_acc"] = (_bg["correct_balls"] / _bg["called_balls"] * 100).round(1)
                         _ba_by_pitch = _bg[["pitch_name", "ball_acc", "called_balls"]]
 
+            # Blown calls per pitch type
+            _blown_by_pitch = pd.DataFrame(columns=["pitch_name", "blown_calls"]).astype({"blown_calls": "int64"})
+            if len(ump_cp) > 0 and all(c in ump_cp.columns for c in ["pX", "pZ", "sz_top", "sz_bottom", "call"]):
+                _bcp = ump_cp.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+                _bcp = _bcp[_bcp["pitch_name"].notna() & (_bcp["pitch_name"] != "")]
+                if len(_bcp) > 0:
+                    _biz = (_bcp["pX"].abs() <= ZONE_EDGE_FT) & (_bcp["pZ"] >= _bcp["sz_bottom"]) & (_bcp["pZ"] <= _bcp["sz_top"])
+                    _bcorrect = ((_bcp["call"] == "Called Strike") & _biz) | ((_bcp["call"] == "Ball") & ~_biz)
+                    _bwrong = _bcp[~_bcorrect].copy()
+                    if len(_bwrong) > 0:
+                        _bdist = vectorized_zone_distance(_bwrong["pX"].values, _bwrong["pZ"].values, _bwrong["sz_top"].values, _bwrong["sz_bottom"].values)
+                        _bwrong["_is_blown"] = np.abs(_bdist) >= BLOWN_CALL_THRESHOLD_FT
+                        _blown_by_pitch = _bwrong[_bwrong["_is_blown"]].groupby("pitch_name").size().reset_index(name="blown_calls")
+
+            # League blown calls per pitch type
+            _lg_blown_by_pitch = pd.DataFrame(columns=["pitch_name", "lg_blown_calls", "lg_blown_pitches"])
+            if called_pitches_df is not None and all(c in called_pitches_df.columns for c in ["pX", "pZ", "sz_top", "sz_bottom", "call"]):
+                _lbcp = called_pitches_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
+                _lbcp = _lbcp[_lbcp["pitch_name"].notna() & (_lbcp["pitch_name"] != "")]
+                if len(_lbcp) > 0:
+                    _lbiz = (_lbcp["pX"].abs() <= ZONE_EDGE_FT) & (_lbcp["pZ"] >= _lbcp["sz_bottom"]) & (_lbcp["pZ"] <= _lbcp["sz_top"])
+                    _lbcorrect = ((_lbcp["call"] == "Called Strike") & _lbiz) | ((_lbcp["call"] == "Ball") & ~_lbiz)
+                    _lbwrong = _lbcp[~_lbcorrect].copy()
+                    if len(_lbwrong) > 0:
+                        _lbdist = vectorized_zone_distance(_lbwrong["pX"].values, _lbwrong["pZ"].values, _lbwrong["sz_top"].values, _lbwrong["sz_bottom"].values)
+                        _lbwrong["_is_blown"] = np.abs(_lbdist) >= BLOWN_CALL_THRESHOLD_FT
+                        _lg_blown_agg = _lbwrong.groupby("pitch_name").agg(
+                            lg_blown_calls=("_is_blown", "sum"),
+                        ).reset_index()
+                        _lg_pitched = _lbcp.groupby("pitch_name").size().reset_index(name="lg_blown_pitches")
+                        _lg_blown_by_pitch = _lg_blown_agg.merge(_lg_pitched, on="pitch_name", how="left")
+
             ump_by_pitch = ump_by_pitch.merge(_ta_by_pitch, on="pitch_name", how="left")
             ump_by_pitch = ump_by_pitch.merge(_sa_by_pitch, on="pitch_name", how="left")
             ump_by_pitch = ump_by_pitch.merge(_ba_by_pitch, on="pitch_name", how="left")
+            ump_by_pitch = ump_by_pitch.merge(_blown_by_pitch, on="pitch_name", how="left")
+            ump_by_pitch["blown_calls"] = ump_by_pitch["blown_calls"].fillna(0).astype(int)
             ump_by_pitch["called_strikes"] = ump_by_pitch["called_strikes"].fillna(0).astype(float)
             ump_by_pitch["called_balls"] = ump_by_pitch["called_balls"].fillna(0).astype(float)
 
@@ -1112,9 +1404,21 @@ if single_umpire and called_pitches_df is not None:
             lg_by_pitch = lg_by_pitch.merge(_lg_ta_by_pitch, on="pitch_name", how="left")
             lg_by_pitch = lg_by_pitch.merge(_lg_sa_by_pitch, on="pitch_name", how="left")
             lg_by_pitch = lg_by_pitch.merge(_lg_ba_by_pitch, on="pitch_name", how="left")
+            if len(_lg_blown_by_pitch) > 0:
+                lg_by_pitch = lg_by_pitch.merge(_lg_blown_by_pitch[["pitch_name", "lg_blown_calls", "lg_blown_pitches"]], on="pitch_name", how="left")
+            else:
+                lg_by_pitch["lg_blown_calls"] = 0
+                lg_by_pitch["lg_blown_pitches"] = 0
+            lg_by_pitch["lg_blown_calls"] = lg_by_pitch["lg_blown_calls"].fillna(0)
+            lg_by_pitch["lg_blown_pitches"] = lg_by_pitch["lg_blown_pitches"].fillna(0)
             lg_by_pitch["lg_total_acc"] = lg_by_pitch["lg_total_acc"].fillna(0)
 
-            merged = ump_by_pitch.merge(lg_by_pitch[["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]], on="pitch_name", how="left")
+            _lg_merge_cols = ["pitch_name", "lg_ot_rate", "lg_strike_acc", "lg_ball_acc", "lg_total_acc"]
+            if "lg_blown_calls" in lg_by_pitch.columns:
+                _lg_merge_cols += ["lg_blown_calls", "lg_blown_pitches"]
+            merged = ump_by_pitch.merge(lg_by_pitch[_lg_merge_cols], on="pitch_name", how="left")
+            merged["lg_blown_calls"] = merged.get("lg_blown_calls", pd.Series(dtype=float)).fillna(0)
+            merged["lg_blown_pitches"] = merged.get("lg_blown_pitches", pd.Series(dtype=float)).fillna(0)
             merged = merged.sort_values("total_pitches", ascending=False)
 
             def _table_pct_color(pct):
@@ -1157,6 +1461,7 @@ if single_umpire and called_pitches_df is not None:
                             <th style="{_th}">Accuracy</th>
                             <th style="{_th}">Strike Acc.</th>
                             <th style="{_th}">Ball Acc.</th>
+                            <th style="{_th}">Blown</th>
                         </tr>
                     </thead>
                     <tbody>"""
@@ -1201,6 +1506,7 @@ if single_umpire and called_pitches_df is not None:
                             <td style="{_td} border-radius:3px; {ta_style}; cursor:default;" title="{_ta_tip}">{ta_val}</td>
                             <td style="{_td} border-radius:3px; {sa_style}; cursor:default;" title="{_sa_tip}">{sa_val}</td>
                             <td style="{_td} border-radius:3px; {ba_style}; cursor:default;" title="{_ba_tip}">{ba_val}</td>
+                            <td style="{_td} color:{OVERTURNED if int(row.get('blown_calls', 0)) > 0 else TEXT_DIM}; font-weight:{'700' if int(row.get('blown_calls', 0)) > 0 else '400'};">{int(row.get('blown_calls', 0)) or '-'}</td>
                         </tr>"""
 
             # Totals row
@@ -1232,6 +1538,7 @@ if single_umpire and called_pitches_df is not None:
                         _tiz_b = ~((_tb["pX"].abs() <= ZONE_EDGE_FT) & (_tb["pZ"] >= _tb["sz_bottom"]) & (_tb["pZ"] <= _tb["sz_top"]))
                         _tot_ba_num = _tiz_b.mean() * 100
                         _tot_ba = f"{_tot_ba_num:.1f}%"
+            _tot_blown = int(merged["blown_calls"].sum()) if "blown_calls" in merged.columns else 0
             _tot_style = f"font-weight:800; border-top:2px solid rgba(255,255,255,0.15);"
             # Heatmap colors for totals row
             _tot_ot_style = f"background:transparent; color:{TEXT_WHITE}; font-weight:600"
@@ -1248,12 +1555,13 @@ if single_umpire and called_pitches_df is not None:
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ta_style};" title="MLB avg: {_lg_ta_overall:.1f}%">{_tot_ta or '-'}</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_sa_style};" title="MLB avg: {_overall_strike_acc:.1f}%">{_tot_sa or '-'}</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ba_style};" title="MLB avg: {_overall_ball_acc:.1f}%">{_tot_ba or '-'}</td>
+                            <td style="{_td} font-weight:800; color:{OVERTURNED if _tot_blown > 0 else TEXT_DIM};">{_tot_blown or '-'}</td>
                         </tr>"""
 
             table_html += f"""
                     </tbody>
                 </table>
-                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.4rem;">Red = above league avg | Blue = below | Strike/Ball Acc. = correct calls / total calls (zone geometry)</div>
+                <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-top:0.4rem;">Red = above league avg | Blue = below | Blown = incorrect calls 3+ inches from zone edge</div>
             </div>"""
             st.session_state["_table_html"] = table_html
 
@@ -1629,6 +1937,15 @@ else:
     st.plotly_chart(fig, width="stretch", config=PLOTLY_CONFIG)
 
 # ---------------------------------------------------------------------------
+# Zone Accuracy Heatmap
+# ---------------------------------------------------------------------------
+if called_pitches_df is not None:
+    _hm_ump = selected_umpire if single_umpire else None
+    _hm_fig = build_accuracy_heatmap(called_pitches_df, umpire=_hm_ump, sz_top=sz_top, sz_bot=sz_bot)
+    if _hm_fig:
+        st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
+
+# ---------------------------------------------------------------------------
 # Bottom section: bar chart (all umpires only)
 # ---------------------------------------------------------------------------
 bottom_df = ump_team_all if len(ump_team_all) > 0 else df
@@ -1841,6 +2158,7 @@ with st.expander("📖 Data Dictionary"):
 | **Zone Distance** | How far a pitch was from the nearest edge of the strike zone, measured in inches. "Inside zone" means the pitch was within the zone; "outside zone" means it was off the plate. |
 | **Strike Zone** | The white rectangle on the chart. Width is the 17-inch plate. Height is the batter's individual zone (knees to midpoint of torso). |
 | **pX / pZ** | Pitch coordinates in feet. pX is horizontal distance from the center of the plate (0 = middle). pZ is vertical height above the ground. |
+| **Blown Call** | An incorrect call where the pitch was 3+ inches (one baseball diameter) beyond the zone edge. These are the most egregious misses that virtually everyone in the stadium would disagree with. |
 | **pp (percentage points)** | The unit for comparing percentages. If one umpire has 55% overturn rate vs. 50% league average, that's +5.0pp. |
 
 **Data source:** MLB Stats API, Spring Training 2026. Challenge data and called pitch locations are collected from live game feeds.
