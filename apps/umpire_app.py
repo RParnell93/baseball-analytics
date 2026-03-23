@@ -363,7 +363,11 @@ def build_zone_grid_html(zones, umpire=None):
     return f'''
     <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1rem; text-align:center; min-height:380px; display:flex; flex-direction:column; justify-content:center;">
         <div style="font-size:0.85rem; font-weight:700; color:{TEXT_WHITE}; margin-bottom:0.25rem;">{_title}</div>
-        <div style="font-size:0.65rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">{_sub} | Pink = below avg | Blue = above</div>
+        <div style="font-size:0.6rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">
+            {_sub} &nbsp;
+            <span style="color:#d1307a;">&#9632;</span> Below Avg &nbsp;
+            <span style="color:#22D1EE;">&#9632;</span> Above Avg
+        </div>
         <svg width="100%" viewBox="0 0 {W} {H}" style="max-width:{W}px; margin:0 auto; display:block;">
             {rects}
             {texts}
@@ -441,10 +445,9 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
             [1.0, "#22D1EE"],
         ]
         z_min_val, z_max_val = -15, 15
-        _hover = "pX: %{x:.2f} ft<br>pZ: %{y:.2f} ft<br>vs MLB avg: %{z:+.1f}pp<extra></extra>"
-        _cbar_title = "vs Avg"
-        _cbar_suffix = "pp"
+        _hover = "%{customdata}<br>vs MLB avg: <b>%{z:+.1f}pp</b><extra></extra>"
         _subtitle = "vs MLB avg at each location"
+        _show_colorbar = False
     else:
         z_data = ump_smooth
         _colorscale = [
@@ -457,27 +460,39 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
         ]
         z_min_val = max(np.nanmin(z_data), 50) if np.any(~np.isnan(z_data)) else 50
         z_max_val = 100
-        _hover = "pX: %{x:.2f} ft<br>pZ: %{y:.2f} ft<br>Accuracy: %{z:.1f}%<extra></extra>"
-        _cbar_title = "Acc"
-        _cbar_suffix = "%"
+        _hover = "%{customdata}<br>Accuracy: <b>%{z:.1f}%</b><extra></extra>"
         _subtitle = "Raw accuracy by location"
+        _show_colorbar = False
+
+    # Build customdata with zone labels and pitch counts per bin
+    x_idx_arr = np.clip(np.digitize(_cp["pX"].values, x_edges) - 1, 0, n_bins - 1)
+    z_idx_arr = np.clip(np.digitize(_cp["pZ"].values, z_edges) - 1, 0, n_bins - 1)
+    count_grid = np.zeros((n_bins, n_bins), dtype=int)
+    for i in range(len(_cp)):
+        count_grid[z_idx_arr[i], x_idx_arr[i]] += 1
+
+    def _zone_label(xc, zc):
+        v = "High" if zc > sz_top - 0.2 else ("Low" if zc < sz_bot + 0.2 else "Mid")
+        h = "Inside" if abs(xc) > PLATE_HALF_FT else ("Away" if xc < -0.2 else ("In" if xc > 0.2 else "Middle"))
+        in_zone = abs(xc) <= ZONE_EDGE_FT and sz_bot <= zc <= sz_top
+        loc = f"{v}-{h}" if not in_zone else f"{v}-{h} (zone)"
+        return loc
+
+    customdata = np.empty((n_bins, n_bins), dtype=object)
+    for zi in range(n_bins):
+        for xi in range(n_bins):
+            _lbl = _zone_label(x_centers[xi], z_centers[zi])
+            _cnt = count_grid[zi, xi]
+            customdata[zi, xi] = f"{_lbl}<br>{_cnt} pitches"
 
     hm_fig = go.Figure()
     hm_fig.add_trace(go.Heatmap(
         x=x_centers, y=z_centers, z=z_data,
+        customdata=customdata,
         colorscale=_colorscale,
         zmin=z_min_val, zmax=z_max_val,
         zsmooth="best",
-        colorbar=dict(
-            title=dict(text=_cbar_title, font=dict(size=9, color=TEXT_DIM), side="right"),
-            tickfont=dict(size=8, color=TEXT_DIM),
-            ticksuffix=_cbar_suffix,
-            bgcolor="rgba(0,0,0,0)",
-            orientation="h",
-            len=0.6, thickness=8,
-            y=-0.08, ypad=0,
-            x=0.5, xanchor="center",
-        ),
+        showscale=False,
         hovertemplate=_hover,
     ))
 
@@ -2034,15 +2049,25 @@ if called_pitches_df is not None:
     _zone_grid = _compute_zone_acc_grid(called_pitches_df, umpire=_hm_ump)
     _zone_html = build_zone_grid_html(_zone_grid, umpire=_hm_ump) if _zone_grid else ""
 
+    _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; font-size:0.6rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem;">
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#d1307a;display:inline-block;"></span> Below Avg</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#c47aa0;display:inline-block;"></span> Slightly Below</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:{CARD_BG};border:1px solid {TEXT_DIM};display:inline-block;"></span> At Avg</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#5ac4d6;display:inline-block;"></span> Slightly Above</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#22D1EE;display:inline-block;"></span> Above Avg</span>
+    </div>'''
+
     if _hm_fig and _zone_html:
         _hm_col, _zg_col = st.columns([3, 2])
         with _hm_col:
             st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
+            st.html(_hm_legend)
         with _zg_col:
             import streamlit.components.v1 as components
             components.html(_zone_html, height=440)
     elif _hm_fig:
         st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
+        st.html(_hm_legend)
 
 # ---------------------------------------------------------------------------
 # Bottom section: bar chart (all umpires only)
