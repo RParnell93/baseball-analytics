@@ -976,9 +976,13 @@ st.markdown(
 col_f1, col_f2, col_f3, _col_spacer = st.columns([1, 1, 1, 1.5])
 
 with col_f1:
-    _default_ump = "Jen Pawol" if "Jen Pawol" in all_umpires else "All Umpires"
     _ump_options = ["All Umpires"] + all_umpires
-    _default_idx = _ump_options.index(_default_ump) if _default_ump in _ump_options else 0
+    _qp_ump = st.query_params.get("umpire", "")
+    if _qp_ump and _qp_ump in _ump_options:
+        _default_idx = _ump_options.index(_qp_ump)
+    else:
+        _default_ump = "Jen Pawol" if "Jen Pawol" in all_umpires else "All Umpires"
+        _default_idx = _ump_options.index(_default_ump) if _default_ump in _ump_options else 0
     selected_umpire = st.selectbox("🔍 Umpire", _ump_options, index=_default_idx)
 
 # Cross-filter teams based on umpire
@@ -2219,11 +2223,21 @@ if len(bottom_df) > 0 and not single_umpire:
     _ch_col, _acc_col = st.columns(2)
     with _ch_col:
         st.subheader("Top Umpires by Challenge Count")
-        st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
+        _ch_event = st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG, on_select="rerun", key="chart_challenges")
+        if _ch_event and _ch_event.selection and _ch_event.selection.points:
+            _clicked_ump = _ch_event.selection.points[0].get("y")
+            if _clicked_ump and _clicked_ump in all_umpires:
+                st.query_params["umpire"] = _clicked_ump
+                st.rerun()
     with _acc_col:
         if acc_fig:
             st.subheader("Top Umpires by Accuracy")
-            st.plotly_chart(acc_fig, width="stretch", config=PLOTLY_CONFIG)
+            _acc_event = st.plotly_chart(acc_fig, width="stretch", config=PLOTLY_CONFIG, on_select="rerun", key="chart_accuracy")
+            if _acc_event and _acc_event.selection and _acc_event.selection.points:
+                _clicked_ump = _acc_event.selection.points[0].get("y")
+                if _clicked_ump and _clicked_ump in all_umpires:
+                    st.query_params["umpire"] = _clicked_ump
+                    st.rerun()
 
 
 # ---------------------------------------------------------------------------
