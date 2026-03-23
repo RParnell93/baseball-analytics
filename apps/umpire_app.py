@@ -1617,7 +1617,7 @@ if single_umpire and called_pitches_df is not None:
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:0.45rem 0.75rem; color:{TEXT_WHITE};">{row['pitch_name']}</td>
                             {"<td style='" + _td + "'>" + tp_val + "</td>" if has_total else ""}
-                            <td style="{_td} color:{OVERTURNED if int(row.get('blown_calls', 0)) > 0 else TEXT_DIM}; font-weight:{'700' if int(row.get('blown_calls', 0)) > 0 else '400'};">{int(row.get('blown_calls', 0)) or '-'}</td>
+                            <td style="{_td} color:{'#ff6b6b' if int(row.get('blown_calls', 0)) > 0 else TEXT_DIM}; font-weight:{'700' if int(row.get('blown_calls', 0)) > 0 else '400'};">{int(row.get('blown_calls', 0)) or '-'}</td>
                             <td style="{_td}">{int(row['challenges'])}</td>
                             <td style="{_td} border-radius:3px; {ot_style}; cursor:default;" title="{_ot_tip}">{row['ot_rate']:.0f}%</td>
                             <td style="{_td} border-radius:3px; {ta_style}; cursor:default;" title="{_ta_tip}">{ta_val}</td>
@@ -1666,7 +1666,7 @@ if single_umpire and called_pitches_df is not None:
                         <tr style="{_tot_style}">
                             <td style="padding:0.45rem 0.75rem; color:{ACCENT}; font-weight:800;">TOTAL</td>
                             {"<td style='" + _td + " font-weight:800;'>" + f"{_tot_pitches:,}" + "</td>" if has_total else ""}
-                            <td style="{_td} font-weight:800; color:{OVERTURNED if _tot_blown > 0 else TEXT_DIM};">{_tot_blown or '-'}</td>
+                            <td style="{_td} font-weight:800; color:{'#ff6b6b' if _tot_blown > 0 else TEXT_DIM};">{_tot_blown or '-'}</td>
                             <td style="{_td} font-weight:800;">{_tot_challenges}</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ot_style};" title="MLB avg: {_overall_ot_rate:.0f}%">{_tot_ot_rate:.0f}%</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ta_style};" title="MLB avg: {_lg_ta_overall:.1f}%">{_tot_ta or '-'}</td>
