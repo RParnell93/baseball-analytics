@@ -291,17 +291,16 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
     with np.errstate(divide="ignore", invalid="ignore"):
         acc_smooth = np.where(smoothed_weight > 0.05, smoothed_acc / smoothed_weight, np.nan)
 
-    # Colorscale: problem areas glow red/orange, good areas are transparent/dark
-    # High accuracy (95%+) fades to transparent, low accuracy glows hot
+    # Colorscale: pink (low accuracy) fading through dark to blue (high accuracy)
+    # Matches the app's existing pink/cyan brand colors
     _colorscale = [
-        [0.0, "rgba(220,40,40,0.9)"],     # terrible - bright red
-        [0.15, "rgba(230,90,50,0.8)"],     # bad - orange-red
-        [0.3, "rgba(240,150,60,0.65)"],    # below avg - orange
-        [0.45, "rgba(200,180,80,0.4)"],    # slightly below - dim yellow
-        [0.6, "rgba(100,140,120,0.2)"],    # average - barely visible
-        [0.75, "rgba(60,140,170,0.15)"],   # above avg - hint of teal
-        [0.9, "rgba(34,209,238,0.1)"],     # good - faint accent
-        [1.0, "rgba(26,27,46,0)"],         # excellent - fully transparent
+        [0.0, "rgba(255,80,180,0.9)"],     # terrible - hot pink
+        [0.2, "rgba(220,60,140,0.7)"],     # bad - pink
+        [0.4, "rgba(140,40,100,0.4)"],     # below avg - dim pink
+        [0.55, "rgba(60,40,70,0.15)"],     # average - near transparent
+        [0.7, "rgba(30,80,130,0.15)"],     # above avg - hint of blue
+        [0.85, "rgba(34,160,220,0.3)"],    # good - light blue
+        [1.0, "rgba(34,209,238,0.5)"],     # excellent - cyan accent
     ]
 
     acc_min = max(np.nanmin(acc_smooth), 50) if np.any(~np.isnan(acc_smooth)) else 50
@@ -318,8 +317,8 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
             tickfont=dict(size=9, color=TEXT_DIM),
             ticksuffix="%",
             bgcolor="rgba(0,0,0,0)",
-            len=0.5, thickness=12,
-            x=1.02,
+            len=0.6, thickness=10,
+            x=0.92, xpad=5,
         ),
         hovertemplate="pX: %{x:.2f} ft<br>pZ: %{y:.2f} ft<br>Accuracy: %{z:.1f}%<extra></extra>",
     ))
@@ -392,7 +391,7 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
 
     hm_fig.update_layout(
         title=dict(
-            text=f"<b>{_hm_title}</b><br><span style='font-size:12px;color:{TEXT_DIM}'>{_hm_n:,} called pitches | Red = low accuracy</span>",
+            text=f"<b>{_hm_title}</b><br><span style='font-size:12px;color:{TEXT_DIM}'>{_hm_n:,} called pitches | Pink = low accuracy | Blue = high</span>",
             font=dict(size=18, color=TEXT_WHITE),
             x=0.5, xanchor="center",
         ),
@@ -1215,8 +1214,8 @@ if single_umpire and called_pitches_df is not None:
             bar_width = max(pct_int, 2)
             circle_left = f"calc({bar_width}% - 14px)" if bar_width > 5 else "0px"
             slider_html += f"""
-            <div style="display:flex; align-items:center; gap:0.5rem;">
-                <div style="width:120px; font-size:0.7rem; color:{TEXT_DIM}; text-align:right; flex-shrink:0; font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:0.03em; text-transform:uppercase;">{label}</div>
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <div style="width:110px; font-size:0.65rem; color:{TEXT_DIM}; text-align:center; flex-shrink:0; font-family:'Montserrat',sans-serif; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; line-height:1.3;">{label}</div>
                 <div style="flex:1; background:rgba(255,255,255,0.06); border-radius:4px; height:10px; position:relative;">
                     <div style="width:{bar_width}%; height:100%; background:{color}; border-radius:4px;"></div>
                     <div style="position:absolute; top:50%; left:{circle_left}; transform:translateY(-50%); width:28px; height:28px; border-radius:50%; background:{color}; display:flex; align-items:center; justify-content:center; border:2px solid {CARD_BG}; box-shadow:0 0 0 1px rgba(255,255,255,0.1);">
@@ -1804,7 +1803,7 @@ fig.update_layout(
     font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="top", y=-0.05,
+        orientation="h", yanchor="top", y=-0.02,
         xanchor="center", x=0.5,
         font=dict(size=11, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
@@ -1813,7 +1812,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=850,
-    margin=dict(t=70, b=60, l=40, r=40),
+    margin=dict(t=70, b=45, l=40, r=40),
 )
 
 # Annotations
@@ -1825,7 +1824,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.10, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.06, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
