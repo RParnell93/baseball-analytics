@@ -228,11 +228,12 @@ def compute_blown_calls(cp_df, umpire=None):
 
 
 def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEFAULT_SZ_BOT,
-                           n_bins=40, sigma=1.5, min_pitches_per_bin=3):
+                           n_bins=None, sigma=None, min_pitches_per_bin=2):
     """Build a zone accuracy heatmap figure.
 
     Returns a Plotly figure showing accuracy as a continuous heatmap,
-    extending 0.5 ft beyond zone edges. Includes zone rectangle overlay.
+    extending 0.5 ft beyond zone edges. Uses transparency so high-accuracy
+    areas blend into the dark background, and only problem areas glow.
     For league view (umpire=None), overlays 3x3 + 4-strip grid with numbers.
     """
     _cp = cp_df.dropna(subset=["pX", "pZ", "sz_top", "sz_bottom"]).copy()
@@ -241,7 +242,13 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
     if len(_cp) < 50:
         return None
 
-    # Use per-pitch sz for zone classification, but fixed grid for display
+    # Adaptive resolution: fewer bins + more smoothing for small samples
+    if n_bins is None:
+        n_bins = 80 if len(_cp) > 5000 else 30
+    if sigma is None:
+        sigma = 3.0 if len(_cp) > 5000 else 4.0
+
+    # Use per-pitch sz for zone classification
     _iz = (
         (_cp["pX"].abs() <= ZONE_EDGE_FT)
         & (_cp["pZ"] >= _cp["sz_bottom"])
@@ -261,18 +268,14 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
     z_centers = (z_edges[:-1] + z_edges[1:]) / 2
 
     # Bin pitches
-    x_idx = np.digitize(_cp["pX"].values, x_edges) - 1
-    z_idx = np.digitize(_cp["pZ"].values, z_edges) - 1
-    # Clamp to valid range
-    x_idx = np.clip(x_idx, 0, n_bins - 1)
-    z_idx = np.clip(z_idx, 0, n_bins - 1)
+    x_idx = np.clip(np.digitize(_cp["pX"].values, x_edges) - 1, 0, n_bins - 1)
+    z_idx = np.clip(np.digitize(_cp["pZ"].values, z_edges) - 1, 0, n_bins - 1)
 
     correct_grid = np.zeros((n_bins, n_bins), dtype=float)
     total_grid = np.zeros((n_bins, n_bins), dtype=float)
     for i in range(len(_cp)):
-        xi, zi = x_idx[i], z_idx[i]
-        correct_grid[zi, xi] += _cp["_correct"].values[i]
-        total_grid[zi, xi] += 1
+        correct_grid[z_idx[i], x_idx[i]] += _cp["_correct"].values[i]
+        total_grid[z_idx[i], x_idx[i]] += 1
 
     # Compute accuracy, mask sparse bins
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -286,33 +289,37 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
     smoothed_acc = gaussian_filter(acc_filled, sigma=sigma)
     smoothed_weight = gaussian_filter(weight, sigma=sigma)
     with np.errstate(divide="ignore", invalid="ignore"):
-        acc_smooth = np.where(smoothed_weight > 0.1, smoothed_acc / smoothed_weight, np.nan)
+        acc_smooth = np.where(smoothed_weight > 0.05, smoothed_acc / smoothed_weight, np.nan)
 
-    # Diverging colorscale: red (low accuracy) -> neutral -> blue (high accuracy)
-    # Center at league average (~92%)
-    lg_avg = np.nanmean(acc_smooth) if np.any(~np.isnan(acc_smooth)) else 92
+    # Colorscale: problem areas glow red/orange, good areas are transparent/dark
+    # High accuracy (95%+) fades to transparent, low accuracy glows hot
     _colorscale = [
-        [0.0, "rgba(200,60,60,0.85)"],
-        [0.25, "rgba(210,130,120,0.7)"],
-        [0.5, "rgba(80,80,100,0.3)"],
-        [0.75, "rgba(100,180,220,0.7)"],
-        [1.0, "rgba(40,180,220,0.85)"],
+        [0.0, "rgba(220,40,40,0.9)"],     # terrible - bright red
+        [0.15, "rgba(230,90,50,0.8)"],     # bad - orange-red
+        [0.3, "rgba(240,150,60,0.65)"],    # below avg - orange
+        [0.45, "rgba(200,180,80,0.4)"],    # slightly below - dim yellow
+        [0.6, "rgba(100,140,120,0.2)"],    # average - barely visible
+        [0.75, "rgba(60,140,170,0.15)"],   # above avg - hint of teal
+        [0.9, "rgba(34,209,238,0.1)"],     # good - faint accent
+        [1.0, "rgba(26,27,46,0)"],         # excellent - fully transparent
     ]
 
-    # Normalize to center the colorscale on the mean
-    acc_min = max(np.nanmin(acc_smooth), lg_avg - 20) if np.any(~np.isnan(acc_smooth)) else 72
-    acc_max = min(np.nanmax(acc_smooth), lg_avg + 10) if np.any(~np.isnan(acc_smooth)) else 100
+    acc_min = max(np.nanmin(acc_smooth), 50) if np.any(~np.isnan(acc_smooth)) else 50
+    acc_max = 100  # anchor top at 100% = fully transparent
 
     hm_fig = go.Figure()
     hm_fig.add_trace(go.Heatmap(
         x=x_centers, y=z_centers, z=acc_smooth,
         colorscale=_colorscale,
         zmin=acc_min, zmax=acc_max,
+        zsmooth="best",
         colorbar=dict(
-            title=dict(text="Accuracy %", font=dict(size=11, color=TEXT_DIM)),
-            tickfont=dict(size=10, color=TEXT_DIM),
+            title=dict(text="Accuracy", font=dict(size=10, color=TEXT_DIM)),
+            tickfont=dict(size=9, color=TEXT_DIM),
+            ticksuffix="%",
             bgcolor="rgba(0,0,0,0)",
-            len=0.6,
+            len=0.5, thickness=12,
+            x=1.02,
         ),
         hovertemplate="pX: %{x:.2f} ft<br>pZ: %{y:.2f} ft<br>Accuracy: %{z:.1f}%<extra></extra>",
     ))
@@ -325,27 +332,24 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
         (PLATE_HALF_FT, PLATE_HALF_FT, sz_bot, sz_top),
     ]:
         hm_fig.add_shape(type="line", x0=x0, x1=x1, y0=y0, y1=y1,
-                         line=dict(color="rgba(255,255,255,0.7)", width=2))
+                         line=dict(color="rgba(255,255,255,0.5)", width=1.5))
 
-    # Grid overlay with accuracy numbers (league view only - enough sample per cell)
+    # Grid overlay with accuracy numbers (league view only)
     is_league = umpire is None
     if is_league:
         third_w = PLATE_HALF_FT * 2 / 3
         third_h = (sz_top - sz_bot) / 3
-        # Inner grid lines
         for i in range(1, 3):
             hm_fig.add_shape(type="line",
                              x0=-PLATE_HALF_FT, x1=PLATE_HALF_FT,
                              y0=sz_bot + third_h * i, y1=sz_bot + third_h * i,
-                             line=dict(color="rgba(255,255,255,0.25)", width=1, dash="dot"))
+                             line=dict(color="rgba(255,255,255,0.15)", width=0.5, dash="dot"))
             hm_fig.add_shape(type="line",
                              x0=-PLATE_HALF_FT + third_w * i, x1=-PLATE_HALF_FT + third_w * i,
                              y0=sz_bot, y1=sz_top,
-                             line=dict(color="rgba(255,255,255,0.25)", width=1, dash="dot"))
+                             line=dict(color="rgba(255,255,255,0.15)", width=0.5, dash="dot"))
 
-        # Compute accuracy in each of the 9 inner cells + 4 shadow strips
         _zones = []
-        # 3x3 inner grid
         for row in range(3):
             for col in range(3):
                 _x0 = -PLATE_HALF_FT + third_w * col
@@ -355,11 +359,8 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
                 _mask = (_cp["pX"] >= _x0) & (_cp["pX"] < _x1) & (_cp["pZ"] >= _z0) & (_cp["pZ"] < _z1)
                 _n = _mask.sum()
                 _acc = _cp.loc[_mask, "_correct"].mean() * 100 if _n > 10 else np.nan
-                _cx = (_x0 + _x1) / 2
-                _cz = (_z0 + _z1) / 2
-                _zones.append((_cx, _cz, _acc, _n, "inner"))
+                _zones.append(((_x0 + _x1) / 2, (_z0 + _z1) / 2, _acc, _n, "inner"))
 
-        # 4 shadow strips
         _shadow_defs = [
             ("Top", -PLATE_HALF_FT, PLATE_HALF_FT, sz_top, sz_top + 0.4),
             ("Bottom", -PLATE_HALF_FT, PLATE_HALF_FT, sz_bot - 0.4, sz_bot),
@@ -370,43 +371,41 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
             _mask = (_cp["pX"] >= _x0) & (_cp["pX"] < _x1) & (_cp["pZ"] >= _z0) & (_cp["pZ"] < _z1)
             _n = _mask.sum()
             _acc = _cp.loc[_mask, "_correct"].mean() * 100 if _n > 10 else np.nan
-            _cx = (_x0 + _x1) / 2
-            _cz = (_z0 + _z1) / 2
-            _zones.append((_cx, _cz, _acc, _n, "shadow"))
+            _zones.append(((_x0 + _x1) / 2, (_z0 + _z1) / 2, _acc, _n, "shadow"))
 
         for _cx, _cz, _acc, _n, _type in _zones:
             if np.isnan(_acc):
                 continue
-            _font_size = 13 if _type == "inner" else 11
-            _text_color = TEXT_WHITE if _acc < lg_avg - 3 or _acc > lg_avg + 3 else "rgba(255,255,255,0.8)"
+            _font_size = 14 if _type == "inner" else 11
+            # White text with dark outline for readability on any background
             hm_fig.add_annotation(
                 x=_cx, y=_cz,
                 text=f"<b>{_acc:.0f}%</b>",
                 showarrow=False,
-                font=dict(size=_font_size, color=_text_color),
+                font=dict(size=_font_size, color=TEXT_WHITE),
+                bgcolor="rgba(26,27,46,0.5)",
+                borderpad=2,
             )
 
-    # Title
     _hm_title = f"Zone Accuracy: {umpire}" if umpire else "Zone Accuracy: All Umpires"
     _hm_n = len(_cp)
-    _hm_subtitle = f"<span style='font-size:12px;color:{TEXT_DIM}'>{_hm_n:,} called pitches | Accuracy by location</span>"
 
     hm_fig.update_layout(
         title=dict(
-            text=f"<b>{_hm_title}</b><br>{_hm_subtitle}",
+            text=f"<b>{_hm_title}</b><br><span style='font-size:12px;color:{TEXT_DIM}'>{_hm_n:,} called pitches | Red = low accuracy</span>",
             font=dict(size=18, color=TEXT_WHITE),
             x=0.5, xanchor="center",
         ),
         xaxis=dict(
             title="Horizontal Location (ft)",
             range=[x_min, x_max], fixedrange=True,
-            zeroline=False, gridcolor="rgba(255,255,255,0.03)",
+            zeroline=False, showgrid=False,
             color=TEXT_DIM, constrain="domain",
         ),
         yaxis=dict(
             title="Vertical Location (ft)",
             range=[z_min, z_max], fixedrange=True,
-            zeroline=False, gridcolor="rgba(255,255,255,0.03)",
+            zeroline=False, showgrid=False,
             color=TEXT_DIM, scaleanchor="x", constrain="domain",
         ),
         plot_bgcolor=DARK_BG,
@@ -414,19 +413,8 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
         font=dict(color=TEXT_WHITE),
         hoverlabel=HOVER_LABEL,
         height=500,
-        margin=dict(t=60, b=40, l=40, r=80),
+        margin=dict(t=60, b=40, l=50, r=20),
     )
-
-    # Home plate
-    plate_y = z_min + 0.1
-    hm_fig.add_trace(go.Scatter(
-        x=[-PLATE_HALF_FT, -PLATE_HALF_FT, 0, PLATE_HALF_FT, PLATE_HALF_FT, -PLATE_HALF_FT],
-        y=[plate_y, plate_y - 0.1, plate_y - 0.2, plate_y - 0.1, plate_y, plate_y],
-        mode="lines",
-        line=dict(color="rgba(255,255,255,0.25)", width=1),
-        fill="toself", fillcolor="rgba(255,255,255,0.03)",
-        showlegend=False, hoverinfo="skip",
-    ))
 
     return hm_fig
 
@@ -1192,7 +1180,7 @@ if single_umpire and called_pitches_df is not None:
              percentile_of_inverse(all_ump["challenge_pct"], ump_row["challenge_pct"])),
             ("Overturns", ump_row["overturn_rate"], f"{ump_row['overturn_rate']:.0f}%",
              percentile_of_inverse(all_ump["overturn_rate"], ump_row["overturn_rate"])),
-            ("Blown Calls", ump_row["blown_per_1k"], f"{ump_row['blown_per_1k']:.1f}/1K",
+            ("Blown Calls", ump_row["blown_per_1k"], f"{int(_ump_blown[0]) if _ump_blown else 0}",
              percentile_of_inverse(all_ump["blown_per_1k"], ump_row["blown_per_1k"])),
         ]
 
@@ -1219,7 +1207,7 @@ if single_umpire and called_pitches_df is not None:
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box; display:flex; flex-direction:column;">'
         slider_html += f'<div class="section-header">Umpire Percentile Rankings <span style="font-size:0.7rem; font-weight:400; color:{TEXT_DIM}; letter-spacing:0; text-transform:none;">{selected_umpire}</span></div>'
-        slider_html += f'<div style="flex:1; display:flex; flex-direction:column; justify-content:space-evenly;">'
+        slider_html += f'<div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:0.6rem;">'
 
         for label, val, display, pct in metrics:
             color = pct_color(pct)
@@ -1816,7 +1804,7 @@ fig.update_layout(
     font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="top", y=-0.12,
+        orientation="h", yanchor="top", y=-0.05,
         xanchor="center", x=0.5,
         font=dict(size=11, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
@@ -1825,7 +1813,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=850,
-    margin=dict(t=70, b=90, l=40, r=40),
+    margin=dict(t=70, b=60, l=40, r=40),
 )
 
 # Annotations
@@ -1837,7 +1825,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.19, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.10, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
