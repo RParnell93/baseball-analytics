@@ -344,10 +344,10 @@ def build_zone_grid_html(zones, umpire=None):
 
     # Shadow strips (zones 9-12: Top, Bot, Left, Right)
     shadow_specs = [
-        (9,  inner_x0, inner_y0 - pad + 5, inner_w, pad - 8),         # Top
-        (10, inner_x0, inner_y0 + inner_h + 3, inner_w, pad - 8),     # Bottom
-        (11, inner_x0 - pad + 5, inner_y0, pad - 8, inner_h),         # Left
-        (12, inner_x0 + inner_w + 3, inner_y0, pad - 8, inner_h),     # Right
+        (9,  inner_x0, inner_y0 - pad, inner_w, pad - 3),             # Top
+        (10, inner_x0, inner_y0 + inner_h + 3, inner_w, pad - 3),     # Bottom
+        (11, inner_x0 - pad, inner_y0, pad - 3, inner_h),             # Left
+        (12, inner_x0 + inner_w + 3, inner_y0, pad - 3, inner_h),     # Right
     ]
     for idx, sx, sy, sw, sh in shadow_specs:
         _label, _acc, _n, _lg, _type = zone_data[idx]
