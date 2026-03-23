@@ -301,20 +301,20 @@ def build_zone_grid_html(zones, umpire=None):
     cell_h = inner_h / 3
 
     def _zone_color(acc, lg_acc):
-        """Pink if below avg, blue if above, dim if at avg."""
+        """Pink if below avg, blue if above. 4-tier scale, no dark/transparent."""
         if acc is None or lg_acc is None:
-            return "#2a2f42"
+            return "#3a4060"  # muted slate for missing data
         diff = acc - lg_acc
         if diff < -5:
-            return "#a82868"
-        elif diff < -2:
-            return "#6e2e55"
-        elif diff < 2:
-            return "#2e3348"
+            return "#d1307a"  # strong pink
+        elif diff < -1:
+            return "#c47aa0"  # light pink
+        elif diff < 1:
+            return "#7ea8c4"  # light blue (neutral leans slightly blue)
         elif diff < 5:
-            return "#245060"
+            return "#5ac4d6"  # light cyan
         else:
-            return "#1a7898"
+            return "#22D1EE"  # strong cyan
 
     rects = ""
     texts = ""
