@@ -1207,7 +1207,7 @@ if single_umpire and called_pitches_df is not None:
 
         slider_html = f'<div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; height:100%; box-sizing:border-box; display:flex; flex-direction:column;">'
         slider_html += f'<div class="section-header">Umpire Percentile Rankings <span style="font-size:0.7rem; font-weight:400; color:{TEXT_DIM}; letter-spacing:0; text-transform:none;">{selected_umpire}</span></div>'
-        slider_html += f'<div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:0.6rem;">'
+        slider_html += f'<div style="flex:1; display:flex; flex-direction:column; justify-content:space-evenly; padding:0.5rem 0;">'
 
         for label, val, display, pct in metrics:
             color = pct_color(pct)
@@ -1433,8 +1433,8 @@ if single_umpire and called_pitches_df is not None:
                 alpha = 0.15 + abs(pct - 50) / 50 * 0.30  # 0.15 at center, 0.45 at extremes
                 return f"background:rgba({r},{g},{b},{alpha:.2f}); color:{TEXT_WHITE}; font-weight:600"
 
-            _th = f"text-align:center; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;"
-            _td = f"text-align:center; padding:0.45rem 0.75rem; color:{TEXT_WHITE};"
+            _th = f"text-align:center; padding:0.5rem 0.5rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;"
+            _td = f"text-align:center; padding:0.45rem 0.5rem; color:{TEXT_WHITE};"
             has_total = ump_by_pitch["total_pitches"].sum() > 0
             table_html = f"""
             <div style="background:{CARD_BG}; border-radius:0.5rem; padding:1.25rem 1.25rem; margin-bottom:0.75rem; overflow-x:auto; -webkit-overflow-scrolling:touch; height:100%; box-sizing:border-box;">
@@ -1444,12 +1444,12 @@ if single_umpire and called_pitches_df is not None:
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
                             <th style="text-align:left; padding:0.5rem 0.75rem; color:{TEXT_DIM}; font-family:'Montserrat',sans-serif; font-weight:800; font-size:0.7rem; letter-spacing:0.05em; text-transform:uppercase;">Pitch</th>
                             {"<th style='" + _th + "'>PITCHES</th>" if has_total else ""}
+                            <th style="{_th}">Blown</th>
                             <th style="{_th}">Challenges</th>
                             <th style="{_th}">OT Rate</th>
                             <th style="{_th}">Accuracy</th>
                             <th style="{_th}">Strike Acc.</th>
                             <th style="{_th}">Ball Acc.</th>
-                            <th style="{_th}">Blown</th>
                         </tr>
                     </thead>
                     <tbody>"""
@@ -1489,12 +1489,12 @@ if single_umpire and called_pitches_df is not None:
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                             <td style="padding:0.45rem 0.75rem; color:{TEXT_WHITE};">{row['pitch_name']}</td>
                             {"<td style='" + _td + "'>" + tp_val + "</td>" if has_total else ""}
+                            <td style="{_td} color:{OVERTURNED if int(row.get('blown_calls', 0)) > 0 else TEXT_DIM}; font-weight:{'700' if int(row.get('blown_calls', 0)) > 0 else '400'};">{int(row.get('blown_calls', 0)) or '-'}</td>
                             <td style="{_td}">{int(row['challenges'])}</td>
                             <td style="{_td} border-radius:3px; {ot_style}; cursor:default;" title="{_ot_tip}">{row['ot_rate']:.0f}%</td>
                             <td style="{_td} border-radius:3px; {ta_style}; cursor:default;" title="{_ta_tip}">{ta_val}</td>
                             <td style="{_td} border-radius:3px; {sa_style}; cursor:default;" title="{_sa_tip}">{sa_val}</td>
                             <td style="{_td} border-radius:3px; {ba_style}; cursor:default;" title="{_ba_tip}">{ba_val}</td>
-                            <td style="{_td} color:{OVERTURNED if int(row.get('blown_calls', 0)) > 0 else TEXT_DIM}; font-weight:{'700' if int(row.get('blown_calls', 0)) > 0 else '400'};">{int(row.get('blown_calls', 0)) or '-'}</td>
                         </tr>"""
 
             # Totals row
@@ -1538,12 +1538,12 @@ if single_umpire and called_pitches_df is not None:
                         <tr style="{_tot_style}">
                             <td style="padding:0.45rem 0.75rem; color:{ACCENT}; font-weight:800;">TOTAL</td>
                             {"<td style='" + _td + " font-weight:800;'>" + f"{_tot_pitches:,}" + "</td>" if has_total else ""}
+                            <td style="{_td} font-weight:800; color:{OVERTURNED if _tot_blown > 0 else TEXT_DIM};">{_tot_blown or '-'}</td>
                             <td style="{_td} font-weight:800;">{_tot_challenges}</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ot_style};" title="MLB avg: {_overall_ot_rate:.0f}%">{_tot_ot_rate:.0f}%</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ta_style};" title="MLB avg: {_lg_ta_overall:.1f}%">{_tot_ta or '-'}</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_sa_style};" title="MLB avg: {_overall_strike_acc:.1f}%">{_tot_sa or '-'}</td>
                             <td style="{_td} font-weight:800; border-radius:3px; {_tot_ba_style};" title="MLB avg: {_overall_ball_acc:.1f}%">{_tot_ba or '-'}</td>
-                            <td style="{_td} font-weight:800; color:{OVERTURNED if _tot_blown > 0 else TEXT_DIM};">{_tot_blown or '-'}</td>
                         </tr>"""
 
             table_html += f"""
