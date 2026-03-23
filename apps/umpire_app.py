@@ -301,20 +301,20 @@ def build_zone_grid_html(zones, umpire=None):
     cell_h = inner_h / 3
 
     def _zone_color(acc, lg_acc):
-        """Pink if below avg, blue if above. Symmetric 5-tier scale."""
+        """Red if below avg, blue if above. 4-tier scale."""
         if acc is None or lg_acc is None:
             return "#3a4060"  # muted slate for missing data
         diff = acc - lg_acc
         if diff < -5:
-            return "#c43070"  # strong pink
-        elif diff < -2:
-            return "#a0607e"  # light pink
-        elif diff < 2:
+            return "#c0392b"  # red
+        elif diff < -1:
+            return "#d4756a"  # light red
+        elif diff < 1:
             return "#506070"  # neutral slate
         elif diff < 5:
-            return "#4a8a96"  # muted teal
+            return "#6a9fb5"  # light blue
         else:
-            return "#3aacb8"  # medium teal
+            return "#3a7cb8"  # blue
 
     rects = ""
     texts = ""
@@ -365,8 +365,8 @@ def build_zone_grid_html(zones, umpire=None):
         <div style="font-size:0.85rem; font-weight:700; color:{TEXT_WHITE}; margin-bottom:0.25rem;">{_title}</div>
         <div style="font-size:0.6rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">
             {_sub} &nbsp;
-            <span style="color:#c43070;">&#9632;</span> Below Avg &nbsp;
-            <span style="color:#3aacb8;">&#9632;</span> Above Avg
+            <span style="color:#c0392b;">&#9632;</span> Below Avg &nbsp;
+            <span style="color:#3a7cb8;">&#9632;</span> Above Avg
         </div>
         <svg width="100%" viewBox="0 0 {W} {H}" style="max-width:{W}px; margin:0 auto; display:block;">
             {rects}
@@ -445,9 +445,8 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
             [1.0, "#3aacb8"],
         ]
         z_min_val, z_max_val = -15, 15
-        _hover = "%{customdata}<br>vs MLB avg: <b>%{z:+.1f}pp</b><extra></extra>"
         _subtitle = "vs MLB avg at each location"
-        _show_colorbar = False
+        _is_delta = True
     else:
         z_data = ump_smooth
         _colorscale = [
@@ -460,30 +459,50 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
         ]
         z_min_val = max(np.nanmin(z_data), 50) if np.any(~np.isnan(z_data)) else 50
         z_max_val = 100
-        _hover = "%{customdata}<br>Accuracy: <b>%{z:.1f}%</b><extra></extra>"
         _subtitle = "Raw accuracy by location"
-        _show_colorbar = False
+        _is_delta = False
 
-    # Build customdata with zone labels and pitch counts per bin
+    # Build customdata with pre-formatted hover text per bin
     x_idx_arr = np.clip(np.digitize(_cp["pX"].values, x_edges) - 1, 0, n_bins - 1)
     z_idx_arr = np.clip(np.digitize(_cp["pZ"].values, z_edges) - 1, 0, n_bins - 1)
     count_grid = np.zeros((n_bins, n_bins), dtype=int)
+    correct_grid = np.zeros((n_bins, n_bins), dtype=int)
     for i in range(len(_cp)):
         count_grid[z_idx_arr[i], x_idx_arr[i]] += 1
+        correct_grid[z_idx_arr[i], x_idx_arr[i]] += _cp["_correct"].values[i]
 
     def _zone_label(xc, zc):
-        v = "High" if zc > sz_top - 0.2 else ("Low" if zc < sz_bot + 0.2 else "Mid")
-        h = "Inside" if abs(xc) > PLATE_HALF_FT else ("Away" if xc < -0.2 else ("In" if xc > 0.2 else "Middle"))
-        in_zone = abs(xc) <= ZONE_EDGE_FT and sz_bot <= zc <= sz_top
-        loc = f"{v}-{h}" if not in_zone else f"{v}-{h} (zone)"
-        return loc
+        v = "High" if zc > sz_top else ("Low" if zc < sz_bot else "Mid")
+        in_x = abs(xc) <= ZONE_EDGE_FT
+        in_z = sz_bot <= zc <= sz_top
+        if in_x and in_z:
+            h = "In" if abs(xc) > PLATE_HALF_FT * 0.33 else "Middle"
+            return f"{v} {h} (Strike Zone)"
+        else:
+            return f"{v} {'Inside' if abs(xc) > PLATE_HALF_FT else 'Edge'} (Shadow)"
 
     customdata = np.empty((n_bins, n_bins), dtype=object)
     for zi in range(n_bins):
         for xi in range(n_bins):
             _lbl = _zone_label(x_centers[xi], z_centers[zi])
             _cnt = count_grid[zi, xi]
-            customdata[zi, xi] = f"{_lbl}<br>{_cnt} pitches"
+            _cor = correct_grid[zi, xi]
+            _raw_acc = (_cor / _cnt * 100) if _cnt > 0 else None
+            if _is_delta:
+                _z = z_data[zi, xi] if not np.isnan(z_data[zi, xi]) else 0
+                _sign = "+" if _z >= 0 else ""
+                _verdict = "Above avg" if _z > 2 else ("Below avg" if _z < -2 else "Near avg")
+                customdata[zi, xi] = (
+                    f"<b>{_lbl}</b><br>"
+                    f"Accuracy: {_raw_acc:.0f}% ({_cnt} pitches)<br>"
+                    f"vs Avg: <b>{_sign}{_z:.1f}pp</b> ({_verdict})"
+                ) if _cnt > 2 else f"<b>{_lbl}</b><br><i>Low sample ({_cnt})</i>"
+            else:
+                _z = z_data[zi, xi] if not np.isnan(z_data[zi, xi]) else 0
+                customdata[zi, xi] = (
+                    f"<b>{_lbl}</b><br>"
+                    f"Accuracy: {_raw_acc:.0f}% ({_cnt} pitches)"
+                ) if _cnt > 2 else f"<b>{_lbl}</b><br><i>Low sample ({_cnt})</i>"
 
     hm_fig = go.Figure()
     hm_fig.add_trace(go.Heatmap(
@@ -493,7 +512,7 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
         zmin=z_min_val, zmax=z_max_val,
         xgap=1, ygap=1,
         showscale=False,
-        hovertemplate=_hover,
+        hovertemplate="%{customdata}<extra></extra>",
     ))
 
     for x0, x1, y0, y1 in [
@@ -1929,7 +1948,7 @@ fig.update_layout(
         itemdoubleclick="toggleothers",
     ),
     height=850,
-    margin=dict(t=70, b=80, l=40, r=40),
+    margin=dict(t=70, b=100, l=40, r=40),
 )
 
 # Annotations
@@ -1941,7 +1960,7 @@ fig.add_annotation(x=0, y=0.1, text="Umpire's view (behind catcher)", showarrow=
                    font=dict(size=10, color=TEXT_DIM))
 
 # Established zone legend (below dot legend)
-fig.add_annotation(x=0.5, y=-0.13, xref="paper", yref="paper",
+fig.add_annotation(x=0.5, y=-0.16, xref="paper", yref="paper",
                    text="<span style='color:rgba(255,80,180,0.8); font-size:14px; letter-spacing:-2px;'>&#126;&#126;&#126;</span>&nbsp;&nbsp;Established Zone (where ump calls strikes)",
                    showarrow=False, font=dict(size=10, color=TEXT_DIM))
 
@@ -2049,12 +2068,12 @@ if called_pitches_df is not None:
     _zone_grid = _compute_zone_acc_grid(called_pitches_df, umpire=_hm_ump)
     _zone_html = build_zone_grid_html(_zone_grid, umpire=_hm_ump) if _zone_grid else ""
 
-    _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; font-size:0.6rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem;">
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#c43070;display:inline-block;"></span> Below Avg</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#a0607e;display:inline-block;"></span> Slightly Below</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#506070;display:inline-block;"></span> At Avg</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#4a8a96;display:inline-block;"></span> Slightly Above</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3aacb8;display:inline-block;"></span> Above Avg</span>
+    _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; font-size:0.65rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem; flex-wrap:wrap;">
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#d1307a;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">-5pp+ below</span></span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#c47aa0;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">-2 to -5pp</span></span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#5a6a80;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">At avg (±2pp)</span></span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#5ac4d6;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">+2 to +5pp</span></span>
+        <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#22D1EE;display:inline-block;"></span> <span style="color:{TEXT_WHITE};">+5pp+ above</span></span>
     </div>'''
 
     if _hm_fig and _zone_html:
