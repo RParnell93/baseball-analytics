@@ -87,10 +87,10 @@ def metric_card(label, value, subtext=None, delta=None, delta_color=None, donut=
                 d_color = UPHELD if delta.startswith("+") else OVERTURNED
         else:
             d_color = TEXT_DIM
-        delta_html = f'<div style="font-size:0.8rem; color:{d_color};">{delta}</div>'
+        delta_html = f'<div style="font-size:0.85rem; font-weight:600; color:{d_color};">{delta}</div>'
     sub_html = ""
     if subtext:
-        sub_html = f'<div style="font-size:0.8rem; color:{TEXT_DIM}; margin-top:0.25rem;">{subtext}</div>'
+        sub_html = f'<div style="font-size:0.7rem; color:{TEXT_DIM}; margin-top:0.15rem;">{subtext}</div>'
 
     donut_html = ""
     if donut:
