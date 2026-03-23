@@ -303,18 +303,18 @@ def build_zone_grid_html(zones, umpire=None):
     def _zone_color(acc, lg_acc):
         """Pink if below avg, blue if above, dim if at avg."""
         if acc is None or lg_acc is None:
-            return f"rgba(255,255,255,0.05)"
+            return "#2a2f42"
         diff = acc - lg_acc
         if diff < -5:
-            return "rgba(255,80,180,0.5)"
+            return "#a82868"
         elif diff < -2:
-            return "rgba(255,80,180,0.25)"
+            return "#6e2e55"
         elif diff < 2:
-            return "rgba(255,255,255,0.06)"
+            return "#2e3348"
         elif diff < 5:
-            return "rgba(34,209,238,0.2)"
+            return "#245060"
         else:
-            return "rgba(34,209,238,0.4)"
+            return "#1a7898"
 
     rects = ""
     texts = ""
@@ -432,11 +432,13 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
             z_data = np.where(~np.isnan(ump_smooth) & ~np.isnan(lg_smooth),
                               ump_smooth - lg_smooth, np.nan)
         _colorscale = [
-            [0.0, "rgba(255,80,180,0.85)"],
-            [0.25, "rgba(255,80,180,0.4)"],
-            [0.5, "rgba(60,40,70,0.05)"],
-            [0.75, "rgba(34,180,230,0.35)"],
-            [1.0, "rgba(34,209,238,0.7)"],
+            [0.0, "#d1307a"],
+            [0.2, "#8c3868"],
+            [0.4, "#4a3555"],
+            [0.5, CARD_BG],
+            [0.6, "#2e4a5e"],
+            [0.8, "#2882a8"],
+            [1.0, "#22D1EE"],
         ]
         z_min_val, z_max_val = -15, 15
         _hover = "pX: %{x:.2f} ft<br>pZ: %{y:.2f} ft<br>vs MLB avg: %{z:+.1f}pp<extra></extra>"
@@ -446,13 +448,12 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
     else:
         z_data = ump_smooth
         _colorscale = [
-            [0.0, "rgba(255,80,180,0.85)"],
-            [0.2, "rgba(220,60,140,0.6)"],
-            [0.4, "rgba(140,40,100,0.3)"],
-            [0.55, "rgba(60,40,70,0.08)"],
-            [0.7, "rgba(30,80,130,0.12)"],
-            [0.85, "rgba(34,160,220,0.3)"],
-            [1.0, "rgba(34,209,238,0.5)"],
+            [0.0, "#d1307a"],
+            [0.3, "#8c3868"],
+            [0.5, "#4a3555"],
+            [0.7, "#2e4a5e"],
+            [0.85, "#2882a8"],
+            [1.0, "#22D1EE"],
         ]
         z_min_val = max(np.nanmin(z_data), 50) if np.any(~np.isnan(z_data)) else 50
         z_max_val = 100
@@ -2038,7 +2039,7 @@ if called_pitches_df is not None:
         with _hm_col:
             st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
         with _zg_col:
-            st.html(_zone_html)
+            st.html(_zone_html, height=440)
     elif _hm_fig:
         st.plotly_chart(_hm_fig, use_container_width=True, config=PLOTLY_CONFIG)
 
