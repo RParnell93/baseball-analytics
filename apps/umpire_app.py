@@ -355,7 +355,7 @@ def build_zone_grid_html(zones, umpire=None):
         rects += f'<rect x="{sx}" y="{sy}" width="{sw}" height="{sh}" fill="{color}" rx="3"/>'
         rects += f'<rect x="{sx}" y="{sy}" width="{sw}" height="{sh}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="3"/>'
         if _acc is not None:
-            texts += f'<text x="{sx + sw/2}" y="{sy + sh/2 + 4}" text-anchor="middle" fill="{TEXT_DIM}" font-size="10" font-weight="600" font-family="Montserrat,sans-serif">{_acc:.0f}%</text>'
+            texts += f'<text x="{sx + sw/2}" y="{sy + sh/2 + 4}" text-anchor="middle" fill="{TEXT_WHITE}" font-size="11" font-weight="700" font-family="Montserrat,sans-serif">{_acc:.0f}%</text>'
 
     _title = f"9-Zone Accuracy: {umpire}" if umpire else "9-Zone Accuracy: All Umpires"
     _sub = "vs MLB avg" if umpire else "League-wide"
@@ -1939,7 +1939,7 @@ fig.update_layout(
     font=dict(color=TEXT_WHITE),
     hoverlabel=HOVER_LABEL,
     legend=dict(
-        orientation="h", yanchor="top", y=-0.08,
+        orientation="h", yanchor="top", y=-0.06,
         xanchor="center", x=0.5,
         font=dict(size=11, color=TEXT_WHITE),
         bgcolor="rgba(0,0,0,0)",
@@ -2069,9 +2069,12 @@ if called_pitches_df is not None:
     _zone_html = build_zone_grid_html(_zone_grid, umpire=_hm_ump) if _zone_grid else ""
 
     _hm_legend = f'''<div style="display:flex; flex-direction:column; align-items:center; margin-top:-0.5rem; padding-bottom:0.25rem;">
-        <div style="width:260px; height:10px; border-radius:5px; background:linear-gradient(to right, #c43070, #a03868, #3a4858, #3a9aa8, #3aacb8);"></div>
-        <div style="display:flex; justify-content:space-between; width:260px; font-size:0.55rem; color:{TEXT_DIM}; margin-top:3px;">
-            <span>Below avg</span><span>At avg</span><span>Above avg</span>
+        <div style="width:280px; height:10px; border-radius:5px; background:linear-gradient(to right, #c43070, #a03868, #3a4858, #3a9aa8, #3aacb8);"></div>
+        <div style="display:flex; justify-content:space-between; width:280px; font-size:0.5rem; color:{TEXT_DIM}; margin-top:3px;">
+            <span>-15pp</span><span>-5pp</span><span>0</span><span>+5pp</span><span>+15pp</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; width:280px; font-size:0.5rem; color:{TEXT_DIM}; margin-top:1px;">
+            <span>Below avg</span><span style="text-align:center;">At avg</span><span>Above avg</span>
         </div>
     </div>'''
 
