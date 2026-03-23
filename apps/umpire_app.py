@@ -300,21 +300,41 @@ def build_zone_grid_html(zones, umpire=None):
     cell_w = inner_w / 3
     cell_h = inner_h / 3
 
-    def _zone_color(acc, lg_acc):
-        """Red if below avg, blue if above. 4-tier scale."""
+    def _zone_color_delta(acc, lg_acc):
+        """Red if below avg, blue if above. For individual umpire view."""
         if acc is None or lg_acc is None:
-            return "#5a7888"  # muted blue for missing data
+            return "#5a7888"
         diff = acc - lg_acc
         if diff < -5:
             return "#c0392b"  # red
         elif diff < -1:
             return "#d4756a"  # light red
         elif diff <= 1:
-            return "#8faabb"  # very light blue (neutral)
+            return "#8faabb"  # very light blue
         elif diff < 5:
             return "#6a9fb5"  # light blue
         else:
             return "#3a7cb8"  # blue
+
+    def _zone_color_raw(acc):
+        """Color by raw accuracy. For league-wide view."""
+        if acc is None:
+            return "#5a7888"
+        if acc < 75:
+            return "#c0392b"  # red - worst
+        elif acc < 85:
+            return "#d4756a"  # light red
+        elif acc < 90:
+            return "#8faabb"  # light blue
+        elif acc < 95:
+            return "#6a9fb5"  # blue
+        else:
+            return "#3a7cb8"  # deep blue - best
+
+    def _zone_color(acc, lg_acc):
+        if umpire:
+            return _zone_color_delta(acc, lg_acc)
+        return _zone_color_raw(acc)
 
     rects = ""
     texts = ""
@@ -365,8 +385,8 @@ def build_zone_grid_html(zones, umpire=None):
         <div style="font-size:0.85rem; font-weight:700; color:{TEXT_WHITE}; margin-bottom:0.25rem;">{_title}</div>
         <div style="font-size:0.6rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">
             {_sub} &nbsp;
-            <span style="color:#c0392b;">&#9632;</span> Below Avg &nbsp;
-            <span style="color:#3a7cb8;">&#9632;</span> Above Avg
+            <span style="color:#c0392b;">&#9632;</span> {"Below Avg" if umpire else "Low Acc"} &nbsp;
+            <span style="color:#3a7cb8;">&#9632;</span> {"Above Avg" if umpire else "High Acc"}
         </div>
         <svg width="100%" viewBox="0 0 {W} {H}" style="max-width:{W}px; margin:0 auto; display:block;">
             {rects}
