@@ -355,7 +355,7 @@ def build_zone_grid_html(zones, umpire=None):
         rects += f'<rect x="{sx}" y="{sy}" width="{sw}" height="{sh}" fill="{color}" rx="3"/>'
         rects += f'<rect x="{sx}" y="{sy}" width="{sw}" height="{sh}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.5" rx="3"/>'
         if _acc is not None:
-            texts += f'<text x="{sx + sw/2}" y="{sy + sh/2 + 4}" text-anchor="middle" fill="{TEXT_WHITE}" font-size="11" font-weight="700" font-family="Montserrat,sans-serif">{_acc:.0f}%</text>'
+            texts += f'<text x="{sx + sw/2}" y="{sy + sh/2}" text-anchor="middle" dominant-baseline="central" fill="{TEXT_WHITE}" font-size="11" font-weight="700" font-family="Montserrat,sans-serif">{_acc:.0f}%</text>'
 
     _title = f"9-Zone Accuracy: {umpire}" if umpire else "9-Zone Accuracy: All Umpires"
     _sub = "vs MLB avg" if umpire else "League-wide"
