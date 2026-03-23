@@ -301,20 +301,20 @@ def build_zone_grid_html(zones, umpire=None):
     cell_h = inner_h / 3
 
     def _zone_color(acc, lg_acc):
-        """Pink if below avg, blue if above. 4-tier scale, no dark/transparent."""
+        """Pink if below avg, blue if above. Symmetric 5-tier scale."""
         if acc is None or lg_acc is None:
             return "#3a4060"  # muted slate for missing data
         diff = acc - lg_acc
         if diff < -5:
-            return "#d1307a"  # strong pink
-        elif diff < -1:
-            return "#c47aa0"  # light pink
-        elif diff < 1:
-            return "#7ea8c4"  # light blue (neutral leans slightly blue)
+            return "#c43070"  # strong pink
+        elif diff < -2:
+            return "#a0607e"  # light pink
+        elif diff < 2:
+            return "#506070"  # neutral slate
         elif diff < 5:
-            return "#5ac4d6"  # light cyan
+            return "#4a8a96"  # muted teal
         else:
-            return "#22D1EE"  # strong cyan
+            return "#3aacb8"  # medium teal
 
     rects = ""
     texts = ""
@@ -365,8 +365,8 @@ def build_zone_grid_html(zones, umpire=None):
         <div style="font-size:0.85rem; font-weight:700; color:{TEXT_WHITE}; margin-bottom:0.25rem;">{_title}</div>
         <div style="font-size:0.6rem; color:{TEXT_DIM}; margin-bottom:0.5rem;">
             {_sub} &nbsp;
-            <span style="color:#d1307a;">&#9632;</span> Below Avg &nbsp;
-            <span style="color:#22D1EE;">&#9632;</span> Above Avg
+            <span style="color:#c43070;">&#9632;</span> Below Avg &nbsp;
+            <span style="color:#3aacb8;">&#9632;</span> Above Avg
         </div>
         <svg width="100%" viewBox="0 0 {W} {H}" style="max-width:{W}px; margin:0 auto; display:block;">
             {rects}
@@ -436,13 +436,13 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
             z_data = np.where(~np.isnan(ump_smooth) & ~np.isnan(lg_smooth),
                               ump_smooth - lg_smooth, np.nan)
         _colorscale = [
-            [0.0, "#d1307a"],
-            [0.2, "#8c3868"],
-            [0.4, "#4a3555"],
-            [0.5, CARD_BG],
-            [0.6, "#2e4a5e"],
-            [0.8, "#2882a8"],
-            [1.0, "#22D1EE"],
+            [0.0, "#c43070"],
+            [0.15, "#a03868"],
+            [0.3, "#704060"],
+            [0.5, "#3a4858"],
+            [0.7, "#3a7080"],
+            [0.85, "#3a9aa8"],
+            [1.0, "#3aacb8"],
         ]
         z_min_val, z_max_val = -15, 15
         _hover = "%{customdata}<br>vs MLB avg: <b>%{z:+.1f}pp</b><extra></extra>"
@@ -451,12 +451,12 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
     else:
         z_data = ump_smooth
         _colorscale = [
-            [0.0, "#d1307a"],
-            [0.3, "#8c3868"],
-            [0.5, "#4a3555"],
-            [0.7, "#2e4a5e"],
-            [0.85, "#2882a8"],
-            [1.0, "#22D1EE"],
+            [0.0, "#c43070"],
+            [0.2, "#a03868"],
+            [0.4, "#704060"],
+            [0.6, "#3a7080"],
+            [0.8, "#3a9aa8"],
+            [1.0, "#3aacb8"],
         ]
         z_min_val = max(np.nanmin(z_data), 50) if np.any(~np.isnan(z_data)) else 50
         z_max_val = 100
@@ -491,7 +491,7 @@ def build_accuracy_heatmap(cp_df, umpire=None, sz_top=DEFAULT_SZ_TOP, sz_bot=DEF
         customdata=customdata,
         colorscale=_colorscale,
         zmin=z_min_val, zmax=z_max_val,
-        zsmooth="best",
+        xgap=1, ygap=1,
         showscale=False,
         hovertemplate=_hover,
     ))
@@ -2050,11 +2050,11 @@ if called_pitches_df is not None:
     _zone_html = build_zone_grid_html(_zone_grid, umpire=_hm_ump) if _zone_grid else ""
 
     _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.6rem; font-size:0.6rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem;">
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#d1307a;display:inline-block;"></span> Below Avg</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#c47aa0;display:inline-block;"></span> Slightly Below</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:{CARD_BG};border:1px solid {TEXT_DIM};display:inline-block;"></span> At Avg</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#5ac4d6;display:inline-block;"></span> Slightly Above</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#22D1EE;display:inline-block;"></span> Above Avg</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#c43070;display:inline-block;"></span> Below Avg</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#a0607e;display:inline-block;"></span> Slightly Below</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#506070;display:inline-block;"></span> At Avg</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#4a8a96;display:inline-block;"></span> Slightly Above</span>
+        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3aacb8;display:inline-block;"></span> Above Avg</span>
     </div>'''
 
     if _hm_fig and _zone_html:
