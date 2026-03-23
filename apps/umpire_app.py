@@ -2068,12 +2068,11 @@ if called_pitches_df is not None:
     _zone_grid = _compute_zone_acc_grid(called_pitches_df, umpire=_hm_ump)
     _zone_html = build_zone_grid_html(_zone_grid, umpire=_hm_ump) if _zone_grid else ""
 
-    _hm_legend = f'''<div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.6rem; color:{TEXT_DIM}; margin-top:-0.5rem; padding-bottom:0.25rem; flex-wrap:wrap;">
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#c43070;display:inline-block;"></span> -5pp+</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#a03868;display:inline-block;"></span> -2 to -5pp</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3a4858;display:inline-block;"></span> At avg</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3a9aa8;display:inline-block;"></span> +2 to +5pp</span>
-        <span style="display:inline-flex; align-items:center; gap:3px;"><span style="width:10px;height:10px;border-radius:2px;background:#3aacb8;display:inline-block;"></span> +5pp+</span>
+    _hm_legend = f'''<div style="display:flex; flex-direction:column; align-items:center; margin-top:-0.5rem; padding-bottom:0.25rem;">
+        <div style="width:260px; height:10px; border-radius:5px; background:linear-gradient(to right, #c43070, #a03868, #3a4858, #3a9aa8, #3aacb8);"></div>
+        <div style="display:flex; justify-content:space-between; width:260px; font-size:0.55rem; color:{TEXT_DIM}; margin-top:3px;">
+            <span>Below avg</span><span>At avg</span><span>Above avg</span>
+        </div>
     </div>'''
 
     if _hm_fig and _zone_html:
