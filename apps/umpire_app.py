@@ -2220,33 +2220,14 @@ if len(bottom_df) > 0 and not single_umpire:
                     margin=dict(l=10, r=10, t=10, b=80),
                 )
 
-    # Collect umpire names from both charts for clickable buttons
-    _ch_ump_names = ump_stats["umpire"].tolist()[::-1]  # reverse to match top-to-bottom display
-
     _ch_col, _acc_col = st.columns(2)
     with _ch_col:
         st.subheader("Top Umpires by Challenge Count")
         st.plotly_chart(bar_fig, width="stretch", config=PLOTLY_CONFIG)
-        _btn_cols = st.columns(5)
-        for _i, _name in enumerate(_ch_ump_names):
-            with _btn_cols[_i % 5]:
-                if st.button(_name, key=f"ch_{_name}", use_container_width=True):
-                    st.query_params["umpire"] = _name
-                    st.rerun()
     with _acc_col:
         if acc_fig:
             st.subheader("Top Umpires by Accuracy")
             st.plotly_chart(acc_fig, width="stretch", config=PLOTLY_CONFIG)
-            try:
-                _acc_ump_names = _acc_top10["umpire"].tolist()[::-1]
-            except NameError:
-                _acc_ump_names = []
-            _btn_cols2 = st.columns(5)
-            for _i, _name in enumerate(_acc_ump_names):
-                with _btn_cols2[_i % 5]:
-                    if st.button(_name, key=f"acc_{_name}", use_container_width=True):
-                        st.query_params["umpire"] = _name
-                        st.rerun()
 
 
 # ---------------------------------------------------------------------------
